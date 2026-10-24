@@ -38,7 +38,7 @@ Vercel은 루트 `app.py`의 Flask `app` 객체를 찾아 Function으로 실행�
 2. **Root Directory**를 이 저장소의 루트로 설정합니다. 하위 폴더로 옮겼다면 실제 `app.py`가 있는 폴더를 지정합니다. Flask가 자동 감지되는지 확인하고, 특별한 이유가 없다면 빌드 명령과 출력 폴더를 임의로 덮어쓰지 않습니다.
 3. 모델 API를 연결했다면 **Environment Variables**에 필요한 변수 이름과 값을 입력하고 적용할 환경을 선택합니다. 데모에는 키가 필요 없습니다. `.env` 파일을 Git에 추가하지 않습니다. [Vercel 환경 변수 관리](https://vercel.com/docs/environment-variables/managing-environment-variables)
 4. **Deploy**를 누르고 빌드 로그에서 의존성 설치·Function 생성의 오류가 없는지 확인합니다. 배포가 끝나면 표시된 `https://….vercel.app` 주소를 엽니다.
-5. `공개주소/`, `공개주소/chat`, `공개주소/health`, `공개주소/assets/css/style.css`, `공개주소/assets/js/chatbot.js`, `공개주소/assets/images/avatar.svg`가 열리는지 확인합니다. 채팅창에서 메시지를 보내고 브라우저 개발자 도구의 Network에서 `POST /api/chat` 응답도 확인합니다.
+5. `공개주소/`, `공개주소/chat`, `공개주소/health`, `공개주소/assets/css/style.css`, `공개주소/assets/js/chatbot.js`, `공개주소/assets/images/hateslop-logo.png`가 열리는지 확인합니다. 채팅창에서 메시지를 보내고 브라우저 개발자 도구의 Network에서 `POST /api/chat` 응답도 확인합니다.
 6. 환경 변수를 나중에 변경했다면 새 배포에 반영되도록 다시 배포하고, Function 로그에서 오류를 확인합니다.
 
 Vercel Function에는 실행 시간·패키지 크기·파일시스템 제한이 있습니다. 모델 호출이 오래 걸리거나 큰 로컬 인덱스를 쓰는 설계라면 배포 전에 [Flask 제한](https://vercel.com/docs/frameworks/backend/flask#limitations)을 확인하세요. 요청 중에 Chroma 인덱스나 사용자 대화 기록을 로컬 파일에 쓰는 구조는 영속 저장을 보장하지 않습니다.

@@ -19,11 +19,11 @@ class SmokeTest(unittest.TestCase):
 
         chat_page = self.client.get("/chat").get_data(as_text=True)
         self.assertIn("/assets/js/chatbot.js", chat_page)
-        self.assertIn("/assets/images/avatar.svg", self.client.get("/").get_data(as_text=True))
+        self.assertIn("/assets/images/hateslop-logo.png", self.client.get("/").get_data(as_text=True))
         for path in (
             "/assets/js/chatbot.js",
             "/assets/css/style.css",
-            "/assets/images/avatar.svg",
+            "/assets/images/hateslop-logo.png",
         ):
             with self.subTest(path=path):
                 response = self.client.get(path)

@@ -1,4 +1,4 @@
-const shell = document.querySelector(".chat-shell");
+const shell = document.querySelector(".chat-area");
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-message");
 const log = document.getElementById("chat-log");

@@ -30,7 +30,7 @@ def load_config() -> dict:
 
 
 def bot_view(config: dict) -> dict:
-    thumbnail = config.get("thumbnail") or "assets/images/avatar.svg"
+    thumbnail = config.get("thumbnail") or "assets/images/hateslop-logo.png"
     return {
         "name": config["name"],
         "description": config.get("description", ""),

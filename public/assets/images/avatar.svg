@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title">
-  <title id="title">예시 캐릭터</title>
-  <rect width="240" height="240" rx="48" fill="#ede6fa"/>
-  <circle cx="120" cy="120" r="76" fill="#6644a4"/>
-  <circle cx="94" cy="108" r="9" fill="#fff"/>
-  <circle cx="146" cy="108" r="9" fill="#fff"/>
-  <path d="M88 145q32 28 64 0" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="9"/>
-</svg>

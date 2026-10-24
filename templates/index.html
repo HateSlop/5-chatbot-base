@@ -3,24 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ bot.name }} · 캐릭터 챗봇</title>
+    <title>{{ bot.name }} - 캐릭터 챗봇</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/style.css') }}">
   </head>
-  <body>
-    <main class="shell">
-      <header class="site-header">
-        <span class="eyebrow">CHARACTER CHAT</span>
-        <h1>나만의 캐릭터와 대화하기</h1>
-        <p>이 화면은 5기 프로젝트의 시작점입니다. 팀의 이야기와 디자인으로 바꿔보세요.</p>
+  <body class="landing-page">
+    <main class="landing-card">
+      <header class="landing-header">
+        <h1>캐릭터 챗봇</h1>
       </header>
-      <section class="card hero-card" aria-labelledby="bot-name">
-        <img class="avatar" src="{{ bot.image }}" alt="{{ bot.name }} 대표 이미지">
-        <div>
-          <h2 id="bot-name">{{ bot.name }}</h2>
-          <p>{{ bot.description }}</p>
-          <a class="button" href="{{ url_for('detail') }}">캐릭터 알아보기</a>
-        </div>
-      </section>
+      <div class="landing-content">
+        <img class="brand-image" src="{{ url_for('static', filename='assets/images/hateslop-logo.png') }}" alt="hateSlop 로고">
+        <a class="start-button" href="{{ url_for('detail') }}">시작하기</a>
+      </div>
     </main>
   </body>
 </html>
