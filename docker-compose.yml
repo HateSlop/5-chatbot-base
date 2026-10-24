@@ -13,4 +13,5 @@ services:
       - ./templates:/app/templates:ro
       - ./public:/app/public:ro
       - ./data/knowledge:/app/data/knowledge:ro
+      - ./tests:/app/tests:ro
     command: python app.py
