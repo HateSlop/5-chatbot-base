@@ -1,0 +1,7 @@
+{
+  "name": "예시 캐릭터",
+  "description": "이 설명과 화면을 팀의 캐릭터에 맞게 바꿔주세요.",
+  "tags": ["#캐릭터", "#챗봇"],
+  "thumbnail": "assets/images/avatar.svg",
+  "greeting": "안녕하세요! 어떤 이야기를 나눌까요?"
+}

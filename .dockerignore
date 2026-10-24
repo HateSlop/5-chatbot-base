@@ -1,0 +1,12 @@
+.git/
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.local/
+reference-3/
+reference-4/
+BASELINE_REVIEW.md
+IMPLEMENTATION_PLAN.md
+docs/
+tests/

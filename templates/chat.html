@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ bot.name }} · 대화</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/style.css') }}">
+    <script src="{{ url_for('static', filename='assets/js/chatbot.js') }}" defer></script>
+  </head>
+  <body class="chat-page">
+    <main class="chat-shell" data-username="{{ username }}">
+      <header class="chat-header">
+        <a class="back-link" href="{{ url_for('detail') }}" aria-label="캐릭터 소개로 돌아가기">←</a>
+        <div>
+          <h1>{{ bot.name }}</h1>
+          <p>데모 모드 · 답변 로직을 구현해 바꿀 수 있습니다</p>
+        </div>
+      </header>
+      <div id="chat-log" class="chat-log" role="log" aria-live="polite" aria-label="대화 내용">
+        <div class="message bot"><p>{{ bot.greeting }}</p></div>
+      </div>
+      <form id="chat-form" class="chat-form">
+        <label class="visually-hidden" for="user-message">메시지</label>
+        <input id="user-message" type="text" maxlength="2000" placeholder="메시지를 입력하세요" autocomplete="off" required>
+        <button id="send-btn" class="button" type="submit">보내기</button>
+      </form>
+    </main>
+  </body>
+</html>
