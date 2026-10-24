@@ -1,22 +1,26 @@
-"""검색 결과와 답변 생성기를 묶어 API 응답을 조립합니다."""
+"""검색·답변 생성·이미지 선택을 연결해 API 응답을 조립합니다."""
 
 from .generator import DemoGenerator
+from .image_selector import DemoImageSelector
 from .retriever import DemoRetriever
 
 
 class ChatbotService:
-    def __init__(self, retriever=None, generator=None):
+    def __init__(self, retriever=None, generator=None, image_selector=None):
         self.retriever = retriever or DemoRetriever()
         self.generator = generator or DemoGenerator()
+        self.image_selector = image_selector or DemoImageSelector()
 
     def generate_response(
         self, user_message: str, username: str = "사용자", character: dict | None = None
     ) -> dict:
         """`reply`, `image`, `sources`로 이루어진 응답을 반환합니다."""
         knowledge = self.retriever.search(user_message)
-        reply = self.generator.generate(user_message, username, character or {}, knowledge)
+        character = character or {}
+        reply = self.generator.generate(user_message, username, character, knowledge)
+        image = self.image_selector.select(reply, character)
         return {
             "reply": reply,
-            "image": None,
+            "image": image,
             "sources": list(dict.fromkeys(hit.title for hit in knowledge)),
         }

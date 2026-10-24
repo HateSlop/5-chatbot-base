@@ -48,7 +48,7 @@ cp .env.example .env
 python app.py
 ```
 
-Conda와 venv는 모두 <http://localhost:5000>을 엽니다. 이름을 입력해 대화해 보세요. 정지하려면 터미널에서 `Ctrl+C`를 누릅니다. `.env`는 데모에는 없어도 됩니다. 모델 API를 붙일 때에는 `.env.example`의 필요한 변수만 `.env`에 추가하세요. `.gitignore`는 `.env`, `.env.local` 등 `.env.*`를 제외합니다. 실제 API 키를 Markdown, 소스 코드, 브라우저 JS, 스크린샷에 적어 공유하지 마세요. 커밋 전 `git status --short`로 파일 목록을 보고, `git check-ignore .env`가 `.env`를 출력하는지 확인하세요. Git에 올라간 키는 파일을 삭제해도 기록에 남으므로 즉시 폐기·재발급해야 합니다.
+Conda와 venv는 모두 <http://localhost:5000>을 엽니다. 이름을 입력해 대화해 보세요. 정지하려면 터미널에서 `Ctrl+C`를 누릅니다. `.env`는 데모에는 없어도 됩니다. 모델 API를 붙일 때에는 운영진이 제공한 키를 포함해 `.env.example`의 필요한 변수만 `.env`에 추가하세요. `.gitignore`는 `.env`, `.env.local` 등 `.env.*`를 제외합니다. 실제 API 키를 Markdown, 소스 코드, 브라우저 JS, 스크린샷이나 팀 채팅에 적어 공유하지 마세요. 커밋 전 `git status --short`로 파일 목록을 보고, `git check-ignore .env`가 `.env`를 출력하는지 확인하세요. 키가 Git이나 외부에 노출되면 운영진에게 바로 알려 교체를 요청하세요.
 
 ## Docker Compose로 실행
 
@@ -67,7 +67,7 @@ docker compose down
 
 `ps`로 실행 상태를, `logs`로 오류를, `exec`으로 **팀원이 같은 컨테이너 환경에서 테스트한 결과**를 확인할 수 있습니다. `down`은 컨테이너를 정리합니다. 로컬 Conda/venv와 Docker를 동시에 실행하면 동일한 기능을 두 번 띄우게 되므로, 비교 목적이 아니라면 한 방법을 골라 쓰세요. [Docker Compose 빠른 시작](https://docs.docker.com/compose/gettingstarted/)
 
-Docker 실행 시 `.env`에 넣은 값은 Compose가 **변수 치환용으로 읽더라도 자동으로 컨테이너에 모두 전달하지 않습니다.** 팀이 API 키를 연결한다면 해당 키를 Compose의 `environment`/`env_file`이나 배포 플랫폼의 비밀 변수 설정에 명시해야 합니다. `.env` 자체를 Git에 올리지 마세요. [Docker Compose 환경 변수](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation)
+Docker 실행 시 `.env`에 넣은 값은 Compose가 **변수 치환용으로 읽더라도 자동으로 컨테이너에 모두 전달하지 않습니다.** 현재 Compose 파일은 OpenAI 키·모델·추론 강도만 명시적으로 전달합니다. 다른 환경 변수를 추가했다면 Compose의 `environment`/`env_file`도 확인하세요. `.env` 자체를 Git에 올리지 마세요. [Docker Compose 환경 변수](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation)
 
 ## API 직접 확인
 
@@ -77,7 +77,7 @@ PowerShell:
 
 ```powershell
 Invoke-RestMethod -Uri http://localhost:5000/health
-$body = @{ message = '안녕'; username = '민지' } | ConvertTo-Json
+$body = @{ message = '안녕'; username = '헤슬' } | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:5000/api/chat -Method Post -ContentType 'application/json' -Body $body
 ```
 
@@ -85,7 +85,7 @@ macOS / Linux:
 
 ```bash
 curl http://localhost:5000/health
-curl -X POST http://localhost:5000/api/chat -H 'Content-Type: application/json' -d '{"message":"안녕","username":"민지"}'
+curl -X POST http://localhost:5000/api/chat -H 'Content-Type: application/json' -d '{"message":"안녕","username":"헤슬"}'
 ```
 
 테스트:
@@ -103,7 +103,7 @@ python -m unittest discover -s tests -v
 | Docker 연결 오류 | Docker Engine/Desktop이 실행 중인지 확인하세요. CLI 설치만으로는 컨테이너가 실행되지 않습니다. |
 | PowerShell에서 활성화가 막힘 | 터미널의 실행 정책을 확인하거나 `.venv\Scripts\python.exe app.py`처럼 가상환경 Python을 직접 실행하세요. |
 | 5000 또는 5001 포트 충돌 | 기존 프로세스를 끄거나 `PORT`/Compose 포트 매핑을 변경하세요. |
-| 화면은 열리는데 답변이 데모 문구임 | 정상입니다. `services/retriever.py`와 `services/generator.py`에 실제 검색·모델 연결을 아직 구현하지 않았습니다. |
+| 화면은 열리는데 답변이 데모 문구임 | 정상입니다. `services/generator.py`에 모델 연결을 아직 구현하지 않았습니다. 자료 검색은 `services/retriever.py`, 답변별 이미지는 `services/image_selector.py`에서 구현합니다. |
 | 이미지·JS가 404 | `public/assets/`와 `config/chatbot_config.json`의 경로, 브라우저 개발자 도구의 Network 탭을 확인하세요. |
 | 모델 연결 뒤 오류 | 서버 로그와 환경 변수 **이름**을 확인하세요. 로그나 질문 글에 실제 API 키를 붙이지 마세요. |
 

@@ -13,7 +13,7 @@ class SmokeTest(unittest.TestCase):
         self.client = app.test_client()
 
     def test_pages_and_referenced_assets(self):
-        for route in ("/", "/detail", "/chat?username=민지", "/health"):
+        for route in ("/", "/detail", "/chat?username=헤슬", "/health"):
             with self.subTest(route=route):
                 self.assertEqual(self.client.get(route).status_code, 200)
 
@@ -30,8 +30,8 @@ class SmokeTest(unittest.TestCase):
                 self.assertEqual(response.status_code, 200)
                 response.close()
 
-    def test_chat_returns_a_real_response(self):
-        response = self.client.post("/api/chat", json={"message": "안녕", "username": "민지"})
+    def test_chat_returns_demo_response(self):
+        response = self.client.post("/api/chat", json={"message": "안녕", "username": "헤슬"})
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn("안녕", data["reply"])
@@ -79,9 +79,9 @@ class SmokeTest(unittest.TestCase):
         retriever, generator = Retriever(), Generator()
         service = ChatbotService(retriever, generator)
         character = {"name": "안내인"}
-        result = service.generate_response("도서관은 어디?", "민지", character)
+        result = service.generate_response("도서관은 어디?", "헤슬", character)
         self.assertEqual(retriever.question, "도서관은 어디?")
-        self.assertEqual(generator.args, ("도서관은 어디?", "민지", character, [hit]))
+        self.assertEqual(generator.args, ("도서관은 어디?", "헤슬", character, [hit]))
         self.assertEqual(result["sources"], ["세계관 설정"])
         self.assertEqual(result["reply"], "도서관을 찾아보세요.")
 

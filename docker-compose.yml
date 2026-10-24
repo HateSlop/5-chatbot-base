@@ -6,6 +6,9 @@ services:
     environment:
       PORT: "5000"
       FLASK_DEBUG: "1"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
+      OPENAI_REASONING_EFFORT: ${OPENAI_REASONING_EFFORT:-none}
     volumes:
       - ./app.py:/app/app.py:ro
       - ./services:/app/services:ro
@@ -13,5 +16,6 @@ services:
       - ./templates:/app/templates:ro
       - ./public:/app/public:ro
       - ./data/knowledge:/app/data/knowledge:ro
+      - ./data/images:/app/data/images:ro
       - ./tests:/app/tests:ro
     command: python app.py

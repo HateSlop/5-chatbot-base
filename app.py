@@ -14,9 +14,24 @@ BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config" / "chatbot_config.json"
 load_dotenv(BASE_DIR / ".env")
 
-# public/의 URL은 로컬 Flask와 정적 파일 호스팅에서 모두 /assets/...가 됩니다.
-app = Flask(__name__, static_folder="public", static_url_path="")
+# Vercel은 public/을 CDN에서 제공하고, 로컬·Render는 Flask가 제공합니다.
+IS_VERCEL = os.getenv("VERCEL") == "1"
+app = Flask(
+    __name__,
+    static_folder=None if IS_VERCEL else "public",
+    static_url_path=None if IS_VERCEL else "",
+)
 chatbot = ChatbotService()
+
+
+def asset_url(filename: str) -> str:
+    """배포 방식과 관계없이 public/ 파일을 같은 URL로 참조합니다."""
+    if IS_VERCEL:
+        return f"/{filename.lstrip('/')}"
+    return url_for("static", filename=filename)
+
+
+app.jinja_env.globals["asset_url"] = asset_url
 
 
 def load_config() -> dict:
@@ -36,7 +51,7 @@ def bot_view(config: dict) -> dict:
         "description": config.get("description", ""),
         "tags": config.get("tags", []),
         "greeting": config.get("greeting", "안녕하세요!"),
-        "image": url_for("static", filename=thumbnail),
+        "image": asset_url(thumbnail),
     }
 
 

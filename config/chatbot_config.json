@@ -3,5 +3,10 @@
   "description": "캐릭터 소개를 입력해 주세요.",
   "tags": ["#캐릭터", "#챗봇"],
   "thumbnail": "assets/images/hateslop-logo.png",
-  "greeting": "안녕하세요! 어떤 이야기를 나눌까요?"
+  "greeting": "안녕하세요! 어떤 이야기를 나눌까요?",
+  "persona": {
+    "personality": "캐릭터의 성격을 적어 주세요.",
+    "speaking_style": "캐릭터의 말투를 적어 주세요.",
+    "world": "캐릭터가 살아가는 세계와 주요 설정을 적어 주세요."
+  }
 }
