@@ -17,7 +17,7 @@ ChromaDB를 쓴다면 작은 로컬 실험은 `PersistentClient`로 시작할 �
 
 ## 모델 호출
 
-이 베이스 코드는 공급자 SDK를 설치하지 않습니다. 팀이 선택한 API의 SDK를 추가하고 `ChatbotService`에 연결하세요. OpenAI를 선택한다면 새 프로젝트에는 Responses API를 권장하는 공식 안내를 확인하세요. 모델 이름은 코드 곳곳에 박지 말고 환경 변수 등 한곳에서 관리하고, 사용 가능한 모델·가격·제한은 배포 전에 다시 확인하세요. [OpenAI Responses 안내](https://developers.openai.com/api/docs/guides/migrate-to-responses), [모델 선택](https://developers.openai.com/api/docs/guides/model-selection)
+이 베이스 코드는 공급자 SDK를 설치하지 않습니다. 팀이 선택한 API의 SDK를 추가하고 `services/generator.py`의 데모 생성기를 교체하세요. 검색을 쓴다면 `services/retriever.py`에서 결과를 반환하도록 연결합니다. OpenAI를 선택한다면 새 프로젝트에는 Responses API를 권장하는 공식 안내를 확인하세요. 모델 이름은 코드 곳곳에 박지 말고 환경 변수 등 한곳에서 관리하고, 사용 가능한 모델·가격·제한은 배포 전에 다시 확인하세요. [OpenAI Responses 안내](https://developers.openai.com/api/docs/guides/migrate-to-responses), [모델 선택](https://developers.openai.com/api/docs/guides/model-selection)
 
 API 실패·시간 초과·요금 제한의 사용자 표시와 재시도 정책을 정하세요. 외부 서비스 호출은 비용이 발생할 수 있으므로 테스트 과정에서 불필요한 반복 호출을 피하세요.
 

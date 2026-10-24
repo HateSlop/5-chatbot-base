@@ -79,7 +79,7 @@ def api_chat():
     username = username.strip()[:50] or "사용자"
 
     try:
-        response = chatbot.generate_response(message, username)
+        response = chatbot.generate_response(message, username, load_config())
         if not isinstance(response, dict) or not isinstance(response.get("reply"), str):
             raise TypeError("챗봇 응답에는 문자열 reply가 필요합니다.")
         image = response.get("image")

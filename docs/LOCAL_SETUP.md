@@ -3,6 +3,7 @@
 ## 실행 방법 선택
 
 Conda, Python venv, Docker Compose 중 **하나만 선택**하면 됩니다. 기본 데모에는 모델 API 키와 ChromaDB가 필요하지 않습니다. Dockerfile은 Python 3.12를 사용하므로, 로컬에서도 같은 버전을 쓰면 환경 차이를 줄일 수 있습니다. 팀이 다른 Python 버전을 택한다면 사용한 패키지의 호환성을 확인하고 Dockerfile·문서를 함께 고치세요.
+저장소의 `.python-version`도 3.12입니다. 배포 플랫폼에서 버전을 바꾸면 Conda 명령·Dockerfile과 함께 확인하세요. Flask 개발 서버의 기본 포트인 `5000`을 예시로 사용합니다. 다른 포트를 원하면 `PORT` 환경 변수를 설정하면 됩니다.
 
 | 방법 | 적합한 경우 | 필요한 것 |
 | --- | --- | --- |
@@ -47,7 +48,7 @@ cp .env.example .env
 python app.py
 ```
 
-Conda와 venv는 모두 <http://localhost:5000>을 엽니다. 이름을 입력해 대화해 보세요. 정지하려면 터미널에서 `Ctrl+C`를 누릅니다. `.env`는 데모에는 없어도 됩니다. 모델 API를 붙일 때에는 `.env.example`의 필요한 변수만 `.env`에 추가하세요. 키 값은 README나 스크린샷에 넣지 마세요.
+Conda와 venv는 모두 <http://localhost:5000>을 엽니다. 이름을 입력해 대화해 보세요. 정지하려면 터미널에서 `Ctrl+C`를 누릅니다. `.env`는 데모에는 없어도 됩니다. 모델 API를 붙일 때에는 `.env.example`의 필요한 변수만 `.env`에 추가하세요. `.gitignore`는 `.env`, `.env.local` 등 `.env.*`를 제외합니다. 실제 API 키를 Markdown, 소스 코드, 브라우저 JS, 스크린샷에 적어 공유하지 마세요. 커밋 전 `git status --short`로 파일 목록을 보고, `git check-ignore .env`가 `.env`를 출력하는지 확인하세요. Git에 올라간 키는 파일을 삭제해도 기록에 남으므로 즉시 폐기·재발급해야 합니다.
 
 ## Docker Compose로 실행
 
@@ -102,7 +103,7 @@ python -m unittest discover -s tests -v
 | Docker 연결 오류 | Docker Engine/Desktop이 실행 중인지 확인하세요. CLI 설치만으로는 컨테이너가 실행되지 않습니다. |
 | PowerShell에서 활성화가 막힘 | 터미널의 실행 정책을 확인하거나 `.venv\Scripts\python.exe app.py`처럼 가상환경 Python을 직접 실행하세요. |
 | 5000 또는 5001 포트 충돌 | 기존 프로세스를 끄거나 `PORT`/Compose 포트 매핑을 변경하세요. |
-| 화면은 열리는데 답변이 데모 문구임 | 정상입니다. `ChatbotService`의 검색·모델 연결을 아직 구현하지 않았습니다. |
+| 화면은 열리는데 답변이 데모 문구임 | 정상입니다. `services/retriever.py`와 `services/generator.py`에 실제 검색·모델 연결을 아직 구현하지 않았습니다. |
 | 이미지·JS가 404 | `public/assets/`와 `config/chatbot_config.json`의 경로, 브라우저 개발자 도구의 Network 탭을 확인하세요. |
 | 모델 연결 뒤 오류 | 서버 로그와 환경 변수 **이름**을 확인하세요. 로그나 질문 글에 실제 API 키를 붙이지 마세요. |
 

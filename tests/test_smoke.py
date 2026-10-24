@@ -1,9 +1,11 @@
-"""이전 베이스에서 놓쳤던 정적 파일과 빈 응답 회귀를 확인합니다."""
+"""화면·정적 파일·채팅 응답과 서비스 연결을 확인합니다."""
 
 import unittest
 from unittest.mock import patch
 
 from app import app
+from services.chatbot_service import ChatbotService
+from services.retriever import KnowledgeHit
 
 
 class SmokeTest(unittest.TestCase):
@@ -60,6 +62,28 @@ class SmokeTest(unittest.TestCase):
             response = self.client.post("/api/chat", json={"message": "안녕"})
         self.assertEqual(response.status_code, 500)
         self.assertEqual(response.get_json()["error"]["code"], "chat_failed")
+
+    def test_service_passes_character_and_retrieved_sources_to_generator(self):
+        hit = KnowledgeHit(title="세계관 설정", content="성 안에는 오래된 도서관이 있다.")
+
+        class Retriever:
+            def search(self, question):
+                self.question = question
+                return [hit]
+
+        class Generator:
+            def generate(self, question, username, character, knowledge):
+                self.args = (question, username, character, knowledge)
+                return "도서관을 찾아보세요."
+
+        retriever, generator = Retriever(), Generator()
+        service = ChatbotService(retriever, generator)
+        character = {"name": "안내인"}
+        result = service.generate_response("도서관은 어디?", "민지", character)
+        self.assertEqual(retriever.question, "도서관은 어디?")
+        self.assertEqual(generator.args, ("도서관은 어디?", "민지", character, [hit]))
+        self.assertEqual(result["sources"], ["세계관 설정"])
+        self.assertEqual(result["reply"], "도서관을 찾아보세요.")
 
 
 if __name__ == "__main__":
