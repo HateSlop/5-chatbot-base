@@ -1,6 +1,8 @@
 # 배포 가이드
 
 이 저장소는 Flask 앱 하나가 화면과 `/api/chat`을 함께 제공합니다. 먼저 로컬에서 원하는 기능이 동작하는지 확인한 뒤, **공개 URL에서 같은 흐름을 다시 확인**하세요. 현재 코드를 그대로 배포하면 데모 답변만 나옵니다.
+**팀의 기획 및 구현에 따라 배포 절차가 달라질 수 있습니다. 그러나 AI를 활용한 질의를 통해 배포까지 진행하시는 경험이 중요하다고 생각합니다. 배포까지 이어지는 과정이 처음이시라면 어색할 수는 있어도 한 번 시도해보시면 이후에는 어려운 작업은 아닐 것입니다.**
+**Github repo와 연결하면 바로 url형태로 배포가 가능하기에 이번 기회에 배포까지 진행하는 것에 익숙해지시면 좋겠습니다.**
 
 ## 1. 배포 경로 고르기
 
@@ -11,9 +13,7 @@
 | Vercel Flask Function | Git 저장소를 가져와 `app.py` 배포 | Function 실행 제약과 데이터 저장 위치를 확인한 경우 |
 | 프런트·API 분리 또는 Cloudflare | API 주소·정적 파일·서버 설정 변경 | 제품 구조에 맞게 화면과 서버를 따로 운영할 때 |
 
-Render나 Vercel을 과제의 필수 플랫폼으로 지정하지 않습니다. 아래 경로는 **현재 코드 기준의 예시**입니다. 플랫폼의 화면, 요금, 제한은 바뀔 수 있으므로 링크된 공식 문서도 함께 확인하세요.
-
-Ollama·Gemma 4처럼 모델을 직접 실행한다면 Flask 배포와 별도로 **모델을 계속 실행할 장비와 접속 경로**가 필요합니다. API 모델 설정과 사용량 확인은 [모델 선택 가이드](MODEL_CHOICE.md)를 참고하세요.
+Render나 Vercel을 필수 플랫폼으로 지정하지 않습니다. 아래 경로는 **현재 코드 기준의 예시**입니다. 플랫폼의 화면, 요금, 제한은 바뀔 수 있으므로 링크된 공식 문서도 함께 확인하세요.
 
 ## 2. 공통 준비
 
@@ -21,10 +21,10 @@ Ollama·Gemma 4처럼 모델을 직접 실행한다면 Flask 배포와 별도로
 2. `app.py`, `requirements.txt`, `.python-version`, `config/`, `services/`, `templates/`, `public/`이 저장소 루트에 있는지 확인합니다. `.python-version`은 Python 3.12를 지정합니다.
 3. `git status --short`로 올릴 파일을 확인합니다. `git check-ignore .env`가 `.env`를 출력하는지도 확인하세요. **실제 API 키를 `.env.example`, 코드, Markdown, 브라우저 JavaScript, 이슈, 화면 캡처에 적지 마세요.** `.gitignore`는 `.env`와 `.env.*`를 제외합니다.
 4. 모델을 연결했다면 필요한 환경 변수의 **이름만** 팀 README에 적습니다. OpenAI API 키는 운영진이 제공합니다. 값을 코드나 저장소에 넣지 말고 배포 플랫폼의 비밀 환경 변수 설정에 입력합니다. `FLASK_DEBUG=1`은 공개 서비스에 사용하지 않습니다.
-   공개된 `/api/chat`이 팀의 키로 호출되므로, 실제 모델을 연결한 뒤에는 요청 횟수 제한과 사용량 확인 방법도 정합니다.
+   공개된 `/api/chat`이 팀의 키로 호출되므로, 실제 모델을 연결한 뒤에는 요청 횟수 제한을 적절히 정합니다.
 5. 배포할 Git 저장소에 코드를 반영합니다. 아래 대시보드 절차는 Git 저장소를 연결하는 방식입니다.
 
-키를 실수로 공개했다면 파일 삭제만으로는 부족합니다. 해당 키를 폐기·재발급하고 공유 범위를 확인하세요. [GitHub 비밀 값 검사 안내](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning)
+키를 실수로 공개했다면 파일 삭제만으로는 부족합니다. 해당 키를 폐기·재발급하고 공유 범위를 확인해야하니 운영진에게 알려주세요.
 
 ## 3A. Render
 
@@ -41,7 +41,7 @@ Vercel은 루트 `app.py`의 Flask `app`을 Function으로 인식하고 `public/
 
 1. [Vercel 대시보드](https://vercel.com/dashboard)에서 **Add New → Project**를 열고 Git 저장소를 가져옵니다.
 2. **Root Directory**가 `app.py`가 있는 저장소 루트인지 확인합니다. Flask가 감지되면 특별한 이유 없이 Build Command나 Output Directory를 덮어쓰지 않습니다.
-3. 실제 모델을 연결했다면 운영진이 제공한 키 등 필요한 값을 **Environment Variables**에 설정합니다. 데모라면 API 키가 필요 없습니다. [Vercel 환경 변수 설정](https://vercel.com/docs/environment-variables/managing-environment-variables)
+3. 실제 모델을 연결했다면 운영진이 제공한 키 등 필요한 값을 **Environment Variables**에 설정합니다.  [Vercel 환경 변수 설정](https://vercel.com/docs/environment-variables/managing-environment-variables)
 4. **Deploy**를 누르고 빌드 로그에서 의존성 설치와 Function 생성 결과를 확인합니다.
 5. 배포된 `https://….vercel.app` 주소에서 `/`, `/chat`, `/health`, `/assets/css/style.css`, `/assets/js/chatbot.js`, `/assets/images/hateslop-logo.png`를 각각 엽니다.
 6. 채팅 화면에서 메시지를 보내고 브라우저 개발자 도구 **Network**에서 `POST /api/chat`의 상태 코드와 응답을 확인합니다.
