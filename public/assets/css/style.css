@@ -173,7 +173,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .message.error { background: #fff0ee; color: #8a3028; }
 .message.pending { color: #666; }
 .message img { display: block; max-width: 100%; max-height: 300px; margin-bottom: 8px; border-radius: 8px; }
-.message .sources { display: block; margin-top: 8px; color: #666; }
 .chat-input-area { flex: none; display: flex; gap: 10px; align-items: center; }
 .chat-input-area input {
   min-width: 0;

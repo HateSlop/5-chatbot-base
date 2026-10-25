@@ -4,7 +4,7 @@ const input = document.getElementById("user-message");
 const log = document.getElementById("chat-log");
 const sendButton = document.getElementById("send-btn");
 
-function addMessage(sender, text, image = null, sources = []) {
+function addMessage(sender, text, image = null) {
   const item = document.createElement("div");
   item.className = `message ${sender}`;
 
@@ -19,12 +19,6 @@ function addMessage(sender, text, image = null, sources = []) {
   body.textContent = text;
   item.append(body);
 
-  if (sources.length) {
-    const reference = document.createElement("small");
-    reference.className = "sources";
-    reference.textContent = `참고 자료: ${sources.join(", ")}`;
-    item.append(reference);
-  }
   log.append(item);
   log.scrollTop = log.scrollHeight;
   return item;
@@ -54,7 +48,7 @@ form.addEventListener("submit", async (event) => {
       throw new Error("서버 응답 형식이 올바르지 않습니다.");
     }
     pending.remove();
-    addMessage("bot", data.reply, data.image, Array.isArray(data.sources) ? data.sources : []);
+    addMessage("bot", data.reply, data.image);
   } catch (error) {
     pending.remove();
     addMessage("bot error", error.message || "오류가 발생했습니다.");

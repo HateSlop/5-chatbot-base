@@ -25,11 +25,11 @@
 저장소를 처음 받을 때:
 
 ```bash
-git clone <저장소 주소>
-cd <저장소 폴더>
+git clone 저장소주소
+cd 저장소폴더
 git switch main
 git pull --ff-only
-git switch -c feature/chat-response
+git switch -c 브랜치명
 ```
 
 이미 로컬에 저장소가 있다면 작업을 시작할 때 `main`을 최신화한 뒤 새 브랜치를 만듭니다.
@@ -37,10 +37,10 @@ git switch -c feature/chat-response
 ```bash
 git switch main
 git pull --ff-only
-git switch -c feature/chat-response
+git switch -c 브랜치명
 ```
 
-브랜치 이름은 작업을 알아볼 수 있게 정합니다. 기능은 `feature/기능명`, 버그 수정은 `fix/문제명`, 문서 수정은 `docs/문서명`처럼 쓸 수 있습니다. 작업 중인 내용을 바로 `main`에 커밋하지 않는 방식을 권장합니다.
+`저장소주소`, `저장소폴더`, `브랜치명`은 각 팀의 실제 값으로 바꾸세요. 브랜치 이름 규칙은 팀에서 정하면 됩니다. 작업 중인 내용을 바로 `main`에 커밋하지 않는 방식을 권장합니다.
 
 ### 2. 작은 단위로 커밋하기
 
@@ -48,7 +48,7 @@ git switch -c feature/chat-response
 git status
 git add services/generator.py
 git commit -m "feat: 캐릭터 답변 생성 연결"
-git push -u origin feature/chat-response
+git push -u origin 브랜치명
 ```
 
 커밋 메시지는 무엇을 바꿨는지 짧게 적고, 앞에 변경 종류를 붙입니다.
@@ -85,9 +85,11 @@ git push -u origin feature/chat-response
 
 `main`에 다른 변경이 먼저 합쳐져 충돌이 나면, 작업 브랜치에서 최신 `main`을 합친 뒤 충돌 파일을 열어 의도에 맞게 정리합니다. 해결 후 테스트하고 커밋·푸시하세요. 두 사람이 같은 파일을 고칠 때는 먼저 변경 범위를 짧게 맞추면 충돌을 줄일 수 있습니다.
 
-## 테스트는 저장소에 두고, 배포 이미지에는 넣지 않기
+## 제공된 테스트는 무엇을 확인하나요?
 
-`tests/test_smoke.py`는 이 저장소에서 제공하는 기본 검증 코드입니다. 팀 기능을 추가할 때 핵심 동작의 정상 사례와 실패 사례를 확인하는 테스트를 더할 수 있습니다.
+`tests/test_smoke.py`는 **현재 Flask 데모가 기본적으로 실행되는지** 확인하는 코드입니다. 화면과 정적 파일이 열리는지, 채팅 API가 데모 응답과 입력 오류를 돌려주는지, 검색 결과가 답변 생성기로 전달되는지를 검사합니다. 실제 모델 답변이나 RAG 품질을 검사하지는 않습니다.
+
+팀이 화면·API·서버 구조를 바꾸면 기존 테스트도 그 구조에 맞게 고치거나 새 테스트로 바꾸세요. 현재 데모의 경로와 응답을 그대로 유지하기 위해 프로젝트 구현을 제한할 필요는 없습니다.
 
 로컬에서는 다음 명령으로 실행합니다.
 
@@ -103,7 +105,7 @@ docker compose exec chatbot python -m unittest discover -s tests -v
 
 테스트 파일은 Git 저장소에 함께 커밋됩니다. `.dockerignore`와 배포용 `Dockerfile`은 테스트·문서를 서비스 이미지에 복사하지 않도록 되어 있습니다. Compose에서 테스트를 실행할 수 있는 것은 개발 중에만 폴더를 컨테이너로 연결하기 때문입니다.
 
-기본 테스트는 화면·정적 파일·API 응답 형식과 서비스 연결을 확인합니다. 검색 품질이나 모델 답변의 사실성을 자동으로 보증하지 않으므로, 그런 부분은 질문 세트와 직접 확인한 결과도 함께 기록하세요.
+검색 품질이나 모델 답변의 사실성을 자동으로 보증하지 않으므로, 그런 부분은 질문 세트와 직접 확인한 결과도 함께 기록하세요.
 
 ## Conda와 Docker
 
