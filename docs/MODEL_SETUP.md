@@ -130,8 +130,3 @@ reply = generator.generate(
 
 위 예시는 기능 종류에 따라 **한 번의 모델 호출에 하나의 값**을 전달합니다. `feature`는 서버 코드에서 지정하며 브라우저 입력이나 별도 모델 분류로 정하지 않습니다. 실제 구조에서는 `ChatbotService.generate_response()`가 `self.generator.generate(...)`를 호출하는 지점에 이 선택을 넣으면 됩니다. 처음에는 모든 호출을 `none`으로 두고, 비교 결과 개선이 확인된 기능에만 `low`를 적용하세요. `medium`은 시작 코드에 넣지 않습니다. 여러 사실이나 조건을 함께 판단해야 하는 특정 기능에서 `low`도 요구사항을 충족하지 못한 사례를 테스트로 확인한 뒤에만 별도로 실험하세요. 그 결과 응답 품질 개선이 확인될 때 해당 호출에 한해 유지하고, 그렇지 않으면 `none` 또는 `low`로 되돌립니다. `none`, `low`, `medium` 외의 값은 이 베이스의 예시에서 허용하지 않습니다.
 
-## 5. 화면과 사용량 확인
-
-서버를 다시 실행하고 짧은 질문으로 답변을 확인합니다. 말투, 세계관 반영, 응답 시간, API 응답의 입력·출력 토큰과 추론 토큰을 기록해 보세요. 질문·답변·키 값은 로그에 남기지 않습니다.
-
-Luna는 설정을 생략하면 `medium`으로 동작하므로 기본 응답에서도 `reasoning.effort`를 명시합니다. 추론 토큰은 화면에 보이지 않아도 출력 토큰 사용량에 포함될 수 있고, `max_output_tokens`에는 추론과 답변이 함께 포함됩니다. 한도가 낮아 답변이 끝나지 않았는지 응답의 완료 상태도 확인하세요. 사용량을 더 자세히 비교하는 방법은 [모델 선택과 답변 확인](MODEL_CHOICE.md), 지원 설정은 [GPT-6 Luna 모델 사양](https://developers.openai.com/api/docs/models/gpt-6-luna)과 [추론 가이드](https://developers.openai.com/api/docs/guides/reasoning?api-mode=responses)를 참고하세요.
