@@ -12,11 +12,11 @@ services/
   generator.py                 캐릭터 답변 생성 경계
   image_selector.py            생성된 답변에 맞는 이미지 선택 경계
   chatbot_service.py           검색 → 생성 → 이미지 선택 → API 응답 조립
-templates/                     Flask/Jinja 예시 화면
-public/assets/                 CSS·브라우저 JS·예시 이미지
+templates/                     Flask/Jinja 예시 화면 (메인 페이지 포함)
+public/assets/                 브라우저가 불러오는 CSS·JS·이미지 파일
 data/knowledge/                검색 자료의 원본 예시
-data/images/                   이미지 메타데이터·인덱스 준비 위치
-tests/                         화면·API·서비스 연결 확인
+data/images/                   이미지 목록·설명·임베딩 인덱스 준비 위치
+tests/                         현재 Flask 데모의 스모크 테스트
 Dockerfile                     배포용 Gunicorn 이미지
 docker-compose.yml             로컬 개발용 컨테이너 실행
 ```
@@ -45,7 +45,7 @@ docker-compose.yml             로컬 개발용 컨테이너 실행
 1. `config/chatbot_config.json`의 `persona`를 채우고 화면에 보이는 이름·소개를 바꿉니다.
 2. `services/generator.py`의 `generate()`에 모델을 연결합니다. 인자는 `question`(입력), `username`, `character`(설정 JSON), `knowledge`(검색 결과)입니다. 반환값은 **답변 문자열**입니다. 첫 단계에서는 빈 `knowledge`로 동작해도 됩니다. 설치부터 코드 교체까지는 [OpenAI 연결 예시](MODEL_SETUP.md)를 보세요.
 3. 검색할 세계관 자료가 있을 때 `services/retriever.py`의 `search()`를 구현합니다. 반환값은 `KnowledgeHit(title, content)` 목록입니다. 원본 파일을 저장하는 것과 인덱스를 만드는 작업은 다릅니다.
-4. `public/assets/images/`에 공개 이미지 파일을 두고 `data/images/`에 이미지 설명·출처를 정리합니다. 먼저 상황별 규칙으로 보여줄 이미지와 생략할 상황을 시험하고, 이후 `services/image_selector.py`에서 답변 문장과 이미지 임베딩의 유사도를 비교하도록 확장합니다. 임베딩 모델이 벡터를 만들고, ChromaDB 같은 벡터 저장소는 그 벡터를 보관하고 가까운 이미지를 찾습니다. 반환값은 브라우저에서 열리는 이미지 URL 또는 `None`입니다.
+4. 화면에 쓸 이미지 파일은 브라우저가 접근할 수 있도록 `public/assets/images/`에 두고, `data/images/`에는 이미지 ID·파일 경로·이름·장면 설명 같은 목록을 둡니다. `public/`은 이미지 파일을 제공하는 정적 폴더이며 메인 페이지는 `templates/`에 있습니다. 예를 들어 `public/assets/images/scene.png`는 브라우저 경로 `/assets/images/scene.png`로 열립니다. 현재 `public/assets/images/`에는 로고만 있고 `data/images/`에는 이 안내 문서만 있습니다. `services/image_selector.py`에서 감정·상황 라벨로 경로를 고르거나, 답변과 장면 설명의 텍스트 임베딩을 비교하거나, 이미지·텍스트 모델로 이미지 자체와 답변의 임베딩을 비교할 수 있습니다. 반환값은 브라우저에서 열리는 이미지 URL 또는 `None`입니다.
 5. `services/chatbot_service.py`는 세 기능의 호출 순서와 JSON 조립을 맡습니다. 이미지 메타데이터나 API 응답 형식을 바꿀 때 이 파일과 `app.py`, 브라우저 JS를 함께 확인합니다.
 
 각 파일에 실제 구현을 넣으면 기존 화면에서 `POST /api/chat`을 통해 확인할 수 있습니다. 프런트를 별도로 만들 때는 API 주소와 응답 형식을 맞추세요.
@@ -56,11 +56,11 @@ docker-compose.yml             로컬 개발용 컨테이너 실행
 | --- | --- | --- |
 | `services/retriever.py` | `KnowledgeHit(title, content)`, 빈 검색 결과 | 원본 자료 정제·분할, ChromaDB 인덱스 조회, 키워드 검색, 검색 실패 처리 |
 | `services/generator.py` | 질문을 되돌려주는 데모 문장 | 캐릭터 설정·검색 결과를 넣은 프롬프트, 모델 API 호출, 시간 초과와 실패 처리 |
-| `services/image_selector.py` | 항상 `None`인 이미지 선택 | 답변·이미지 임베딩 비교, 이미지 메타데이터 조회, 공개 URL 반환 |
+| `services/image_selector.py` | 항상 `None`인 이미지 선택 | 라벨 기반 선택 또는 답변·이미지 설명/이미지 임베딩 비교, 메타데이터 조회, 공개 URL 반환 |
 | `services/chatbot_service.py` | 검색·생성·이미지 선택 호출과 `sources` 조립 | 검색 결과 점검, 응답 후처리, 메모리 결합 |
 | `app.py` | 라우트·입력 검증·오류 응답 | 인증, 요청 제한, 새 API, 프런트 분리 시 CORS·API 주소 설정 |
 | `data/knowledge/` | 연습용 원본 문서 | 사용 권한을 확인한 실제 자료. 인덱스 저장 위치는 별도로 결정 |
-| `templates/`, `public/` | 세 가지 예시 화면과 채팅 JS | 화면 추가·교체 또는 독립 프런트엔드. 대화용 이미지는 `public/assets/images/`에 둘 수 있음 |
+| `templates/`, `public/` | 세 가지 예시 화면과 채팅 JS, 로고 | 화면 추가·교체 또는 독립 프런트엔드. 브라우저에 보여줄 대화용 이미지는 `public/assets/images/` 등에 둠 |
 
 새 기능은 관련 폴더에 파일을 더해 연결하면 됩니다. 예를 들어 인덱스를 만드는 배치 작업은 `scripts/`, 대화 저장 코드는 `services/memory.py`, 외부 API 설정은 `config/`에 둘 수 있습니다. 이는 확장 예시이며 해당 폴더와 기능은 아직 제공하지 않습니다.
 

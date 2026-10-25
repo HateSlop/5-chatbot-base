@@ -61,7 +61,7 @@ docker compose up --build
 
 ## 5. 기본 테스트 실행하기
 
-이 저장소의 스모크 테스트는 화면·정적 파일·API 형식과 서비스 연결을 확인합니다.
+이 저장소의 테스트는 현재 Flask 데모의 화면·정적 파일·API 형식과 서비스 연결을 확인합니다. 팀이 프레임워크나 API 구조를 바꾸면 테스트도 새 구조에 맞게 고치거나 교체하세요.
 
 ```bash
 docker compose exec chatbot python -m unittest discover -s tests -v
@@ -73,7 +73,7 @@ docker compose exec chatbot python -m unittest discover -s tests -v
 python -m unittest discover -s tests -v
 ```
 
-팀 기능을 추가하면 핵심 정상 사례와 실패 사례를 테스트에 보태세요. 테스트는 Git 저장소에 포함하지만, 프로덕션 Docker 이미지에는 보통 포함하지 않습니다.
+팀 기능을 추가하면 핵심 정상 사례와 실패 사례를 테스트에 보태세요. 테스트는 개발 검증용이며 프로젝트 구조를 현재 데모에 맞출 필요는 없습니다. 테스트 코드는 Git 저장소에 포함하지만, 프로덕션 Docker 이미지에는 보통 포함하지 않습니다.
 
 ## 6. 자주 쓰는 명령
 

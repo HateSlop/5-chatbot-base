@@ -94,6 +94,8 @@ curl -X POST http://localhost:5000/api/chat -H 'Content-Type: application/json' 
 python -m unittest discover -s tests -v
 ```
 
+이 테스트는 현재 Flask 데모를 확인하는 예시입니다. 프레임워크나 API 구조를 바꿨다면 새 구조에 맞게 수정하거나 팀의 테스트로 교체하세요.
+
 ## 자주 생기는 문제
 
 | 증상 | 확인할 것 |
