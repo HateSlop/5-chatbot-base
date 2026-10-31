@@ -20,7 +20,7 @@
           {% for tag in bot.tags %}<li>{{ tag }}</li>{% endfor %}
         </ul>
         {% endif %}
-        <form class="start-form" action="{{ url_for('chat') }}" method="get">
+        <form id="start-form" class="start-form" action="{{ url_for('chat') }}" method="get">
           <div class="username-area">
             <label for="username">이름:</label>
             <input id="username" name="username" type="text" maxlength="50" placeholder="당신의 이름" autocomplete="nickname" required>
@@ -29,5 +29,9 @@
         </form>
       </div>
     </main>
+    <script>
+      document.getElementById("start-form").addEventListener("submit", () => sessionStorage.setItem("new-village-entry", "1"));
+      window.addEventListener("pageshow", () => { document.getElementById("username").value = ""; });
+    </script>
   </body>
 </html>
