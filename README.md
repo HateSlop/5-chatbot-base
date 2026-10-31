@@ -21,9 +21,9 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 ## 동작 방식
 
 - Flask 서버가 현재 장면, 허용된 대화 상대와 버튼, 호감도, 차 키, 엔딩을 판정한다. 장면 및 엔딩 규칙은 `services/story.py`에 있다.
-- 화면의 자유 입력은 `POST /api/chat`으로 전달된다. 서버는 현재 인물과 장면에 공개 가능한 사실만 `data/knowledge/facts.json`에서 검색한다. OpenAI 모델 한 번의 구조화된 응답으로 대사, 대화 태도, 이미지 표정을 얻는다.
+- 화면의 자유 입력은 `POST /api/chat`으로 전달된다. 서버는 현재 인물과 장면에 공개 가능한 사실만 `data/knowledge/facts.json`에서 검색하고, 그 장면에서 해당 인물이 이미 한 고정 대사를 AI에 함께 준다. OpenAI 모델 한 번의 구조화된 응답으로 대사, 대화 태도, 이미지 표정을 얻는다.
 - 이미지 선택기는 `data/images/catalog.json`에서 인물·표정에 맞는 자산을 고른다. 현재 SVG는 교체 가능한 임시 그림이다.
-- 진행 상태는 `STORY_STATE_KEY`로 암호화한 토큰으로 응답하며 브라우저의 `localStorage`에 저장된다. 같은 브라우저에서 새로고침하거나 서버를 재시작한 뒤 이어할 수 있다. 서버 키를 바꾸거나 브라우저 저장소를 지우면 이전 진행은 복원할 수 없다. 다른 기기와 동기화되지 않는다.
+- 진행 상태는 `STORY_STATE_KEY`로 암호화한 토큰으로 응답하며 플레이 중인 화면의 메모리에만 남는다. 새로고침하거나 화면을 떠났다가 돌아오면 이름 입력부터 새로 시작한다. 엔딩을 읽은 뒤에도 새 이름으로 시작할 수 있다.
 
 화면은 서버의 `view`와 `events`만 표시한다. API의 요청·응답 예시는 [계약서](docs/API_CONTRACT.md)에 있다.
 
@@ -39,6 +39,6 @@ python -m unittest discover -s tests -v
 
 [문서 지도](docs/README.md)에서 베이스 자료와 팀 문서, 사람·AI의 참조 범위를 확인한다. [구현 명세와 진행 현황](docs/IMPLEMENTATION_SPEC.md), [스토리](docs/STORY.md), [두 개발자의 파일 경계](docs/TEAM_IMPLEMENTATION.md), [AI 에이전트 지침](AGENTS.md)을 함께 본다. 팀장 소유 fork를 기준으로 팀장은 `suyoung`에서 서버·스토리를, 팀원은 `yejoon`에서 화면·이미지를 맡는다. 각자 `main` 대상 PR을 올리고 팀장이 검토·병합한다.
 
-**공개 시연 주소:** [더뉴빌리지 챗봇](https://chatbot-bb1234.onrender.com/). 첫 화면, 실제 대화 한 번, 첫 이동, 새로고침 뒤 이어하기와 `/health` 응답을 확인했다. 세 결말의 브라우저 흐름, 모바일, Render 재배포 뒤 복원은 아직 확인 전이다. 팀장이 직접 만든 Render 서비스의 실제 설정은 [Render 배포 안내](docs/RENDER-GUIDE.md)를 참고해 점검한다. [`render.yaml`](render.yaml)은 이후 같은 서비스를 다시 만들 때 참고할 설정이며, 기존 서비스에 중복 적용하지 않는다. `STORY_STATE_KEY`를 바꾸면 기존 이어하기 기록이 열리지 않는다. 프로듀서는 [시연 안내](docs/PRODUCER_TEST_GUIDE.md)를 따른다.
+**공개 시연 주소:** [더뉴빌리지 챗봇](https://chatbot-bb1234.onrender.com/). 이전 배포에서 첫 화면, 실제 대화 한 번, 첫 이동, 새로고침 뒤 이어하기와 `/health` 응답을 확인했다. 현재 로컬 변경은 아직 공개 주소에서 확인하지 않았다. 팀장이 직접 만든 Render 서비스의 실제 설정은 [Render 배포 안내](docs/RENDER-GUIDE.md)를 참고해 점검한다. [`render.yaml`](render.yaml)은 이후 같은 서비스를 다시 만들 때 참고할 설정이며, 기존 서비스에 중복 적용하지 않는다. 프로듀서는 [시연 안내](docs/PRODUCER_TEST_GUIDE.md)를 따른다.
 
 기존 베이스 프로젝트의 상세 참고 문서는 `docs/`에 남겨 두었다. 이 프로젝트의 실제 API와 실행 방법은 이 README 및 [API 계약서](docs/API_CONTRACT.md)를 기준으로 한다.
