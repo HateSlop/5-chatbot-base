@@ -35,6 +35,7 @@ def new_state(player_name: str) -> dict:
         "job_offered": None,
         "ending": None,
         "history": {},
+        "scene_events": [],
     }
 
 
@@ -164,7 +165,8 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         }.get(action_id)
         if destination:
             next_state["location_id"] = destination[0]
-            if destination[1] not in next_state["visited"]:
+            first_visit = destination[1] not in next_state["visited"]
+            if first_visit:
                 next_state["visited"].append(destination[1])
             greetings = ({
                 "karen": "어서 오세요. 마을 이야기는 조금씩 알게 되실 거예요.",
@@ -175,7 +177,8 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
                 "bob": "고기 좋아하쇼? 다음 주 축제 때 꼭 들르시게.",
                 "cathy": "반가워요. 시간이 되면 미용실에도 들러 주세요.",
             })
-            events.append(event(destination[1], greetings[destination[1]]))
+            if first_visit:
+                events.append(event(destination[1], greetings[destination[1]]))
         else:
             next_state.update(scene_id="cathy_task", location_id="player_house")
             events.append(event("jimmy", "캐시가 바빠 보이더라. 잠깐 도와줄 수 있을까?"))
@@ -220,7 +223,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["affinity"] = max(0, next_state["affinity"] - 5)
         events += [
             event("thought", "벽에 지미의 사진이 걸려 있었다."),
-            event("karen", "거기서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
+            event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
         ]
     elif scene == "photo_found":
         next_state.update(scene_id="checkpoint", location_id="player_house")

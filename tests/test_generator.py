@@ -14,11 +14,14 @@ class GeneratorTest(unittest.TestCase):
         history = [{"role": "user", "content": "나는 커피를 좋아해"}, {"role": "assistant", "content": "기억할게요."}]
         with patch("services.generator.OpenAI") as client:
             client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
-            result = StoryGenerator().generate("내 취향 기억해?", "알렉스", {"name": "밥", "persona": {}}, [], history, "정육점", 65)
+            result = StoryGenerator().generate("내 취향 기억해?", "알렉스", {"name": "밥", "persona": {}}, [], history, "정육점", 65,
+                                               [{"speaker_id": "bob", "text": "고기 좋아하쇼?"}])
         self.assertEqual(result, answer)
         request = client.return_value.responses.create.call_args.kwargs
         self.assertIn("정육점", request["instructions"])
         self.assertIn("경계하고 조심스럽게", request["instructions"])
+        self.assertIn("고기 좋아하쇼?", request["instructions"])
+        self.assertIn("다시 인사하지 말고", request["instructions"])
         self.assertEqual(request["input"][0]["content"], "나는 커피를 좋아해")
 
 

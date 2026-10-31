@@ -102,6 +102,14 @@ class StoryTest(unittest.TestCase):
         self.assertEqual([person["id"] for person in bob["view"]["available_characters"]], ["bob"])
         self.assertIn("구경만", bob["events"][0]["text"])
 
+    def test_revisiting_neighbor_does_not_repeat_fixed_greeting(self):
+        self.action("visit_neighbors")
+        self.assertTrue(self.action("visit_karen")["events"])
+        self.action("visit_bob")
+        revisit = self.action("visit_karen")
+        self.assertEqual(revisit["events"], [])
+        self.assertEqual(decode_state(self.token)["scene_events"], [])
+
     def test_each_character_remembers_only_own_conversation(self):
         self.action("visit_neighbors")
         self.action("visit_karen")
@@ -127,6 +135,19 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(result["view"]["location_id"], "player_house")
         self.assertEqual(result["view"]["available_characters"][0]["id"], "karen")
         self.assertNotIn("cathy", [item["speaker_id"] for item in result["events"]])
+
+    def test_fixed_scene_line_reaches_ai_without_private_thoughts(self):
+        for action_id in TO_CHECKPOINT[:-1]:
+            self.action(action_id)
+        state = decode_state(self.token)
+        self.assertEqual(state["scene_id"], "photo_found")
+        self.assertEqual([item["speaker_id"] for item in state["scene_events"]], ["karen"])
+        self.assertIn("제 방에서", state["scene_events"][0]["text"])
+        with patch.object(chatbot.generator, "generate", return_value={"reply": "놀랐을 뿐이에요.", "attitude": "neutral", "visual_cue": "worried"}) as generate:
+            response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "왜 놀라셨어요?"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(generate.call_args.args[-1], state["scene_events"])
+        self.assertEqual(decode_state(response.get_json()["state_token"])["scene_events"], state["scene_events"])
 
     def test_job_offer_is_fixed_when_later_chat_lowers_affinity(self):
         with patch.object(chatbot.generator, "generate", return_value={"reply": "고마워.", "attitude": "cooperative", "visual_cue": "smile"}):

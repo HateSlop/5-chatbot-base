@@ -25,13 +25,19 @@ class ChatbotService:
 
     def start(self, player_name: str) -> dict:
         state = new_state(player_name)
-        return self._response(state, [event("jimmy", f"안녕, {player_name}! 난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게.")])
+        events = [event("jimmy", f"안녕, {player_name}! 난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게.")]
+        state["scene_events"] = [{"speaker_id": "jimmy", "text": "난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게."}]
+        return self._response(state, events)
 
     def resume(self, token: str) -> dict:
         return self._response(decode_state(token), [])
 
     def action(self, token: str, action_id: str) -> dict:
         state, events = apply_action(decode_state(token), action_id)
+        state["scene_events"] = [
+            {"speaker_id": item["speaker_id"], "text": item["text"]}
+            for item in events if item["speaker_id"] != "thought"
+        ]
         return self._response(state, events)
 
     def chat(self, token: str, character_id: str, message: str, config: dict) -> dict:
@@ -42,9 +48,11 @@ class ChatbotService:
             raise ValueError("character_unavailable")
         knowledge = self.retriever.search(message, character_id, state["scene_id"], state["clues"])
         history = state["history"].get(character_id, [])
+        scene_events = [item for item in state.get("scene_events", [])
+                        if item["speaker_id"] in {character_id, "narrator"}]
         turn = self.generator.generate(
             message, state["player_name"], config["characters"][character_id], knowledge, history,
-            LOCATIONS[state["location_id"]], state["affinity"],
+            LOCATIONS[state["location_id"]], state["affinity"], scene_events,
         )
         next_state = deepcopy(state)
         attitude = turn["attitude"]

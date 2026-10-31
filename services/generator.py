@@ -32,6 +32,7 @@ class StoryGenerator:
         history: list[dict],
         place_name: str,
         affinity: int,
+        scene_events: list[dict],
     ) -> dict:
         effort = os.getenv("OPENAI_REASONING_EFFORT", "none")
         if effort not in ALLOWED_REASONING_EFFORTS:
@@ -47,9 +48,17 @@ class StoryGenerator:
             f"현재 공개 가능한 사실: {persona.get('world', '')}\n"
             "제공된 사실 밖의 사건이나 미래의 비밀을 지어내거나 미리 밝히지 마세요. "
             "장소 이동, 단서 획득, 호감도와 엔딩을 선언하지 마세요. 이전에 나눈 대화를 기억하고, 일반적인 질문에도 자연스럽게 이어서 한두 문장으로 대답하세요. "
+            "현재 장면에서 이미 한 대사를 반복하거나 다시 인사하지 말고, 플레이어의 질문에 이어서 답하세요. "
             "attitude는 캐릭터의 감정이 아니라 사용자 발화가 협조적인지, 의심·추궁하는지 판정하세요. "
             "애매하면 neutral을 선택하세요. visual_cue는 답변에 어울리는 표정입니다."
         )
+
+        if scene_events:
+            lines = "\n".join(
+                f"- {'당신이 이미 한 말' if item['speaker_id'] != 'narrator' else '공개된 상황'}: {item['text']}"
+                for item in scene_events
+            )
+            instructions += f"\n현재 장면에서 이미 일어난 공개 사건:\n{lines}"
 
         if knowledge:
             context = "\n".join(
