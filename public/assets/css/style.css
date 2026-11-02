@@ -271,6 +271,7 @@ h1, h2, .wordmark { font-family: Georgia, "Times New Roman", serif; }
 .journal ul { padding-left: 18px; line-height: 1.5; }
 .journal li { padding: 4px 0; }
 .ending-card { margin-top: 16px; padding: 12px; background: var(--red); }
+.ending-restart { align-self: center; margin: 12px 0; padding: 10px 16px; background: var(--red); color: #fffaf0; text-decoration: none; }
 .story-actions { grid-column: 1 / -1; grid-row: 3; justify-self: center; align-self: end; width: min(720px, 100%); padding: 8px; background: rgb(20 26 21 / 84%); border: 1px solid rgb(255 250 240 / 55%); }
 .action-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .action-button { flex: 1 1 170px; max-width: 260px; min-height: 44px; padding: 8px 12px; color: var(--ink); background: #f7f0de; border: 1px solid #d6c7a7; cursor: pointer; }

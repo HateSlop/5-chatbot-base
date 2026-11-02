@@ -5,21 +5,15 @@ const log = document.getElementById("chat-log");
 const actionList = document.getElementById("action-list");
 const journalList = document.getElementById("journal-list");
 const statusMessage = document.getElementById("status-message");
-const tokenKey = "new-village-state-v1";
-const transcriptKey = "new-village-transcript-v1";
 const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시", narrator: "이야기", thought: "나의 생각", user: "나" };
 const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 사진", assimilation: "새로운 이웃" };
-let stateToken = localStorage.getItem(tokenKey);
-let transcript;
-try {
-  const stored = JSON.parse(localStorage.getItem(transcriptKey) || "[]");
-  transcript = Array.isArray(stored) ? stored.map((item, index) => {
-    if (item.kind) return item;
-    const character = item.speaker === "user" ? stored[index + 1]?.speaker : item.speaker;
-    const chat = item.speaker === "user" || stored[index - 1]?.speaker === "user";
-    return { ...item, kind: chat ? "chat" : "scene", character_id: chat ? character : null };
-  }) : [];
-} catch { transcript = []; }
+const entryKey = "new-village-entry";
+const canStart = sessionStorage.getItem(entryKey) === "1";
+sessionStorage.removeItem(entryKey);
+localStorage.removeItem("new-village-state-v1");
+localStorage.removeItem("new-village-transcript-v1");
+let stateToken = null;
+let transcript = [];
 let selectedCharacter = null;
 let currentView = null;
 let busy = false;
@@ -70,7 +64,6 @@ function showMessage(speaker, text, image = null, save = true) {
 function saveMessage(item) {
   transcript.push(item);
   transcript = transcript.slice(-120);
-  localStorage.setItem(transcriptKey, JSON.stringify(transcript));
 }
 
 function renderMessages() {
@@ -87,7 +80,7 @@ function renderMessages() {
   if (!conversation.length) {
     const empty = document.createElement("p");
     empty.className = "conversation-context";
-    empty.textContent = selectedCharacter ? "아직 나눈 대화가 없습니다. 먼저 말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
+    empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
   latestLine = { speaker, text, image };
@@ -134,6 +127,7 @@ function renderView(view) {
   const endingCard = document.getElementById("ending-card");
   endingCard.hidden = !view.ending;
   endingCard.textContent = view.ending ? `ENDING — ${endingNames[view.ending] || view.ending}` : "";
+  document.getElementById("ending-restart").hidden = !view.ending;
   input.disabled = busy || !character || !!view.ending;
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : selected ? `${selected.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
@@ -141,7 +135,16 @@ function renderView(view) {
   postMoveUI.render({locationId: view.location_id, locationName: locationNames[view.location_id] || view.location_id, actions: view.available_actions, busy});
 }
 
-async function request(path, payload, resetTranscript = false) {
+function applyResponse(data, kind, characterId = null) {
+  stateToken = data.state_token;
+  for (const item of data.events) {
+    saveMessage({ speaker: item.speaker_id, text: item.text, image: item.image, kind,
+      character_id: characterId, scene_id: data.view.scene_id, location_id: data.view.location_id });
+  }
+  renderView(data.view);
+}
+
+async function request(path, payload) {
   const response = await fetch(path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
   });
@@ -192,8 +195,6 @@ form.addEventListener("submit", async (event) => {
     statusMessage.textContent = "답변이 도착했습니다.";
   } catch (error) {
     transcript.pop();
-    latestLine = transcript.at(-1) || null;
-    localStorage.setItem(transcriptKey, JSON.stringify(transcript));
     renderMessages();
     statusMessage.textContent = error.message;
   } finally {
@@ -203,25 +204,18 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-document.getElementById("restart-btn").addEventListener("click", () => {
-  if (!busy) window.location.assign("/detail");
-});
-
 async function initialize() {
-  if (!stateToken) {
-    window.location.assign("/detail");
-    return;
-  }
-  busy = true;
+  statusMessage.textContent = "이야기를 불러오는 중…";
   try {
-    for (const item of transcript) showMessage(item.speaker, item.text, item.image, false);
-    await request("/api/session/resume", { state_token: stateToken });
+    await request("/api/session", { player_name: shell.dataset.playerName || "새 이웃" });
     statusMessage.textContent = "";
-  } catch (error) { statusMessage.textContent = error.message; }
-  finally {
-    busy = false;
-    if (currentView) renderView(currentView);
+  } catch (error) {
+    statusMessage.textContent = error.message;
   }
 }
 
-initialize();
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) location.replace(document.getElementById("restart-btn").href);
+});
+if (canStart) initialize();
+else location.replace(document.getElementById("restart-btn").href);
