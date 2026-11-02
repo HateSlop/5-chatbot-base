@@ -42,4 +42,4 @@ node --test tests/*.test.cjs
 
 **공개 시연 주소:** [더뉴빌리지 챗봇](https://chatbot-bb1234.onrender.com/). 이전 배포에서 첫 화면, 실제 대화 한 번, 첫 이동, 새로고침 뒤 이어하기와 `/health` 응답을 확인했다. 현재 로컬 변경은 아직 공개 주소에서 확인하지 않았다. 팀장이 직접 만든 Render 서비스의 실제 설정은 [Render 배포 안내](docs/RENDER-GUIDE.md)를 참고해 점검한다. [`render.yaml`](render.yaml)은 이후 같은 서비스를 다시 만들 때 참고할 설정이며, 기존 서비스에 중복 적용하지 않는다. 프로듀서는 [시연 안내](docs/PRODUCER_TEST_GUIDE.md)를 따른다.
 
-기존 베이스 프로젝트의 상세 참고 문서는 `docs/`에 남겨 두었다. 이 프로젝트의 실제 API와 실행 방법은 이 README 및 [API 계약서](docs/API_CONTRACT.md)를 기준으로 한다.
+기존 베이스 프로젝트의 상세 참고 문서는 [`docs/archive/`](docs/archive/)에 보관했다. 이 프로젝트의 실제 API와 실행 방법은 이 README 및 [API 계약서](docs/API_CONTRACT.md)를 기준으로 한다.

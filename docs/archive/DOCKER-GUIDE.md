@@ -102,4 +102,4 @@ docker compose down
 
 ## Conda와 같이 써도 되나요?
 
-Conda/venv는 Python 가상환경을 관리하고 Docker는 앱이 실행될 OS 환경과 의존성을 묶습니다. 개인 작업은 Conda에서 하고 팀 통합 때 Compose로 실행해 보는 식으로 둘을 함께 활용할 수 있습니다. 같은 실행을 Conda와 Docker 안에서 동시에 중첩할 필요는 없습니다. 배포 구조를 선택할 때는 [배포 경로 안내](DEPLOYMENT.md)와 [Render 가이드](RENDER-GUIDE.md)를 확인하세요.
+Conda/venv는 Python 가상환경을 관리하고 Docker는 앱이 실행될 OS 환경과 의존성을 묶습니다. 개인 작업은 Conda에서 하고 팀 통합 때 Compose로 실행해 보는 식으로 둘을 함께 활용할 수 있습니다. 같은 실행을 Conda와 Docker 안에서 동시에 중첩할 필요는 없습니다. 배포 구조를 선택할 때는 [배포 경로 안내](DEPLOYMENT.md)와 [Render 가이드](../RENDER-GUIDE.md)를 확인하세요.

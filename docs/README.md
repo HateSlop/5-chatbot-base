@@ -16,17 +16,17 @@
 
 이 문서들은 **대화 모델의 런타임 프롬프트에 통째로 들어가지 않는다.** 코드를 바꾸는 에이전트는 관련 문서를 읽고, 사람은 기획·계약·진행 상황을 확인한다. 진행 상태는 구현 명세에, 이야기 결정은 스토리에, API 변경은 계약서에 기록한다.
 
-## 초기 베이스 문서
+## 보관한 초기 베이스 문서
 
-아래는 초기 베이스 코드(`ea152de`)에서 제공된 안내다. **사람이 수업 목표·일반 구현 방법을 확인할 때** 읽는다. 구현 에이전트는 현재 작업에 관련된 문서만 참고한다. 초기 데모 코드와 파일 상태를 설명하는 부분은 지금의 구현과 다를 수 있으므로 현재 동작은 팀 문서와 코드를 기준으로 확인한다.
+초기 베이스 코드(`ea152de`)의 일반 안내는 [`archive/`](archive/)에 보관한다. **수업 목표나 당시의 구현 예시가 필요할 때만** 읽는다. 초기 데모 코드와 파일 상태를 설명하므로 현재 동작은 위 팀 문서와 코드를 기준으로 확인한다.
 
 | 분류 | 문서 | 주요 내용 |
 | --- | --- | --- |
-| 베이스 원본 | [프로젝트 가이드](PROJECT_GUIDE.md) | 과제 목표와 결과 기준 |
-| 베이스 원본 | [구조 설명](ARCHITECTURE.md), [고급 주제](ADVANCED_TOPICS.md) | 초기 코드의 확장 지점과 일반적인 구현 예시 |
-| 베이스 원본 | [모델 연결](MODEL_SETUP.md), [모델 선택](MODEL_CHOICE.md) | 모델 설정 참고 |
-| 베이스 원본 | [로컬 실행](LOCAL_SETUP.md), [Docker](DOCKER-GUIDE.md) | 일반 실행 환경 참고 |
-| 베이스 원본 | [배포 경로](DEPLOYMENT.md), [팀 워크플로](TEAM_WORKFLOW.md) | 플랫폼과 Git 협업 참고 |
+| 베이스 원본 | [프로젝트 가이드](archive/PROJECT_GUIDE.md) | 과제 목표와 결과 기준 |
+| 베이스 원본 | [구조 설명](archive/ARCHITECTURE.md), [고급 주제](archive/ADVANCED_TOPICS.md) | 초기 코드의 확장 지점과 일반적인 구현 예시 |
+| 베이스 원본 | [모델 연결](archive/MODEL_SETUP.md), [모델 선택](archive/MODEL_CHOICE.md) | 모델 설정 참고 |
+| 베이스 원본 | [로컬 실행](archive/LOCAL_SETUP.md), [Docker](archive/DOCKER-GUIDE.md) | 일반 실행 환경 참고 |
+| 베이스 원본 | [배포 경로](archive/DEPLOYMENT.md), [팀 워크플로](archive/TEAM_WORKFLOW.md) | 플랫폼과 Git 협업 참고 |
 | 베이스 원본 | [예시 세계관](../data/knowledge/example_lore.md) | 초기 자료 실험용 예시. 현재 대화 모델이 읽지 않음 |
 | 베이스에 팀 설명 추가 | [지식 자료 안내](../data/knowledge/README.md), [이미지 자료 안내](../data/images/README.md) | 초기 자료 폴더 설명에 현재 실제 사용 자료를 덧붙임 |
 
@@ -41,4 +41,4 @@
 | 암호화된 진행 토큰의 해당 인물 최근 대화 | 실행 중 생성 | 해당 인물과의 최근 대화 문맥만 전달 |
 | 현재 장면에서 이미 공개된 사건 대사 | 실행 중 서버 규칙 생성 | 해당 인물 자신의 고정 대사와 공개 상황만 전달. 주인공의 속마음과 미래 사건은 제외 |
 
-`docs/*.md`, `AGENTS.md`, `data/knowledge/example_lore.md`는 대화 모델에 전달되지 않는다. 이미지 목록 `data/images/catalog.json`은 모델 입력이 아니라 **모델이 반환한 표정 단서로 화면 이미지를 고를 때** 사용한다. 자료 접근을 바꾸면 이 표와 관련 테스트를 함께 갱신한다.
+`docs/`의 문서, `AGENTS.md`, `data/knowledge/example_lore.md`는 대화 모델에 전달되지 않는다. 이미지 목록 `data/images/catalog.json`은 모델 입력이 아니라 **모델이 반환한 표정 단서로 화면 이미지를 고를 때** 사용한다. 자료 접근을 바꾸면 이 표와 관련 테스트를 함께 갱신한다.
