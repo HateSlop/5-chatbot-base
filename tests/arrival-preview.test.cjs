@@ -14,7 +14,7 @@ async function setup() {
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/arrival-preview.js'),'utf8'),{
     document:{getElementById:get},window:{addEventListener:(type,fn)=>events[type]=fn},
-    DialogueStage:class{render(data){renders.push(data);}},PostMoveUI:class{render(data){ui.push(data);}},
+    DialogueStage:class{render(data){renders.push(data);get('.dialogue-box').hidden=get('.move-composer').hidden=data.dialogue===false;}},PostMoveUI:class{render(data){ui.push(data);}},
     setTimeout:(fn,delay)=>{const id=++sequence;timers.set(id,{fn,due:now+delay});return id;},clearTimeout:id=>timers.delete(id),
     fetch(){throw Error('No API calls allowed');},localStorage:new Proxy({},{get(){throw Error('No storage access allowed');}}),
   });

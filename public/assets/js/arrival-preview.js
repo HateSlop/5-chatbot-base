@@ -35,14 +35,16 @@ async function replayArrival() {
   arrivalMessage.value = '';
   arrivalMessage.disabled = arrivalSend.disabled = true;
   arrivalStatus.textContent = '지미가 찾아오기 전입니다.';
-  arrivalStage.render({background:arrivalBackground});
+  arrivalStage.render({background:arrivalBackground, dialogue:false});
   renderArrivalUI();
   // Count from when the background is available, including a color fallback on failure.
   await arrivalRoot.querySelector('.dialogue-background').decode().catch(() => {});
   if (run !== arrivalRun) return;
-  arrivalTimer = setTimeout(() => {
+  arrivalTimer = setTimeout(async () => {
     arrivalStage.render({background:arrivalBackground, image:'/assets/images/jimmy_smile.svg', speaker:'지미', text:jimmyQuestion});
-    arrivalBox.hidden = arrivalComposer.hidden = arrivalChat.hidden = false;
+    if (arrivalStage.ready) await arrivalStage.ready;
+    if (run !== arrivalRun) return;
+    arrivalChat.hidden = false;
     arrivalAwaitingName = true;
     arrivalAnswer.hidden = false;
     arrivalStatus.textContent = '지미의 대사를 읽고 이름 입력하기를 눌러 주세요.';

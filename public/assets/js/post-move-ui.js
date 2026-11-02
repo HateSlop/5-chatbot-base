@@ -2,7 +2,7 @@
 window.postMoveNavigation = function(locationId, actions) {
   const home = locationId === 'player_house';
   const slots = home ? [
-    ['butcher_shop', '정육점', 'visit_bob', 'carrot'],
+    ['butcher_shop', '정육점', 'visit_bob', 'steak'],
     ['salon', '미용실', 'visit_cathy', 'scissors'],
     ['square', '마을 광장', 'visit_neighbors', 'park'],
     ['karen_house', '캐런의 집', 'visit_karen', 'star'],
@@ -41,6 +41,11 @@ window.PostMoveUI = class {
     this.nav = stage.querySelector('.move-nav');
     this.hints = frame.querySelector('.move-hints');
     stage.querySelector('.move-composer').append(form);
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+      event.preventDefault();
+      if (!input.disabled && !send.disabled && input.value.trim()) form.requestSubmit();
+    });
     const suggestions = [
       ['마을에 대해 묻기', '마을에 대해 알려 주세요.'],
       ['자세히 물어보기', '조금 더 자세히 이야기해 주세요.'],
@@ -74,7 +79,7 @@ window.PostMoveUI = class {
       // Static icon geometry; all variable names/labels use textContent.
       const paths = {
         home: '<path d="M3 11 12 3l9 8M6 10v11h12V10M10 21v-7h4v7"/>',
-        carrot: '<path d="m6 9 9 9L3 22ZM13 10l5-7 2 2-5 7M15 12l7-2-1-3-6 3"/>',
+        steak: '<path d="M16 3c4 0 6 3 5 7-1 3-4 3-6 6s-4 6-8 5-5-4-4-7 4-4 6-6 3-5 7-5Z"/><path d="M16 6c2 0 3 2 2 4s-4 3-6 6-5 3-6 0 3-4 5-6 2-4 5-4Z"/><circle cx="15" cy="9" r="1.5"/>',
         scissors: '<circle cx="6" cy="17" r="4"/><circle cx="18" cy="17" r="4"/><path d="m8 14 10-12M16 14 6 2"/>',
         park: '<path d="m2 10 10-7 10 7ZM5 11v10m5-10v10m4-10v10m5-10v10M2 22h20"/>',
         star: '<path d="m12 2 3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1Z"/>',

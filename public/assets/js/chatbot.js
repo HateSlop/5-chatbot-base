@@ -9,12 +9,18 @@ const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐
 const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 사진", assimilation: "새로운 이웃" };
 const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
 const postMoveUI = new PostMoveUI(document.getElementById("dialogue-stage"), form, input, document.getElementById("send-btn"), performAction);
+actionList.className = 'action-list scene-actions';
+document.querySelector('#dialogue-stage .dialogue-box').append(statusMessage);
+document.querySelector('#dialogue-stage .dialogue-box').append(actionList);
 let stateToken = null;
 let transcript = [];
 let playerName = "";
 let selectedCharacter = null;
 let currentView = null;
 let busy = false;
+function focusChatWhenReady() {
+  dialogueStage.ready?.then(() => { if (stateToken && !input.disabled) input.focus(); });
+}
 
 function speakerName(id) {
   return id === "user" ? playerName : (speakerNames[id] ?? id);
@@ -52,7 +58,7 @@ function renderMessages() {
   const line = conversation.at(-1);
   dialogueStage.render({
     background: currentView.background,
-    image: line?.image || (line?.speaker === selectedCharacter ? currentView.available_characters[0]?.portrait : null),
+    image: line?.image || currentView.available_characters[0]?.portrait || null,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
   });
@@ -126,7 +132,8 @@ window.startStory = (data, name) => {
   applyResponse(data, "scene");
   document.getElementById("name-screen").hidden = true;
   document.getElementById("game-screen").hidden = false;
-  if (selectedCharacter) input.focus();
+  document.getElementById("entry-name-dialog")?.close();
+  if (selectedCharacter) focusChatWhenReady();
 };
 
 async function request(path, payload) {
@@ -171,7 +178,7 @@ form.addEventListener("submit", async (event) => {
   } finally {
     busy = false;
     renderView(currentView);
-    if (!input.disabled) input.focus();
+    if (!input.disabled) focusChatWhenReady();
   }
 });
 
@@ -179,6 +186,9 @@ window.addEventListener("pagehide", () => {
   stateToken = null;
   transcript = [];
 });
+for (const id of ['restart-btn', 'ending-restart']) {
+  document.getElementById(id).addEventListener('click', () => { if (!busy) window.location.reload(); });
+}
 window.addEventListener("pageshow", event => {
   document.getElementById("username").value = "";
   if (event.persisted) window.location.reload();
