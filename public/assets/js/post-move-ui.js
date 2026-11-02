@@ -17,15 +17,29 @@ window.PostMoveUI = class {
     this.input = input;
     this.send = send;
     this.onMove = onMove;
+    const frame = document.createElement('div');
+    frame.className = 'post-move-screen';
+    if (stage.classList.contains('game-screen')) {
+      stage.classList.remove('game-screen');
+      frame.classList.add('game-screen');
+    }
+    stage.parentNode.insertBefore(frame, stage);
+    frame.insertAdjacentHTML('beforeend', `
+      <aside class="move-sidebar" aria-label="호감도와 입력 도움말">
+        <div class="move-affinity">호감도<strong>— / 100</strong></div>
+        <div class="move-hints" aria-label="입력 도움말"></div>
+      </aside>`);
+    frame.append(stage);
+    this.frame = frame;
     stage.classList.add('post-move-stage');
     stage.insertAdjacentHTML('beforeend', `
-      <header class="move-top"><span></span><h1 class="move-location"></h1><div class="move-affinity">호감도<strong>— / 100</strong></div></header>
+      <header class="move-top"><h1 class="move-location"></h1></header>
       <nav class="move-nav" aria-label="장소 이동"></nav>
-      <div class="move-composer"><div class="move-hints" aria-label="입력 도움말"></div></div>`);
+      <div class="move-composer"></div>`);
     this.title = stage.querySelector('.move-location');
-    this.affinity = stage.querySelector('.move-affinity strong');
+    this.affinity = frame.querySelector('.move-affinity strong');
     this.nav = stage.querySelector('.move-nav');
-    this.hints = stage.querySelector('.move-hints');
+    this.hints = frame.querySelector('.move-hints');
     stage.querySelector('.move-composer').append(form);
     const suggestions = [
       ['마을에 대해 묻기', '마을에 대해 알려 주세요.'],
@@ -41,6 +55,9 @@ window.PostMoveUI = class {
       });
       this.hints.append(button);
     }
+  }
+  setSplit(enabled) {
+    this.frame.classList.toggle('is-intro', !enabled);
   }
   render({locationId, locationName, registeredName = null, affinity = null, actions = [], busy = false}) {
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;

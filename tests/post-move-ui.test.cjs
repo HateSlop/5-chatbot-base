@@ -3,11 +3,12 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
-function node(){return {children:[],classList:{add(){}},attrs:{},append(x){this.children.push(x);},replaceChildren(){this.children=[];},setAttribute(k,v){this.attrs[k]=v;},addEventListener(type,fn){this[type]=fn;},focus(){this.focused=true;},dispatchEvent(){this.inputEvent=true;}};}
+function node(){return {children:[],classList:{add(){},contains(){return false;},remove(){}},attrs:{},append(x){this.children.push(x);},replaceChildren(){this.children=[];},setAttribute(k,v){this.attrs[k]=v;},addEventListener(type,fn){this[type]=fn;},focus(){this.focused=true;},dispatchEvent(){this.inputEvent=true;},insertAdjacentHTML(){}};}
 function setup(){
-  const nodes=new Map();const root={...node(),insertAdjacentHTML(){},querySelector(s){if(!nodes.has(s))nodes.set(s,node());return nodes.get(s);}};
+  const nodes=new Map();const querySelector=s=>{if(!nodes.has(s))nodes.set(s,node());return nodes.get(s);};
+  const root={...node(),querySelector,parentNode:{insertBefore(){}}};
   root.querySelector('.move-affinity strong').parentElement={};
-  const context={window:{},document:{createElement:node},Event:class{}};
+  const context={window:{},document:{createElement:()=>({...node(),querySelector})},Event:class{}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/post-move-ui.js'),'utf8'),context);
   context.postMoveNavigation=context.window.postMoveNavigation;
   const input=node();let moved;
