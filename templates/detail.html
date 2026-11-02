@@ -1,22 +1,23 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ bot.name }} — 도입 화면 미리보기</title>
-  <link rel="stylesheet" href="{{ asset_url('assets/css/portrait.css') }}">
+  <link rel="stylesheet" href="{{ asset_url('assets/css/screen.css') }}">
   <link rel="stylesheet" href="{{ asset_url('assets/css/dialogue-stage.css') }}">
   <style>
     body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #090b09; color: #f3e4bd; font: 14px/1.6 sans-serif; }
-    .intro-wrap { width: min(100%, max(320px, 56.25dvh), 540px); }
+    .intro-wrap { width: min(100%, max(640px, 177.777778dvh), 1280px); }
     .intro-notice { padding: 12px 16px; }
     a { color: inherit; display: inline-block; padding: 10px 0; margin-right: 16px; }
   </style>
+    <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
 </head>
 <body>
   <main class="intro-wrap">
     <section class="dialogue-stage" aria-label="이사 전 집 TV 도입 미리보기">
-      <div class="dialogue-tv" role="img" aria-label="TV"></div>
+      <img class="dialogue-background" src="{{ asset_url('assets/images/pre-move-house.png') }}" alt="이사 전 집 거실과 TV" onerror="this.hidden = true">
       <div class="dialogue-box" tabindex="0" role="region" aria-label="독백 대사"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
     </section>
     <aside class="intro-notice">

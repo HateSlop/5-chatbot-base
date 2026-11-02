@@ -1,0 +1,10 @@
+﻿/* Narrow windows scroll the landscape canvas without shrinking controls. */
+html { min-width: 640px; }
+.game-screen {
+  width: min(100%, 177.777778vh, 1280px);
+  width: min(100%, 177.777778dvh, 1280px);
+  min-width: 640px;
+  aspect-ratio: 16 / 9;
+  margin: auto;
+  box-sizing: border-box;
+}

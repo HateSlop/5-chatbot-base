@@ -5,36 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ bot.name }} — 이야기</title>
     <link rel="stylesheet" href="{{ asset_url('assets/css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/css/portrait.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/css/name-entry.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/screen.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/story-portrait.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/dialogue-stage.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/post-move-ui.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
-    <section id="name-screen" class="village-start name-entry" aria-label="이름 입력 화면">
-      <div class="start-scene portrait-screen">
-        <h1 class="start-title"><img src="{{ asset_url('assets/images/start/title.png') }}" alt="더뉴빌리지로 오세요" width="1774" height="887"></h1>
-        <div class="cover-slot" aria-hidden="true"></div>
-        <div class="start-panel name-panel">
-          <p class="name-question">마을에서 사용할 이름을 알려 주세요.</p>
-          <form id="name-form" class="name-form">
-            <div class="name-row">
-              <label for="username">이름</label>
-              <input id="username" name="username" type="text" maxlength="50" autocomplete="nickname" required>
-              <button id="name-submit" type="submit">이웃 만나기</button>
-            </div>
-            <p id="name-status" class="name-status" role="status"></p>
-          </form>
-        </div>
-      </div>
-    </section>
-    <div id="game-screen" class="portrait-screen story-screen" hidden>
+    <div class="game-screen story-screen">
     <section id="dialogue-stage" class="dialogue-stage" aria-label="현재 대사 장면">
       <img class="dialogue-background" alt="" hidden>
       <img class="dialogue-figure" alt="" hidden>
