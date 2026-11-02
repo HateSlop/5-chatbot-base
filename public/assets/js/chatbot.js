@@ -5,56 +5,27 @@ const log = document.getElementById("chat-log");
 const actionList = document.getElementById("action-list");
 const journalList = document.getElementById("journal-list");
 const statusMessage = document.getElementById("status-message");
-const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시", narrator: "이야기", thought: "나의 생각", user: "나" };
+const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시", narrator: "이야기", thought: "", user: "나" };
 const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 사진", assimilation: "새로운 이웃" };
-const entryKey = "new-village-entry";
-const canStart = sessionStorage.getItem(entryKey) === "1";
-sessionStorage.removeItem(entryKey);
-localStorage.removeItem("new-village-state-v1");
-localStorage.removeItem("new-village-transcript-v1");
+const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
+const postMoveUI = new PostMoveUI(document.getElementById("dialogue-stage"), form, input, document.getElementById("send-btn"), performAction);
 let stateToken = null;
 let transcript = [];
+let playerName = "";
 let selectedCharacter = null;
 let currentView = null;
 let busy = false;
 
-const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
-const postMoveUI = new PostMoveUI(document.getElementById('dialogue-stage'), form, input, document.getElementById('send-btn'), performAction);
-const characterNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시" };
-const playerNameKey = "new-village-player-name-v1";
-const suppliedName = new URLSearchParams(window.location.search).get("username");
-const playerName = suppliedName || localStorage.getItem(playerNameKey) || shell.dataset.playerName;
-if (suppliedName) localStorage.setItem(playerNameKey, suppliedName);
-shell.dataset.playerName = playerName;
-let latestLine = null;
 function speakerName(id) {
-  if (id === "thought") return '';
-  return id === "user" ? playerName : characterNames[id] || (id === "narrator" ? "이야기" : id);
-}
-function updateDialogueStage() {
-  const line = latestLine;
-  const character = currentView?.available_characters.find(c => c.id === line?.speaker);
-  dialogueStage.render({
-    background: currentView?.background,
-    image: line && characterNames[line.speaker] ? line.image || character?.portrait : null,
-    speaker: line ? speakerName(line.speaker) : "",
-    text: line?.text || "",
-  });
+  return id === "user" ? playerName : (speakerNames[id] ?? id);
 }
 
-function showMessage(speaker, text, image = null, save = true) {
-  const item = document.createElement("article");
-  item.className = `message ${speaker === "user" ? "user" : "bot"}`;
+function messageElement(item) {
+  const element = document.createElement("article");
+  element.className = `message ${item.speaker === "user" ? "user" : ["narrator", "thought"].includes(item.speaker) ? "scene-note" : "bot"}`;
   const label = document.createElement("strong");
-  label.textContent = speakerName(speaker) ? `${speakerName(speaker)}: ` : '';
-  item.append(label);
-  if (image) {
-    const picture = document.createElement("img");
-    picture.onerror = () => { picture.hidden = true; };
-    picture.src = image;
-    picture.alt = `${label.textContent}의 현재 모습`;
-    item.append(picture);
-  }
+  label.textContent = speakerName(item.speaker) ? `${speakerName(item.speaker)}: ` : "";
+  element.append(label);
   const body = document.createElement("p");
   body.textContent = item.text;
   element.append(body);
@@ -67,15 +38,10 @@ function saveMessage(item) {
 }
 
 function renderMessages() {
-  if (!currentView) {
-    log.replaceChildren(...transcript.slice(-12).map(messageElement));
-    return;
-  }
-  const previousScene = transcript.findLastIndex((item) => item.kind !== "chat" && item.scene_id &&
-    (item.scene_id !== currentView.scene_id || item.location_id !== currentView.location_id));
-  const conversation = transcript.filter((item, index) =>
-    (item.kind === "chat" && item.character_id === selectedCharacter && selectedCharacter) ||
-    (item.kind !== "chat" && index > previousScene));
+  if (!currentView) return;
+  const conversation = transcript.filter(item =>
+    item.scene_id === currentView.scene_id && item.location_id === currentView.location_id &&
+    (item.kind === "scene" || item.kind === "chat" && item.character_id === selectedCharacter));
   log.replaceChildren(...conversation.map(messageElement));
   if (!conversation.length) {
     const empty = document.createElement("p");
@@ -83,16 +49,20 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  latestLine = { speaker, text, image };
-  updateDialogueStage();
-  return item;
+  const line = conversation.at(-1);
+  dialogueStage.render({
+    background: currentView.background,
+    image: line?.image || (line?.speaker === selectedCharacter ? currentView.available_characters[0]?.portrait : null),
+    speaker: line ? speakerName(line.speaker) : "",
+    text: line?.text || "",
+  });
+  log.scrollTop = log.scrollHeight;
 }
 
 function renderView(view) {
   currentView = view;
-  for (const character of view.available_characters) characterNames[character.id] = character.name;
-  updateDialogueStage();
-  document.getElementById("location-title").textContent = locationNames[view.location_id] || view.location_id;
+  const place = view.location_name || view.location_id;
+  document.getElementById("location-title").textContent = place;
   const background = document.getElementById("scene-background");
   background.style.backgroundImage = view.background ? `url("${view.background}")` : "none";
   background.setAttribute("aria-label", `${place} 배경`);
@@ -111,12 +81,17 @@ function renderView(view) {
 
   const character = view.available_characters[0];
   selectedCharacter = character?.id || null;
+  if (character) speakerNames[character.id] = character.name;
   document.getElementById("scene-character").textContent = character ? `현재 대화 상대: ${character.name}` : "지금 이곳에는 대화 상대가 없습니다";
   document.getElementById("character-title").textContent = character?.name || "대화 상대 없음";
   const portrait = document.getElementById("character-portrait");
-  portrait.onerror = () => { portrait.hidden = true; };
-  portrait.hidden = !selected?.portrait;
-  if (selected?.portrait) { portrait.src = selected.portrait; portrait.alt = `${selected.name} 초상`; }
+  portrait.hidden = !character?.portrait;
+  if (character?.portrait) {
+    const latestImage = transcript.findLast(item => item.speaker === character.id && item.image &&
+      item.scene_id === view.scene_id && item.location_id === view.location_id)?.image;
+    portrait.src = latestImage || character.portrait;
+    portrait.alt = `${character.name}의 현재 모습`;
+  }
 
   journalList.replaceChildren();
   for (const note of view.journal) {
@@ -130,54 +105,49 @@ function renderView(view) {
   document.getElementById("ending-restart").hidden = !view.ending;
   input.disabled = busy || !character || !!view.ending;
   document.getElementById("send-btn").disabled = input.disabled;
-  input.placeholder = view.ending ? "이야기가 끝났습니다" : selected ? `${selected.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
-  // No public registered-name or affinity field exists in API v2 yet.
-  postMoveUI.render({locationId: view.location_id, locationName: locationNames[view.location_id] || view.location_id, actions: view.available_actions, busy});
+  input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
+  postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
+    affinity: view.affinity, actions: view.available_actions, busy});
+  renderMessages();
 }
 
 function applyResponse(data, kind, characterId = null) {
   stateToken = data.state_token;
   for (const item of data.events) {
-    saveMessage({ speaker: item.speaker_id, text: item.text, image: item.image, kind,
-      character_id: characterId, scene_id: data.view.scene_id, location_id: data.view.location_id });
+    saveMessage({speaker: item.speaker_id, text: item.text, image: item.image, kind,
+      character_id: characterId, scene_id: data.view.scene_id, location_id: data.view.location_id});
   }
   renderView(data.view);
 }
+
+window.startStory = (data, name) => {
+  playerName = name;
+  transcript = [];
+  applyResponse(data, "scene");
+  document.getElementById("name-screen").hidden = true;
+  document.getElementById("game-screen").hidden = false;
+  if (selectedCharacter) input.focus();
+};
 
 async function request(path, payload) {
   const response = await fetch(path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
   });
   const data = await response.json();
-  if (!response.ok) {
-    const error = new Error(data.error?.message || "요청을 처리하지 못했습니다.");
-    error.code = data.error?.code;
-    throw error;
-  }
-  if (resetTranscript) {
-    transcript = [];
-    log.replaceChildren();
-    localStorage.removeItem(transcriptKey);
-  }
-  stateToken = data.state_token;
-  localStorage.setItem(tokenKey, stateToken);
-  for (const item of data.events) showMessage(item.speaker_id, item.text, item.image);
-  renderView(data.view);
+  if (!response.ok) throw new Error(data.error?.message || "요청을 처리하지 못했습니다.");
+  applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
 }
 
 async function performAction(actionId) {
-  if (busy) return;
+  if (busy || !stateToken) return;
   busy = true;
   renderView(currentView);
   statusMessage.textContent = "이야기가 이어지는 중…";
   try {
-    await request("/api/action", { state_token: stateToken, action_id: actionId });
+    await request("/api/action", {state_token: stateToken, action_id: actionId});
     statusMessage.textContent = "이야기가 이어졌습니다.";
   } catch (error) { statusMessage.textContent = error.message; }
-  finally {
-    busy = false;
-    if (currentView) renderView(currentView);
-  }
+  finally { busy = false; renderView(currentView); }
 }
 
 form.addEventListener("submit", async (event) => {
@@ -187,10 +157,11 @@ form.addEventListener("submit", async (event) => {
   busy = true;
   renderView(currentView);
   statusMessage.textContent = "답변을 기다리는 중…";
-  saveMessage({ speaker: "user", text: message, image: null, kind: "chat", character_id: selectedCharacter });
+  saveMessage({speaker: "user", text: message, image: null, kind: "chat", character_id: selectedCharacter,
+    scene_id: currentView.scene_id, location_id: currentView.location_id});
   renderMessages();
   try {
-    await request("/api/chat", { state_token: stateToken, character_id: selectedCharacter, message });
+    await request("/api/chat", {state_token: stateToken, character_id: selectedCharacter, message});
     input.value = "";
     statusMessage.textContent = "답변이 도착했습니다.";
   } catch (error) {
@@ -199,23 +170,16 @@ form.addEventListener("submit", async (event) => {
     statusMessage.textContent = error.message;
   } finally {
     busy = false;
-    if (currentView) renderView(currentView);
-    input.focus();
+    renderView(currentView);
+    if (!input.disabled) input.focus();
   }
 });
 
-async function initialize() {
-  statusMessage.textContent = "이야기를 불러오는 중…";
-  try {
-    await request("/api/session", { player_name: shell.dataset.playerName || "새 이웃" });
-    statusMessage.textContent = "";
-  } catch (error) {
-    statusMessage.textContent = error.message;
-  }
-}
-
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) location.replace(document.getElementById("restart-btn").href);
+window.addEventListener("pagehide", () => {
+  stateToken = null;
+  transcript = [];
 });
-if (canStart) initialize();
-else location.replace(document.getElementById("restart-btn").href);
+window.addEventListener("pageshow", event => {
+  document.getElementById("username").value = "";
+  if (event.persisted) window.location.reload();
+});

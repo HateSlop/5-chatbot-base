@@ -19,10 +19,14 @@ test('intro preview never calls APIs or storage; characters retain names',()=>{
   nodes.get('long').click(); assert.equal(rendered.speaker,'');
   assert.equal(rendered.text.split('\n').length,30);
 });
-test('start links directly to intro; former name page has no form, scripts or invented dialogue',()=>{
+test('start links to the real name form while the intro preview stays separate',()=>{
   const index=fs.readFileSync(path.join(__dirname,'../templates/index.html'),'utf8');
   const intro=fs.readFileSync(path.join(__dirname,'../templates/detail.html'),'utf8');
-  assert.match(index,/url_for\('detail'\) }}" aria-label="시작하기"/);
+  const chat=fs.readFileSync(path.join(__dirname,'../templates/chat.html'),'utf8');
+  assert.match(index,/url_for\('chat'\) }}" aria-label="시작하기"/);
+  assert.doesNotMatch(index,/continue-story|start\.js|이어하기/);
   assert.doesNotMatch(intro,/<form|<script|name-entry/);
   assert.match(intro,/class="dialogue-speaker"><\/span><span class="dialogue-text"><\/span>/);
+  assert.match(chat,/id="name-form"/);
+  assert.match(chat,/assets\/js\/name-entry\.js/);
 });

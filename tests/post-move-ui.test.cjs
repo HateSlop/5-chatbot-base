@@ -32,6 +32,7 @@ test('registered home name is literal text and hints fill a draft without sendin
   const h=setup();h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'<b>예준</b>',affinity:80});
   assert.equal(h.nodes.get('.move-location').textContent,'<b>예준</b> 하우스');
   assert.equal(h.nodes.get('.move-affinity strong').textContent,'80 / 100');
+  assert.equal(h.nodes.get('.move-affinity strong').parentElement.title,'마을 호감도');
   h.nodes.get('.move-hints').children[0].click();assert.equal(h.input.value,'마을에 대해 알려 주세요.');
   assert.equal(h.input.focused,true);assert.equal(h.move(),undefined);
   h.input.disabled=true;h.input.value='유지';h.nodes.get('.move-hints').children[1].click();assert.equal(h.input.value,'유지');
