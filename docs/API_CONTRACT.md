@@ -19,7 +19,7 @@
     "background": "/assets/images/player_house.svg",
     "available_characters": [{"id": "jimmy", "name": "지미", "portrait": "/assets/images/jimmy_neutral.svg"}],
     "available_actions": [{"id": "visit_neighbors", "label": "이웃들에게 인사하러 간다", "kind": "move"}],
-    "affinity": 70,
+    "affinity": 50,
     "journal": [],
     "ending": null
   }

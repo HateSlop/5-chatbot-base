@@ -6,7 +6,7 @@ from .generator import StoryGenerator
 from .image_selector import StoryImageSelector
 from .retriever import StoryRetriever
 from .state_token import decode_state, encode_state
-from .story import LOCATIONS, apply_action, available_characters, event, new_state, view
+from .story import CHAT_DELTAS, LOCATIONS, MAX_SCORED_CHATS, adjusted_affinity, apply_action, available_characters, event, new_state, view
 
 
 class ChatbotService:
@@ -57,9 +57,13 @@ class ChatbotService:
         next_state = deepcopy(state)
         attitude = turn["attitude"]
         score_key = f"{state['scene_id']}:{character_id}:{attitude}"
-        if attitude != "neutral" and score_key not in next_state["scored_chat"]:
-            next_state["affinity"] = max(0, min(100, next_state["affinity"] + (5 if attitude == "cooperative" else -5)))
+        message_key = " ".join(message.casefold().split())
+        if (CHAT_DELTAS[attitude] and score_key not in next_state["scored_chat"]
+                and message_key not in next_state.get("scored_messages", [])
+                and len(next_state["scored_chat"]) < MAX_SCORED_CHATS):
+            next_state["affinity"] = adjusted_affinity(next_state["affinity"], CHAT_DELTAS[attitude])
             next_state["scored_chat"].append(score_key)
+            next_state.setdefault("scored_messages", []).append(message_key)
         # shortcut: 인물마다 최근 10번의 대화만 보관, 긴 대화 기억이 필요하면 요약을 추가한다.
         next_state["history"][character_id] = (history + [
             {"role": "user", "content": message[:500]},

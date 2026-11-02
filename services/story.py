@@ -3,8 +3,12 @@
 from copy import deepcopy
 
 
-START_SCORE = 70
+START_SCORE = 50
 JOB_THRESHOLD = 70
+WELCOME_SCORE = 70
+WARY_SCORE = 35
+CHAT_DELTAS = {"cooperative": 3, "neutral": 0, "suspicious": -3}
+MAX_SCORED_CHATS = 12
 CHARACTERS = {"jimmy": "지미", "karen": "캐런", "bob": "밥", "cathy": "캐시"}
 LOCATIONS = {
     "player_house": "새집",
@@ -31,6 +35,7 @@ def new_state(player_name: str) -> dict:
         "journal": [],
         "affinity": START_SCORE,
         "scored_chat": [],
+        "scored_messages": [],
         "has_car_key": False,
         "job_offered": None,
         "ending": None,
@@ -41,6 +46,11 @@ def new_state(player_name: str) -> dict:
 
 def _action(action_id: str, label: str, kind: str) -> dict:
     return {"id": action_id, "label": label, "kind": kind}
+
+
+def adjusted_affinity(score: int, base_delta: int) -> int:
+    modifier = 1 - abs(score - START_SCORE) / 100
+    return max(0, min(100, score + round(base_delta * modifier)))
 
 
 def available_characters(state: dict) -> list[str]:
@@ -172,7 +182,11 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
                 "karen": "어서 오세요. 마을 이야기는 조금씩 알게 되실 거예요.",
                 "bob": "새 손님이군. 가게에서는 구경만 하시오.",
                 "cathy": "반가워요. 다들 새 이웃을 유심히 보고 있답니다.",
-            } if next_state["affinity"] < JOB_THRESHOLD else {
+            } if next_state["affinity"] < WARY_SCORE else {
+                "karen": "어서 오세요. 마을이 낯설진 않으신가요?",
+                "bob": "어서 오시오. 필요한 게 있으면 말하쇼.",
+                "cathy": "반가워요. 미용실에도 편히 들러 주세요.",
+            } if next_state["affinity"] < WELCOME_SCORE else {
                 "karen": "어머, 새로 오신 분이군요. 우리 마을은 모두 가족 같답니다.",
                 "bob": "고기 좋아하쇼? 다음 주 축제 때 꼭 들르시게.",
                 "cathy": "반가워요. 시간이 되면 미용실에도 들러 주세요.",
