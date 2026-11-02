@@ -63,7 +63,7 @@ window.PostMoveUI = class {
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;
     this.title.title = this.title.textContent;
     this.affinity.textContent = affinity === null ? '— / 100' : `${affinity} / 100`;
-    this.affinity.parentElement.title = affinity === null ? '서버 연동 예정' : '개발용 예시 값';
+    this.affinity.parentElement.title = '마을 호감도';
     this.nav.replaceChildren();
     for (const slot of postMoveNavigation(locationId, actions)) {
       const button = document.createElement('button');
