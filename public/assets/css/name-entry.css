@@ -11,3 +11,4 @@
 .name-entry button:disabled { opacity: .6; cursor: wait; }
 .name-entry input:focus-visible, .name-entry button:focus-visible { outline: 3px solid #ffe3a0; outline-offset: 3px; }
 .name-entry .name-status { min-height: 3em; margin: 12px 0 0; font-size: 14px; line-height: 1.5; color: #f3dba6; overflow-wrap: anywhere; }
+.name-entry[hidden], .story-screen[hidden] { display: none; }

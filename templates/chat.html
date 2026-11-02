@@ -6,15 +6,35 @@
     <title>{{ bot.name }} — 이야기</title>
     <link rel="stylesheet" href="{{ asset_url('assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/portrait.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/name-entry.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/story-portrait.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/dialogue-stage.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/post-move-ui.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
-    <div class="portrait-screen story-screen">
+    <section id="name-screen" class="village-start name-entry" aria-label="이름 입력 화면">
+      <div class="start-scene portrait-screen">
+        <h1 class="start-title"><img src="{{ asset_url('assets/images/start/title.png') }}" alt="더뉴빌리지로 오세요" width="1774" height="887"></h1>
+        <div class="cover-slot" aria-hidden="true"></div>
+        <div class="start-panel name-panel">
+          <p class="name-question">마을에서 사용할 이름을 알려 주세요.</p>
+          <form id="name-form" class="name-form">
+            <div class="name-row">
+              <label for="username">이름</label>
+              <input id="username" name="username" type="text" maxlength="50" autocomplete="nickname" required>
+              <button id="name-submit" type="submit">이웃 만나기</button>
+            </div>
+            <p id="name-status" class="name-status" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+    <div id="game-screen" class="portrait-screen story-screen" hidden>
     <section id="dialogue-stage" class="dialogue-stage" aria-label="현재 대사 장면">
       <img class="dialogue-background" alt="" hidden>
       <img class="dialogue-figure" alt="" hidden>
@@ -23,9 +43,9 @@
     </section>
     <header class="story-header">
       <a class="wordmark" href="{{ url_for('index') }}">THE NEW VILLAGE <span>더뉴빌리지로 오세요</span></a>
-      <a id="restart-btn" class="text-button" href="{{ url_for('detail') }}">처음부터 시작</a>
+      <a id="restart-btn" class="text-button" href="{{ url_for('chat') }}">처음부터 시작</a>
     </header>
-    <main class="story-layout" data-player-name="{{ username }}">
+    <main class="story-layout">
       <div id="scene-background" class="scene-background" role="img" aria-label="새집 배경"></div>
       <div class="scene-caption">
         <div class="eyebrow">YOU ARE HERE</div>
@@ -43,7 +63,7 @@
         </div>
         <div id="chat-log" class="chat-log" role="log" aria-live="off" aria-label="현재 장면과 인물의 대화 기록"></div>
         <div id="ending-card" class="ending-card" hidden></div>
-        <a id="ending-restart" class="ending-restart" href="{{ url_for('detail') }}" hidden>새 이름으로 다시 시작</a>
+        <a id="ending-restart" class="ending-restart" href="{{ url_for('chat') }}" hidden>새 이름으로 다시 시작</a>
         <p id="status-message" class="status-message" role="status"></p>
         <form id="chat-form" class="chat-input-area">
           <label class="visually-hidden" for="user-message">대화 입력</label>

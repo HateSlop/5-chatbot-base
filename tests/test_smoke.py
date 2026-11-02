@@ -27,6 +27,10 @@ class SmokeTest(unittest.TestCase):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 response.close()
+        chat_page = self.client.get("/chat?username=이전이름").get_data(as_text=True)
+        self.assertIn('id="name-form"', chat_page)
+        self.assertIn("assets/js/name-entry.js", chat_page)
+        self.assertNotIn('data-player-name="이전이름"', chat_page)
 
     def test_session_and_resume(self):
         token = self.start()
