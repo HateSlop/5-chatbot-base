@@ -31,6 +31,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 ```powershell
 python -m unittest discover -s tests -v
+node tests/test_session_lifecycle.js
 ```
 
 테스트는 모델을 대체하여 세 결말, 호감도 검사 시점, 같은 대화 태도의 중복 점수 방지, 정보 공개 범위, 토큰 변조, 모델 실패 시 상태 보존을 검사한다. 실제 모델 대사와 공개 URL의 화면은 별도로 확인해야 한다.
