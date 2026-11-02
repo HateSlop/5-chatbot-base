@@ -21,14 +21,39 @@ let selectedCharacter = null;
 let currentView = null;
 let busy = false;
 
+const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
+const postMoveUI = new PostMoveUI(document.getElementById('dialogue-stage'), form, input, document.getElementById('send-btn'), performAction);
+const characterNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시" };
+const playerNameKey = "new-village-player-name-v1";
+const suppliedName = new URLSearchParams(window.location.search).get("username");
+const playerName = suppliedName || localStorage.getItem(playerNameKey) || shell.dataset.playerName;
+if (suppliedName) localStorage.setItem(playerNameKey, suppliedName);
+shell.dataset.playerName = playerName;
+let latestLine = null;
+function speakerName(id) {
+  if (id === "thought") return '';
+  return id === "user" ? playerName : characterNames[id] || (id === "narrator" ? "이야기" : id);
+}
+function updateDialogueStage() {
+  const line = latestLine;
+  const character = currentView?.available_characters.find(c => c.id === line?.speaker);
+  dialogueStage.render({
+    background: currentView?.background,
+    image: line && characterNames[line.speaker] ? line.image || character?.portrait : null,
+    speaker: line ? speakerName(line.speaker) : "",
+    text: line?.text || "",
+  });
+}
+
 function showMessage(speaker, text, image = null, save = true) {
   const item = document.createElement("article");
   item.className = `message ${speaker === "user" ? "user" : "bot"}`;
   const label = document.createElement("strong");
-  label.textContent = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐시", narrator: "이야기", thought: "나의 생각", user: "나" }[speaker] || speaker;
+  label.textContent = speakerName(speaker) ? `${speakerName(speaker)}: ` : '';
   item.append(label);
   if (image) {
     const picture = document.createElement("img");
+    picture.onerror = () => { picture.hidden = true; };
     picture.src = image;
     picture.alt = `${label.textContent}의 현재 모습`;
     item.append(picture);
@@ -43,11 +68,15 @@ function showMessage(speaker, text, image = null, save = true) {
     transcript = transcript.slice(-120);
     localStorage.setItem(transcriptKey, JSON.stringify(transcript));
   }
+  latestLine = { speaker, text, image };
+  updateDialogueStage();
   return item;
 }
 
 function renderView(view) {
   currentView = view;
+  for (const character of view.available_characters) characterNames[character.id] = character.name;
+  updateDialogueStage();
   document.getElementById("location-title").textContent = locationNames[view.location_id] || view.location_id;
   const background = document.getElementById("scene-background");
   background.style.backgroundImage = view.background ? `url("${view.background}")` : "none";
@@ -81,6 +110,7 @@ function renderView(view) {
   const selected = view.available_characters.find((item) => item.id === selectedCharacter);
   document.getElementById("character-title").textContent = selected?.name || "이웃을 선택하세요";
   const portrait = document.getElementById("character-portrait");
+  portrait.onerror = () => { portrait.hidden = true; };
   portrait.hidden = !selected?.portrait;
   if (selected?.portrait) { portrait.src = selected.portrait; portrait.alt = `${selected.name} 초상`; }
 
@@ -96,9 +126,11 @@ function renderView(view) {
   input.disabled = busy || !selected || !!view.ending;
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : selected ? `${selected.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
+  // No public registered-name or affinity field exists in API v2 yet.
+  postMoveUI.render({locationId: view.location_id, locationName: locationNames[view.location_id] || view.location_id, actions: view.available_actions, busy});
 }
 
-async function request(path, payload) {
+async function request(path, payload, resetTranscript = false) {
   const response = await fetch(path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
   });
@@ -107,6 +139,11 @@ async function request(path, payload) {
     const error = new Error(data.error?.message || "요청을 처리하지 못했습니다.");
     error.code = data.error?.code;
     throw error;
+  }
+  if (resetTranscript) {
+    transcript = [];
+    log.replaceChildren();
+    localStorage.removeItem(transcriptKey);
   }
   stateToken = data.state_token;
   localStorage.setItem(tokenKey, stateToken);
@@ -143,6 +180,7 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     userItem.remove();
     transcript.pop();
+    latestLine = transcript.at(-1) || null;
     localStorage.setItem(transcriptKey, JSON.stringify(transcript));
     statusMessage.textContent = error.message;
   } finally {
@@ -152,56 +190,25 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-document.getElementById("restart-btn").addEventListener("click", async () => {
-  if (busy) return;
+document.getElementById("restart-btn").addEventListener("click", () => {
+  if (!busy) window.location.assign("/detail");
+});
+
+async function initialize() {
+  if (!stateToken) {
+    window.location.assign("/detail");
+    return;
+  }
   busy = true;
-  statusMessage.textContent = "새 이야기를 시작하는 중…";
   try {
-    const response = await fetch("/api/session", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_name: shell.dataset.playerName || "새 이웃" }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "새 이야기를 시작하지 못했습니다.");
-    transcript = [];
-    log.replaceChildren();
-    localStorage.removeItem(transcriptKey);
-    stateToken = data.state_token;
-    localStorage.setItem(tokenKey, stateToken);
-    for (const item of data.events) showMessage(item.speaker_id, item.text, item.image);
-    renderView(data.view);
+    for (const item of transcript) showMessage(item.speaker, item.text, item.image, false);
+    await request("/api/session/resume", { state_token: stateToken });
     statusMessage.textContent = "";
   } catch (error) {
     statusMessage.textContent = error.message;
   } finally {
     busy = false;
     if (currentView) renderView(currentView);
-  }
-});
-
-async function initialize() {
-  statusMessage.textContent = "이야기를 불러오는 중…";
-  try {
-    if (stateToken) {
-      for (const item of transcript) showMessage(item.speaker, item.text, item.image, false);
-      await request("/api/session/resume", { state_token: stateToken });
-    } else {
-      await request("/api/session", { player_name: shell.dataset.playerName || "새 이웃" });
-    }
-    statusMessage.textContent = "";
-  } catch (error) {
-    if (stateToken && error.code !== "invalid_state_token") {
-      statusMessage.textContent = "이어하기에 실패했습니다. 잠시 후 새로고침해 주세요.";
-      return;
-    }
-    stateToken = null;
-    transcript = [];
-    localStorage.removeItem(tokenKey);
-    localStorage.removeItem(transcriptKey);
-    log.replaceChildren();
-    statusMessage.textContent = "이전 기록을 열지 못해 새 이야기를 시작합니다.";
-    try { await request("/api/session", { player_name: shell.dataset.playerName || "새 이웃" }); }
-    catch (error) { statusMessage.textContent = error.message; }
   }
 }
 

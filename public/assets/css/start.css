@@ -1,0 +1,22 @@
+/* Scoped to the start page; original transparent PNGs are unchanged. */
+.village-start { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; background: #090b09; color: #f3e4bd; font-family: "Malgun Gothic", sans-serif; }
+.village-start * { box-sizing: border-box; }
+.village-start .start-scene { position: relative; overflow: auto; background-color: #17201a; background-size: cover; background-position: center; }
+.village-start .image-action { display: block; width: 100%; min-height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: pointer; transition: filter 150ms, transform 150ms; -webkit-tap-highlight-color: transparent; }
+.village-start .sign-image { display: block; position: relative; overflow: hidden; aspect-ratio: 1864 / 513; }
+.village-start .sign-image img { position: absolute; display: block; height: auto; max-width: none; pointer-events: none; }
+.village-start .sign-new img { width: 107.52%; left: -3.66%; top: -13.5%; }
+.village-start .sign-continue img { width: 106.38%; left: -3.17%; top: -24.95%; }
+.village-start .image-action:hover:not(:disabled) { filter: brightness(1.18); transform: translateY(-2px); }
+.village-start .image-action:focus-visible { outline: 3px solid #ffe3a0; outline-offset: 5px; }
+.village-start .image-action:active:not(:disabled) { transform: translateY(2px) scale(.97); }
+.village-start .image-action:disabled { opacity: .45; filter: saturate(.35); cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .village-start .image-action { transition: none; } }
+/* Shared geometry keeps the title and future cover identical on both pages. */
+.village-start .start-scene { display: grid; grid-template-rows: 26% 34% 40%; padding: 16px; }
+.village-start .start-title { position: static; width: 100%; height: 100%; min-height: 0; margin: 0; filter: drop-shadow(0 3px 4px #0009); }
+.village-start .start-title img { position: static; display: block; width: 100%; height: 100%; object-fit: contain; }
+.village-start .cover-slot { width: 100%; min-height: 0; }
+.village-start .start-panel { min-height: 0; text-align: center; }
+.village-start .start-actions { position: static; display: flex; flex-direction: column; width: 80%; margin: 0 auto; gap: 12px; }
+.village-start .save-status { position: static; width: 100%; margin: 14px 0 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
