@@ -5,9 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ bot.name }} — 이야기</title>
     <link rel="stylesheet" href="{{ asset_url('assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/portrait.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/story-portrait.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/dialogue-stage.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/post-move-ui.css') }}">
+    <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
   </head>
   <body class="chat-page">
+    <div class="portrait-screen story-screen">
+    <section id="dialogue-stage" class="dialogue-stage" aria-label="현재 대사 장면">
+      <img class="dialogue-background" alt="" hidden>
+      <img class="dialogue-figure" alt="" hidden>
+      <div class="dialogue-tv" role="img" aria-label="TV" hidden></div>
+      <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
+    </section>
     <header class="story-header">
       <a class="wordmark" href="{{ url_for('index') }}">THE NEW VILLAGE <span>더뉴빌리지로 오세요</span></a>
       <button id="restart-btn" class="text-button" type="button">처음부터 시작</button>
@@ -32,7 +45,7 @@
         <p id="status-message" class="status-message" role="status"></p>
         <form id="chat-form" class="chat-input-area">
           <label class="visually-hidden" for="user-message">대화 입력</label>
-          <input id="user-message" type="text" maxlength="2000" placeholder="이웃에게 말을 걸어 보세요" autocomplete="off" required disabled>
+          <textarea id="user-message" maxlength="2000" placeholder="이웃에게 말을 걸어 보세요" aria-label="대화 입력" autocomplete="off" required disabled></textarea>
           <button id="send-btn" class="send-button" type="submit" disabled>보내기</button>
         </form>
       </section>
@@ -46,5 +59,6 @@
         <div id="action-list" class="action-list"></div>
       </nav>
     </main>
+    </div>
   </body>
 </html>

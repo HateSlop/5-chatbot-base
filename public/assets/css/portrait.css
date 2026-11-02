@@ -1,0 +1,8 @@
+/* Keep the portrait canvas readable; short windows and keyboards scroll. */
+.portrait-screen {
+  width: min(100%, max(320px, 56.25vh), 540px);
+  width: min(100%, max(320px, 56.25dvh), 540px);
+  aspect-ratio: 9 / 16;
+  margin: auto;
+  box-sizing: border-box;
+}

@@ -4,18 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ bot.name }} - 캐릭터 챗봇</title>
-    <link rel="stylesheet" href="{{ asset_url('assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/portrait.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
+    <script src="{{ asset_url('assets/js/start.js') }}" defer></script>
   </head>
-  <body class="landing-page">
-    <main class="landing-card">
-      <header class="landing-header">
-        <p class="eyebrow">A PERFECT PLACE TO BELONG · 1962</p>
-        <h1>더뉴빌리지로 오세요</h1>
-      </header>
-      <div class="landing-content">
-        <img class="brand-image" src="{{ bot.image }}" alt="더뉴빌리지의 환영 간판">
-        <p>친절한 이웃, 따뜻한 식탁, 당신을 기다리는 새 가족.</p>
-        <a class="start-button" href="{{ url_for('detail') }}">마을로 이사하기</a>
+  <body class="village-start">
+    <main class="start-scene portrait-screen" aria-label="더뉴빌리지 시작 화면">
+      <h1 class="start-title"><img src="{{ asset_url('assets/images/start/title.png') }}" alt="더뉴빌리지로 오세요" width="1774" height="887"></h1>
+      <div class="cover-slot" aria-hidden="true"></div>
+      <div class="start-panel">
+      <nav class="start-actions" aria-label="이야기 시작">
+        <a class="image-action" href="{{ url_for('detail') }}" aria-label="시작하기"><span class="sign-image sign-new"><img src="{{ asset_url('assets/images/start/start-button.png') }}" alt="" width="2201" height="714"></span></a>
+        <button class="image-action" id="continue-story" type="button" data-href="{{ url_for('chat') }}" aria-label="이어하기" aria-describedby="save-status" disabled><span class="sign-image sign-continue"><img src="{{ asset_url('assets/images/start/continue-button.png') }}" alt="" width="1983" height="793"></span></button>
+      </nav>
+      <p id="save-status" class="save-status" role="status">저장된 이야기가 없습니다</p>
       </div>
     </main>
   </body>

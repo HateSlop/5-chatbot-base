@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이사 이후 인터페이스 미리보기</title>
+<link rel="stylesheet" href="/assets/css/portrait.css">
+<link rel="stylesheet" href="/assets/css/dialogue-stage.css">
+<link rel="stylesheet" href="/assets/css/post-move-ui.css">
+<style>
+body {margin:0;background:#090b09;color:#f3e4bd;font:16px/1.5 sans-serif;}
+.demo-controls {max-width:540px;margin:auto;padding:16px;}
+.demo-controls button,.demo-controls input {font:inherit;min-height:44px;max-width:100%;box-sizing:border-box;}
+.demo-controls button {margin-top:8px;}
+</style>
+<div class="demo-controls">
+  <strong>개발용 · 이름과 호감도는 예시 · 저장/API 호출 없음</strong>
+  <p>아이콘을 눌러 집과 네 장소의 배치를 확인하세요. 입력 도움말은 초안만 채우며 자동 전송하지 않습니다.</p>
+  <label>예시 등록 이름 <input id="demo-name" value="예준" maxlength="50"></label>
+  <button id="demo-home">집 보기</button> <button id="demo-outside">정육점 보기</button>
+  <p id="demo-status" role="status"></p>
+</div>
+<section id="move-preview" class="portrait-screen dialogue-stage" aria-label="이사 이후 장면 미리보기">
+  <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
+  <div class="dialogue-tv" role="img" aria-label="TV" hidden></div>
+  <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
+</section>
+<form id="demo-form" class="chat-input-area">
+  <textarea id="demo-input" aria-label="대화 입력" maxlength="2000" placeholder="대화를 입력하세요"></textarea>
+  <button id="demo-send" class="send-button" type="submit">보내기</button>
+</form>
+<script src="/assets/js/dialogue-stage.js"></script>
+<script src="/assets/js/post-move-ui.js"></script>
+<script src="/assets/js/post-move-preview.js"></script>
+</html>
