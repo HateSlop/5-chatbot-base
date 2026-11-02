@@ -27,6 +27,10 @@ class SmokeTest(unittest.TestCase):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 response.close()
+        chat_page = self.client.get("/chat?username=이전이름").get_data(as_text=True)
+        self.assertIn('id="name-form"', chat_page)
+        self.assertIn("assets/js/name-entry.js", chat_page)
+        self.assertNotIn('data-player-name="이전이름"', chat_page)
 
     def test_session_and_resume(self):
         token = self.start()
@@ -34,6 +38,17 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["view"]["scene_id"], "arrival")
         self.assertEqual(decode_state(response.get_json()["state_token"])["player_name"], "알렉스")
+
+    def test_new_session_with_same_name_has_no_previous_play(self):
+        token = self.start()
+        turn = {"reply": "도와줘서 고마워.", "attitude": "cooperative", "visual_cue": "smile"}
+        with patch.object(chatbot.generator, "generate", return_value=turn):
+            response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "도울게"})
+        self.assertEqual(response.get_json()["view"]["affinity"], 53)
+        fresh = decode_state(self.start())
+        self.assertEqual(fresh["affinity"], 50)
+        self.assertEqual(fresh["history"], {})
+        self.assertEqual(fresh["scored_chat"], [])
 
     def test_invalid_inputs_and_tampered_token(self):
         self.assertEqual(self.client.post("/api/session", json={"player_name": " "}).status_code, 400)
@@ -53,7 +68,7 @@ class SmokeTest(unittest.TestCase):
         with patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
             response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "안녕"})
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(decode_state(token)["affinity"], 70)
+        self.assertEqual(decode_state(token)["affinity"], 50)
         self.assertEqual(decode_state(token)["history"], {})
 
 
