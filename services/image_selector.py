@@ -17,6 +17,8 @@ class StoryImageSelector:
     ) -> str | None:
         images = self.catalog.get(character_id, {})
         cue = visual_cue
+        if cue is None and character_id == "jimmy":
+            cue = "neutral"
         if cue is None:
             cue = "worried" if any(word in reply_text for word in ("뭐", "안 돼", "말할 수", "아직", "왜")) else "smile"
         url = images.get(cue) or images.get("neutral")
