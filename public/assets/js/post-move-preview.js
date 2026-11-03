@@ -3,6 +3,7 @@ const moveStage = new DialogueStage(moveRoot);
 const demoForm = document.getElementById('demo-form');
 const demoName = document.getElementById('demo-name');
 let demoLocation = 'player_house';
+let demoAffinity = 80;
 const demoPlaces = {
   player_house: ['내 집', 'player_house', 'jimmy', '지미'],
   butcher_shop: ['정육점', 'butcher_shop', 'bob', '밥'],
@@ -17,11 +18,17 @@ const moveUI = new PostMoveUI(moveRoot, demoForm, document.getElementById('demo-
 function renderMoveDemo() {
   const [label, background, character, speaker] = demoPlaces[demoLocation];
   moveStage.render({background:`/assets/images/${background}.svg`,image:character ? `/assets/images/${character}_neutral.svg` : null,speaker,text:'[개발용 배치 확인 문구 · 실제 스토리 대사 아님]'});
-  moveUI.render({locationId:demoLocation,locationName:label,registeredName:demoName.value.trim(),affinity:80,
+  moveUI.render({locationId:demoLocation,locationName:label,registeredName:demoName.value.trim(),affinity:demoAffinity,
     actions:Object.keys(demoTargets).map(id=>({id,kind:'move',label:'개발용 장소 전환'}))});
 }
 document.getElementById('demo-home').addEventListener('click',()=>{demoLocation='player_house';renderMoveDemo();});
 document.getElementById('demo-outside').addEventListener('click',()=>{demoLocation='butcher_shop';renderMoveDemo();});
 demoName.addEventListener('input',renderMoveDemo);
+for (const [id, change] of [['demo-affinity-up', 10], ['demo-affinity-down', -10]]) {
+  document.getElementById(id).addEventListener('click', () => {
+    demoAffinity = Math.max(0, Math.min(100, demoAffinity + change));
+    renderMoveDemo();
+  });
+}
 demoForm.addEventListener('submit',event=>{event.preventDefault();document.getElementById('demo-status').textContent='개발용 입력 확인 완료 · 전송하거나 저장하지 않았습니다.';});
 renderMoveDemo();

@@ -22,7 +22,7 @@
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
         <div class="dialogue-tv" hidden></div>
-        <div class="dialogue-box" tabindex="0" role="region" aria-label="지미의 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
+        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
       </section>
       <form id="entry-chat" class="chat-input-area" hidden>
         <textarea id="entry-message" aria-label="이름 입력 전 대화" disabled></textarea><button id="entry-send" type="submit" disabled>보내기</button>
@@ -55,8 +55,8 @@
         <p id="scene-character">현재 대화 상대: 지미</p>
       </div>
       <div class="affinity-card">
-        <span>마을 호감도</span>
-        <output id="affinity-value" aria-label="마을 호감도">70 / 100</output>
+        <span>호감도</span>
+        <output id="affinity-value" aria-label="호감도">70 / 100</output>
       </div>
       <img id="character-portrait" class="character-portrait" alt="" hidden>
       <details class="conversation conversation-record" aria-label="대화 기록">
