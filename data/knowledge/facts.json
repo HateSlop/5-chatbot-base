@@ -7,6 +7,13 @@
     "keywords": ["마을", "이웃", "여기", "안녕", "소개"]
   },
   {
+    "title": "마을 주민 소개",
+    "content": "캐런은 정중하고 밝은 주민대표다. 밥은 말수가 적은 정육점·식당 운영자다. 캐시는 상냥한 미용사다. 지미는 한 달 먼저 이사 온 금발의 친근한 주민이다.",
+    "characters": ["jimmy", "karen", "bob", "cathy"],
+    "scenes": ["arrival", "neighbors", "cathy_task", "cathy_help", "karen_search", "jimmy_butcher", "butcher_search", "bob_caught", "dinner_invite", "karen_dinner", "photo_found", "checkpoint", "festival_invite", "festival", "hair_found"],
+    "keywords": ["마을 사람", "사람들", "이웃", "주민", "누가 있어", "어떤 사람들이", "캐런", "밥", "캐시", "지미"]
+  },
+  {
     "title": "다가오는 축제",
     "content": "마을 광장에서 다음 주 축제가 열린다. 밥이 식사를 준비한다. 음식의 재료는 아직 공개하지 않는다.",
     "characters": ["jimmy", "karen", "bob", "cathy"],
