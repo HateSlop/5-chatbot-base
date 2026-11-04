@@ -129,6 +129,7 @@ window.DialogueStage = class {
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
     if (['butcher_search', 'empty_butcher', 'dinner_invite'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
+    if (sceneId === 'empty_butcher') image = null;
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
     const version = ++this.version;
     const changedScene = this.lastBackground !== background;

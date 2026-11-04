@@ -17,7 +17,7 @@ function setup(extra = {}) {
 
 test('disclosed frightened Jimmy and caught Karen scenes keep their incident portraits', async () => {
   const {nodes, stage} = setup();
-  for (const sceneId of ['butcher_search', 'empty_butcher', 'dinner_invite']) {
+  for (const sceneId of ['butcher_search', 'dinner_invite']) {
     stage.render({sceneId, background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
     await stage.ready;
     assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_scared.png');
@@ -25,6 +25,22 @@ test('disclosed frightened Jimmy and caught Karen scenes keep their incident por
   stage.render({sceneId:'photo_found', background:'/assets/images/karen_house.svg', image:'/assets/images/karen_worried.svg'});
   await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src, '/assets/images/karen_angry.png');
+});
+
+test('Jimmy leaves the empty butcher scene while his farewell and background remain', async () => {
+  const {nodes, stage} = setup();
+  stage.render({sceneId:'butcher_search', background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
+  await stage.ready;
+  const farewell = {sceneId:'empty_butcher', background:'/assets/images/butcher_shop.svg',
+    image:'/assets/images/jimmy_worried.svg', speaker:'지미', text:'지금은 말할 수 없어. 나중에 보자.'};
+  for (let i = 0; i < 2; i++) {
+    stage.render(farewell);
+    await stage.ready;
+    assert.equal(nodes['.dialogue-figure'].hidden, true);
+    assert.equal(nodes['.dialogue-figure'].src, undefined);
+    assert.equal(nodes['.dialogue-background'].src, '/assets/images/butcher_shop.svg');
+    assert.equal(nodes['.dialogue-text'].textContent, farewell.text);
+  }
 });
 test('separate speaker/text remain literal text, including markup and long dialogue',()=>{
   const {nodes,stage}=setup();
