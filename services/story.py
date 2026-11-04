@@ -7,8 +7,8 @@ START_SCORE = 50
 JOB_THRESHOLD = 70
 WELCOME_SCORE = 70
 WARY_SCORE = 35
-CHAT_DELTAS = {"cooperative": 3, "neutral": 0, "suspicious": -3}
-MAX_SCORED_CHATS = 12
+CHAT_DELTAS = {"friendly": 5, "cooperative": 7, "neutral": 0, "hostile": -2}
+MAX_HOSTILE_CHATS_PER_SCENE = 3
 CHARACTERS = {"jimmy": "지미", "karen": "캐런", "bob": "밥", "cathy": "캐시"}
 LOCATIONS = {
     "player_house": "새집",
@@ -60,6 +60,8 @@ def new_state(player_name: str) -> dict:
         "affinity": START_SCORE,
         "scored_chat": [],
         "scored_messages": [],
+        "positive_scores": {},
+        "hostile_streak": 0,
         "has_car_key": False,
         "job_offered": None,
         "ending": None,
@@ -73,7 +75,7 @@ def _action(action_id: str, label: str, kind: str) -> dict:
 
 
 def adjusted_affinity(score: int, base_delta: int) -> int:
-    modifier = 1 - abs(score - START_SCORE) / 100
+    modifier = (100 - score) / (100 - START_SCORE) if base_delta > 0 and score > START_SCORE else 1
     return max(0, min(100, score + round(base_delta * modifier)))
 
 

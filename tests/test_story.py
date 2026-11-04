@@ -11,7 +11,7 @@ os.environ["STORY_STATE_KEY"] = Fernet.generate_key().decode("ascii")
 from app import app, chatbot  # noqa: E402
 from services.retriever import StoryRetriever  # noqa: E402
 from services.state_token import decode_state, encode_state  # noqa: E402
-from services.story import CHAT_DELTAS, MAX_SCORED_CHATS, START_SCORE, adjusted_affinity, available_characters  # noqa: E402
+from services.story import CHAT_DELTAS, START_SCORE, adjusted_affinity, available_actions, available_characters  # noqa: E402
 
 
 TO_CHECKPOINT = [
@@ -74,12 +74,38 @@ class StoryTest(unittest.TestCase):
             state = decode_state(self.token)
             characters = available_characters(state)
             if characters and state["scene_id"] != "checkpoint":
-                self.chat(characters[0], f"{state['scene_id']}에서 제가 도울게요")
-        self.assertGreaterEqual(decode_state(self.token)["affinity"], 70)
+                self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 제가 도울게요")
+        self.assertEqual(decode_state(self.token)["affinity"], 86)
         self.assertTrue(decode_state(self.token)["job_offered"])
         self.festival("accept_job")
         self.assertTrue(decode_state(self.token)["has_car_key"])
         self.assertEqual(self.action("escape")["view"]["ending"], "escape")
+
+    def test_everyday_conversation_can_reach_job_offer(self):
+        self.chat("jimmy", "지미, 안녕하세요", "friendly")
+        for action_id in TO_CHECKPOINT:
+            self.action(action_id)
+            state = decode_state(self.token)
+            characters = available_characters(state)
+            if characters and state["scene_id"] != "checkpoint":
+                self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 만나 반가워요", "friendly")
+        state = decode_state(self.token)
+        self.assertEqual(state["affinity"], 80)
+        self.assertTrue(state["job_offered"])
+        self.assertIn("accept_job", [item["id"] for item in available_actions(state)])
+
+    def test_continued_hostility_path_has_no_job_offer(self):
+        self.chat("jimmy", "적대 arrival", "hostile")
+        for action_id in TO_CHECKPOINT:
+            self.action(action_id)
+            state = decode_state(self.token)
+            characters = available_characters(state)
+            if characters and state["scene_id"] != "checkpoint":
+                self.chat(characters[0], f"적대 {state['scene_id']} {characters[0]}", "hostile")
+        state = decode_state(self.token)
+        self.assertEqual(state["affinity"], 0)
+        self.assertFalse(state["job_offered"])
+        self.assertEqual(state["hostile_streak"], 10)
 
     def test_staying_assimilates_even_when_watched(self):
         self.checkpoint()
@@ -101,11 +127,11 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(start["available_characters"][0]["id"], "jimmy")
         self.assertEqual(self.action("visit_neighbors")["view"]["available_characters"], [])
         self.assertEqual(self.action("visit_karen")["view"]["available_characters"][0]["id"], "karen")
-        with patch.object(chatbot.generator, "generate", return_value={"reply": "그 얘기는 불편하군요.", "attitude": "suspicious", "visual_cue": "worried"}):
-            response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "지미는 어디 있죠?"})
+        with patch.object(chatbot.generator, "generate", return_value={"reply": "그 얘기는 불편하군요.", "attitude": "hostile", "visual_cue": "worried"}):
+            response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "당신을 가만두지 않겠어요"})
         self.assertEqual(response.status_code, 200)
         self.token = response.get_json()["state_token"]
-        self.assertEqual(response.get_json()["view"]["affinity"], 47)
+        self.assertEqual(response.get_json()["view"]["affinity"], 48)
         bob = self.action("visit_bob")
         self.assertEqual(bob["view"]["location_name"], "정육점")
         self.assertEqual([person["id"] for person in bob["view"]["available_characters"]], ["bob"])
@@ -113,7 +139,7 @@ class StoryTest(unittest.TestCase):
         with patch.object(chatbot.generator, "generate", return_value={"reply": "어서 오시오.", "attitude": "neutral", "visual_cue": "neutral"}) as generate:
             response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "bob", "message": "가게는 언제 열어요?"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(generate.call_args.args[6], 47)
+        self.assertEqual(generate.call_args.args[6], 48)
 
     def test_revisiting_neighbor_does_not_repeat_fixed_greeting(self):
         self.action("visit_neighbors")
@@ -205,33 +231,80 @@ class StoryTest(unittest.TestCase):
         self.checkpoint()
         self.assertEqual(decode_state(self.token)["affinity"], 70)
         for index in range(3):
-            response = self.chat("karen", f"수상해요 {index}", "suspicious")
-        self.assertEqual(response["view"]["affinity"], 68)
+            response = self.chat("karen", f"당신을 가만두지 않겠어요 {index}", "hostile")
+        self.assertEqual(response["view"]["affinity"], 58)
         self.assertIn("accept_job", [action["id"] for action in response["view"]["available_actions"]])
         self.assertTrue(decode_state(self.action("accept_job")["state_token"])["has_car_key"])
 
     def test_adjustment_center_edges_rounding_and_bounds(self):
         self.assertEqual(START_SCORE, 50)
-        self.assertEqual(CHAT_DELTAS, {"cooperative": 3, "neutral": 0, "suspicious": -3})
-        self.assertEqual(adjusted_affinity(50, 3), 53)
-        self.assertEqual(adjusted_affinity(50, -3), 47)
-        self.assertEqual(adjusted_affinity(0, 3), 2)
-        self.assertEqual(adjusted_affinity(100, -3), 98)
-        self.assertEqual(adjusted_affinity(0, -3), 0)
-        self.assertEqual(adjusted_affinity(100, 3), 100)
-        self.assertEqual(adjusted_affinity(0, 1), 0)
+        self.assertEqual(CHAT_DELTAS, {"friendly": 5, "cooperative": 7, "neutral": 0, "hostile": -2})
+        for score, friendly, cooperative in ((50, 5, 7), (70, 3, 4), (90, 1, 1), (0, 5, 7)):
+            self.assertEqual(adjusted_affinity(score, 5) - score, friendly)
+            self.assertEqual(adjusted_affinity(score, 7) - score, cooperative)
+        self.assertEqual(adjusted_affinity(0, -2), 0)
+        self.assertEqual(adjusted_affinity(100, 5), 100)
+        self.assertEqual(adjusted_affinity(100, -6), 94)
+        self.assertEqual(adjusted_affinity(99, 7), 99)  # Rounded zero stays zero.
 
-    def test_neutral_duplicate_and_chat_limit(self):
-        self.assertEqual(self.chat("jimmy", "안녕", "neutral")["view"]["affinity"], 50)
-        self.assertEqual(self.chat("jimmy", "도울게")["view"]["affinity"], 53)
-        self.assertEqual(self.chat("jimmy", "도울게")["view"]["affinity"], 53)
+    def test_neutral_duplicate_and_positive_tiers(self):
+        self.assertEqual(self.chat("jimmy", "네", "neutral")["view"]["affinity"], 50)
+        self.assertEqual(self.chat("jimmy", "네", "friendly")["view"]["affinity"], 50)
+        self.assertEqual(self.chat("jimmy", "안녕하세요", "friendly")["view"]["affinity"], 55)
+        self.assertEqual(self.chat("jimmy", "안녕하세요", "friendly")["view"]["affinity"], 55)
+        self.assertEqual(self.chat("jimmy", "도울게")["view"]["affinity"], 57)
+        self.assertEqual(self.chat("jimmy", "다른 일도 도울게")["view"]["affinity"], 57)
         self.action("visit_neighbors")
         self.action("visit_karen")
-        self.assertEqual(self.chat("karen", "  도울게  ")["view"]["affinity"], 53)
+        self.assertEqual(self.chat("karen", "  안녕하세요  ", "friendly")["view"]["affinity"], 57)
         state = decode_state(self.token)
-        state["scored_chat"] = [f"earlier:{n}" for n in range(MAX_SCORED_CHATS)]
+        state["scored_chat"] = [f"earlier:{n}" for n in range(12)] + state["scored_chat"]
         self.token = encode_state(state)
-        self.assertEqual(self.chat("karen", "다른 일을 돕겠습니다")["view"]["affinity"], 53)
+        self.assertEqual(self.chat("karen", "다른 일을 돕겠습니다")["view"]["affinity"], 63)
+
+    def test_hostile_streak_recovery_duplicates_and_scene_cap(self):
+        self.assertEqual(self.chat("jimmy", "꺼져 1", "hostile")["view"]["affinity"], 48)
+        self.assertEqual(self.chat("jimmy", "꺼져 2", "hostile")["view"]["affinity"], 44)
+        self.assertEqual(self.chat("jimmy", "꺼져 2", "hostile")["view"]["affinity"], 44)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 2)
+        self.assertEqual(self.chat("jimmy", "고마워요", "friendly")["view"]["affinity"], 49)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 1)
+        self.assertEqual(self.chat("jimmy", "꺼져 3", "hostile")["view"]["affinity"], 45)
+        self.assertEqual(self.chat("jimmy", "꺼져 4", "hostile")["view"]["affinity"], 45)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 2)
+        self.assertEqual(self.chat("jimmy", "네", "neutral")["view"]["affinity"], 45)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 2)
+        self.assertEqual(self.chat("jimmy", "도와드릴게요", "cooperative")["view"]["affinity"], 47)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 1)
+
+    def test_zero_score_hostility_does_not_advance_streak(self):
+        state = decode_state(self.token)
+        state["affinity"] = 0
+        self.token = encode_state(state)
+        self.assertEqual(self.chat("jimmy", "꺼져", "hostile")["view"]["affinity"], 0)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 0)
+        self.assertEqual(self.chat("jimmy", "고마워요", "friendly")["view"]["affinity"], 5)
+        self.assertEqual(self.chat("jimmy", "나가", "hostile")["view"]["affinity"], 3)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 1)
+
+    def test_fixed_actions_do_not_change_hostile_streak(self):
+        self.chat("jimmy", "꺼져", "hostile")
+        state = decode_state(self.token)
+        self.assertEqual(state["hostile_streak"], 1)
+        for action_id in TO_CHECKPOINT[:7]:
+            self.action(action_id)
+        self.assertEqual(decode_state(self.token)["hostile_streak"], 1)
+
+    def test_legacy_token_keeps_duplicate_record(self):
+        self.chat("jimmy", "꺼져", "hostile")
+        state = decode_state(self.token)
+        state.pop("hostile_streak")
+        state.pop("positive_scores")
+        state["scored_chat"] = ["arrival:jimmy:suspicious"]
+        state["scored_messages"] = ["꺼져"]
+        self.token = encode_state(state)
+        self.assertEqual(self.chat("jimmy", "꺼져", "hostile")["view"]["affinity"], 48)
+        self.assertEqual(decode_state(self.token).get("hostile_streak", 0), 0)
 
 
 if __name__ == "__main__":

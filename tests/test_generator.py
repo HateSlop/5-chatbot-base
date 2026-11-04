@@ -41,6 +41,20 @@ class GeneratorTest(unittest.TestCase):
                     self.assertIn("정중하고 밝게", instructions)
                     self.assertNotIn(f"{score}점", instructions)
 
+    def test_everyday_korean_examples_and_investigation_are_in_classification_rules(self):
+        answer = {"reply": "반가워요.", "attitude": "friendly", "visual_cue": "smile"}
+        with patch("services.generator.OpenAI") as client:
+            client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
+            StoryGenerator().generate("안녕하세요", "알렉스", {"name": "캐런", "persona": {}}, [], [], "캐런의 집", 50, [], ("방문", "주민대표", "미래 사건"))
+        request = client.return_value.responses.create.call_args.kwargs
+        for utterance in ("안녕하세요", "고맙습니다", "잘 지내셨어요?", "하시는 일은 어떠세요?", "마을 이야기를 들려주실 수 있나요?", "많이 놀라셨겠어요"):
+            self.assertIn(utterance, request["instructions"])
+        for question in ("지미는 어디 있죠?", "사진은 왜 여기 있나요?"):
+            self.assertIn(question, request["instructions"])
+        self.assertIn("근거 있는 추궁만으로 hostile이라 하지 마세요", request["instructions"])
+        self.assertEqual(request["text"]["format"]["schema"]["properties"]["attitude"]["enum"],
+                         ["friendly", "cooperative", "neutral", "hostile"])
+
 
 if __name__ == "__main__":
     unittest.main()

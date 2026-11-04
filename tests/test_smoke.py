@@ -44,7 +44,7 @@ class SmokeTest(unittest.TestCase):
         turn = {"reply": "도와줘서 고마워.", "attitude": "cooperative", "visual_cue": "smile"}
         with patch.object(chatbot.generator, "generate", return_value=turn):
             response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "도울게"})
-        self.assertEqual(response.get_json()["view"]["affinity"], 53)
+        self.assertEqual(response.get_json()["view"]["affinity"], 57)
         fresh = decode_state(self.start())
         self.assertEqual(fresh["affinity"], 50)
         self.assertEqual(fresh["history"], {})

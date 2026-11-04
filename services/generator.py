@@ -14,7 +14,7 @@ TURN_SCHEMA = {
     "type": "object",
     "properties": {
         "reply": {"type": "string"},
-        "attitude": {"type": "string", "enum": ["cooperative", "neutral", "suspicious"]},
+        "attitude": {"type": "string", "enum": ["friendly", "cooperative", "neutral", "hostile"]},
         "visual_cue": {"type": "string", "enum": ["neutral", "smile", "worried"]},
     },
     "required": ["reply", "attitude", "visual_cue"],
@@ -57,8 +57,13 @@ class StoryGenerator:
             "장소 이동, 단서 획득, 호감도와 엔딩을 선언하지 마세요. 이전에 나눈 대화를 기억하고, 일반적인 질문에도 자연스럽게 이어서 한두 문장으로 대답하세요. "
             "현재 장면에서 이미 한 대사를 반복하거나 다시 인사하지 말고, 플레이어의 질문에 이어서 답하세요. "
             "attitude는 답변의 친절함이나 표정이 아니라 이번 사용자 발화의 행동만 분류하세요. "
-            "실제로 도움을 약속하거나 협조하면 cooperative, 근거 있는 추궁이나 적대적 행동이면 suspicious입니다. "
-            "인사, 반복 질문, 단순 정보 요청, 판단 근거가 부족한 말은 neutral입니다. visual_cue는 답변에 어울리는 표정입니다."
+            "첫 인사, 감사, 안부, 상대의 일에 대한 관심, 예의 있는 질문과 반응은 도움 약속이 없어도 friendly입니다. "
+            "예: '안녕하세요', '고맙습니다', '잘 지내셨어요?', '하시는 일은 어떠세요?', '마을 이야기를 들려주실 수 있나요?', '많이 놀라셨겠어요'는 friendly입니다. "
+            "실제로 도움을 제안·약속하거나 요청을 받아들이면 cooperative입니다. "
+            "맥락 없는 짧은 반복, 사실 확인만 하는 말, 판단하기 어려운 말은 neutral입니다. "
+            "위협·모욕, 분명한 적대 행동, 상대가 거절한 뒤에도 계속하는 압박만 hostile입니다. "
+            "사건을 이해하려는 첫 질문이나 근거 있는 추궁만으로 hostile이라 하지 마세요. '지미는 어디 있죠?', '사진은 왜 여기 있나요?'는 적대가 아닙니다. "
+            "visual_cue는 답변에 어울리는 표정이며 발화 분류와 무관합니다."
         )
 
         if scene_events:
