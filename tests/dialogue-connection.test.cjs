@@ -12,6 +12,7 @@ function node() {
     setAttribute() {},
     addEventListener(name, callback) { this.listeners[name] = callback; },
     focus() { this.focused = true; },
+    close() { this.hidden = true; },
   };
 }
 
@@ -68,6 +69,30 @@ test('start uses response in memory and renders the current scene', () => {
   assert.equal(h.transcript()[0].location_id, 'player_house');
 });
 
+test('naming continues an already visible Jimmy visit without replaying his entrance',()=>{
+  const h=setup();h.context.window.entryVisitReady=true;
+  h.context.window.startStory(response('arrival','player_house','jimmy',[]),'예준');
+  assert.equal(vm.runInContext('dialogueStage.homeVisitor',h.context),'jimmy');
+  assert.equal(h.context.window.entryVisitReady,false);
+  assert.equal(h.nodes.get('game-screen').hidden,false);
+});
+
+test('first greeting choices hide every visited place, preserve return home, and reset for a new game',()=>{
+  const h=setup();
+  const actions=['visit_karen','visit_bob','visit_cathy','return_home'].map(id=>({id,kind:'move',label:id}));
+  const scene=(location,sceneId='neighbors')=>{const data=response(sceneId,location,null,[]);data.view.available_actions=actions;return data;};
+  const labels=()=>h.nodes.get('action-list').children.map(button=>button.textContent);
+  h.context.window.startStory(scene('karen_house'),'예준');
+  assert.deepEqual(labels(),['visit_bob','visit_cathy','return_home']);
+  h.context.applyResponse(scene('butcher_shop'),'scene');
+  assert.deepEqual(labels(),['visit_cathy','return_home']);
+  h.context.applyResponse(scene('salon'),'scene');assert.deepEqual(labels(),['return_home']);
+  h.context.applyResponse(scene('karen_house','karen_dinner'),'scene');
+  assert.deepEqual(labels(),actions.map(a=>a.label));
+  h.context.window.startStory(scene('square'),'새 이름');
+  assert.deepEqual(labels(),actions.map(a=>a.label));
+});
+
 test('current scene events and current character chat never mix other scenes or people', () => {
   const h = setup();
   h.context.window.startStory(response('neighbors', 'karen_house', 'karen', [
@@ -120,4 +145,15 @@ test('leaving clears memory and a history restore reloads to the name screen', (
   h.listeners.pageshow({persisted: true});
   assert.equal(h.context.window.location.reloaded, true);
   assert.equal(h.nodes.get('username').value, '');
+});
+test('failed chat keeps the draft and token so the same message can be retried',async()=>{
+  const h=setup();h.context.window.startStory(response('arrival','player_house','jimmy',[]),'알렉스');
+  h.nodes.get('user-message').value='다시 물어볼게요';
+  h.context.fetch=async()=>({ok:false,json:async()=>({error:{message:'잠시 후 재시도'}})});
+  await h.nodes.get('chat-form').listeners.submit({preventDefault(){}});
+  assert.equal(h.nodes.get('user-message').value,'다시 물어볼게요');assert.equal(h.transcript().length,0);
+  assert.equal(vm.runInContext('stateToken',h.context),'token-arrival-player_house');
+  let sent;h.context.fetch=async(_,opts)=>{sent=JSON.parse(opts.body);return {ok:true,json:async()=>response('arrival','player_house','jimmy',[{speaker_id:'jimmy',text:'답변',image:null}])};};
+  await h.nodes.get('chat-form').listeners.submit({preventDefault(){}});
+  assert.equal(sent.message,'다시 물어볼게요');assert.equal(h.stage().text,'답변');
 });

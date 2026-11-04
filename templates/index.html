@@ -10,11 +10,14 @@
   </head>
   <body class="village-start">
     <main class="start-scene game-screen" aria-label="더뉴빌리지 시작 화면">
+      <video class="start-video" autoplay muted loop playsinline preload="auto" poster="{{ asset_url('assets/images/start/opening-background.png') }}" aria-hidden="true" tabindex="-1">
+        <source src="{{ asset_url('assets/videos/opening-loop.mp4') }}" type="video/mp4">
+      </video>
       <h1 class="start-title"><img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="Welcome to The New Village — 더뉴빌리지로 오세요" width="2172" height="724"></h1>
       <div class="cover-slot" aria-hidden="true"></div>
       <div class="start-panel">
       <nav class="start-actions" aria-label="이야기 시작">
-        <a class="image-action" href="{{ url_for('detail') }}" aria-label="시작하기">시작하기</a>
+        <a class="image-action" href="{{ url_for('chat') }}" aria-label="START">START</a>
       </nav>
       </div>
     </main>

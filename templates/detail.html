@@ -17,8 +17,8 @@
 <body>
   <main class="intro-wrap">
     <section class="dialogue-stage" aria-label="이사 전 집 TV 도입 미리보기">
-      <img class="dialogue-background" src="{{ asset_url('assets/images/pre-move-house.png') }}" alt="이사 전 집 거실과 TV" onerror="this.hidden = true">
-      <div class="dialogue-box" tabindex="0" role="region" aria-label="독백 대사"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
+      <img class="dialogue-background" src="{{ asset_url('assets/images/pre-move-house.png') }}" alt="이사 전 집 거실과 TV" onload="this.nextElementSibling.hidden = false" onerror="this.hidden = true; this.nextElementSibling.hidden = false">
+      <div class="dialogue-box" tabindex="0" role="region" aria-label="독백 대사" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
     </section>
     <aside class="intro-notice">
       <p>개발용 도입 미리보기입니다. 실제 게임은 시작 화면에서 시작할 수 있습니다.</p>

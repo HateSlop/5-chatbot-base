@@ -1,13 +1,16 @@
 {
   "jimmy": {
-    "neutral": "/assets/images/jimmy_neutral.svg",
-    "smile": "/assets/images/jimmy_smile.svg",
-    "worried": "/assets/images/jimmy_worried.svg"
+    "neutral": "/assets/images/jimmy_basic.png",
+    "basic": "/assets/images/jimmy_basic.png",
+    "smile": "/assets/images/jimmy_smile.png",
+    "worried": "/assets/images/jimmy_scared.png",
+    "scared": "/assets/images/jimmy_scared.png",
+    "angry": "/assets/images/jimmy_angry.png"
   },
   "karen": {
-    "neutral": "/assets/images/karen_neutral.svg",
-    "smile": "/assets/images/karen_smile.svg",
-    "worried": "/assets/images/karen_worried.svg"
+    "neutral": "/assets/images/karen_basic.png",
+    "smile": "/assets/images/karen_smile.png",
+    "worried": "/assets/images/karen_basic.png"
   },
   "bob": {
     "neutral": "/assets/images/bob_neutral.svg",

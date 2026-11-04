@@ -9,12 +9,21 @@ const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐
 const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 사진", assimilation: "새로운 이웃" };
 const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
 const postMoveUI = new PostMoveUI(document.getElementById("dialogue-stage"), form, input, document.getElementById("send-btn"), performAction);
+actionList.className = 'action-list scene-actions';
+document.querySelector('#dialogue-stage .dialogue-box').append(statusMessage);
+document.querySelector('#dialogue-stage .dialogue-controls').append(actionList);
 let stateToken = null;
 let transcript = [];
 let playerName = "";
 let selectedCharacter = null;
 let currentView = null;
 let busy = false;
+// Presentation only: hide completed greeting destinations, without changing server actions.
+const greetedPlaces = new Set();
+const greetingDestinations = {visit_karen:'karen_house',visit_bob:'butcher_shop',visit_cathy:'salon'};
+function focusChatWhenReady() {
+  dialogueStage.ready?.then(() => { if (stateToken && !input.disabled) input.focus(); });
+}
 
 function speakerName(id) {
   return id === "user" ? playerName : (speakerNames[id] ?? id);
@@ -52,9 +61,11 @@ function renderMessages() {
   const line = conversation.at(-1);
   dialogueStage.render({
     background: currentView.background,
-    image: line?.image || (line?.speaker === selectedCharacter ? currentView.available_characters[0]?.portrait : null),
+    image: line?.image || currentView.available_characters[0]?.portrait || null,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
+    visitorId: selectedCharacter,
+    sceneId: currentView.scene_id,
   });
   log.scrollTop = log.scrollHeight;
 }
@@ -69,7 +80,11 @@ function renderView(view) {
   document.getElementById("affinity-value").textContent = `${view.affinity} / 100`;
 
   actionList.replaceChildren();
+  if (view.scene_id === 'neighbors' && Object.values(greetingDestinations).includes(view.location_id)) {
+    greetedPlaces.add(view.location_id);
+  }
   for (const action of view.available_actions) {
+    if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `action-button ${action.kind}`;
@@ -121,12 +136,26 @@ function applyResponse(data, kind, characterId = null) {
 }
 
 window.startStory = (data, name) => {
+  const continuingVisit = window.entryVisitReady && data.view.location_id === 'player_house' &&
+    data.view.available_characters.some(character => character.id === 'jimmy');
+  if (continuingVisit) {
+    dialogueStage.homeVisitor = 'jimmy';
+    dialogueStage.visitorVisible = true;
+    dialogueStage.root?.setAttribute('data-continuing', 'true');
+  }
+  window.entryVisitReady = false;
   playerName = name;
   transcript = [];
+  greetedPlaces.clear();
   applyResponse(data, "scene");
-  document.getElementById("name-screen").hidden = true;
-  document.getElementById("game-screen").hidden = false;
-  if (selectedCharacter) input.focus();
+  const reveal = () => {
+    document.getElementById("name-screen").hidden = true;
+    document.getElementById("game-screen").hidden = false;
+    document.getElementById("entry-name-dialog")?.close();
+  };
+  if (continuingVisit && dialogueStage.ready) dialogueStage.ready.then(reveal);
+  else reveal();
+  if (selectedCharacter) focusChatWhenReady();
 };
 
 async function request(path, payload) {
@@ -171,14 +200,18 @@ form.addEventListener("submit", async (event) => {
   } finally {
     busy = false;
     renderView(currentView);
-    if (!input.disabled) input.focus();
+    if (!input.disabled) focusChatWhenReady();
   }
 });
 
 window.addEventListener("pagehide", () => {
+  greetedPlaces.clear();
   stateToken = null;
   transcript = [];
 });
+for (const id of ['restart-btn', 'ending-restart']) {
+  document.getElementById(id).addEventListener('click', () => { if (!busy) window.location.reload(); });
+}
 window.addEventListener("pageshow", event => {
   document.getElementById("username").value = "";
   if (event.persisted) window.location.reload();

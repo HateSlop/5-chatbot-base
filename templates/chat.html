@@ -9,14 +9,34 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/story-portrait.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/dialogue-stage.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/post-move-ui.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/arrival-preview.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
-    <div class="game-screen story-screen">
+    <div id="name-screen">
+      <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
+        <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
+        <div class="dialogue-tv" hidden></div>
+        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
+      </section>
+      <form id="entry-chat" class="chat-input-area" hidden>
+        <textarea id="entry-message" aria-label="이름 입력 전 대화" disabled></textarea><button id="entry-send" type="submit" disabled>보내기</button>
+      </form>
+      <dialog id="entry-name-dialog" class="entry-name-dialog" aria-label="이름 입력">
+        <form id="name-form" novalidate>
+          <label for="username">이름:</label>
+          <input id="username" type="text" placeholder="이름을 입력하세요" autocomplete="off" enterkeyhint="done" aria-describedby="name-status" autofocus required>
+          <button id="name-submit" class="visually-hidden" type="submit" tabindex="-1">이름 확인</button>
+          <p id="name-status" role="status" aria-live="polite"></p>
+        </form>
+      </dialog>
+    </div>
+    <div id="game-screen" class="game-screen story-screen" hidden>
     <section id="dialogue-stage" class="dialogue-stage" aria-label="현재 대사 장면">
       <img class="dialogue-background" alt="" hidden>
       <img class="dialogue-figure" alt="" hidden>
@@ -25,9 +45,9 @@
     </section>
     <header class="story-header">
       <a class="wordmark" href="{{ url_for('index') }}">THE NEW VILLAGE <span>더뉴빌리지로 오세요</span></a>
-      <a id="restart-btn" class="text-button" href="{{ url_for('chat') }}">처음부터 시작</a>
+      <button id="restart-btn" class="text-button" type="button">처음부터 시작</button>
     </header>
-    <main class="story-layout">
+    <main class="story-layout" data-player-name="{{ username }}">
       <div id="scene-background" class="scene-background" role="img" aria-label="새집 배경"></div>
       <div class="scene-caption">
         <div class="eyebrow">YOU ARE HERE</div>
@@ -35,28 +55,29 @@
         <p id="scene-character">현재 대화 상대: 지미</p>
       </div>
       <div class="affinity-card">
-        <span>마을 호감도</span>
-        <output id="affinity-value" aria-label="마을 호감도">50 / 100</output>
+        <span>호감도</span>
+        <output id="affinity-value" aria-label="호감도">70 / 100</output>
       </div>
       <img id="character-portrait" class="character-portrait" alt="" hidden>
-      <section class="conversation" aria-label="대화">
+      <details class="conversation conversation-record" aria-label="대화 기록">
+        <summary>대화 기록</summary>
         <div class="conversation-heading">
           <div class="eyebrow">CONVERSATION</div><h2 id="character-title">대화 상대를 기다리는 중</h2>
         </div>
         <div id="chat-log" class="chat-log" role="log" aria-live="off" aria-label="현재 장면과 인물의 대화 기록"></div>
-        <div id="ending-card" class="ending-card" hidden></div>
-        <a id="ending-restart" class="ending-restart" href="{{ url_for('chat') }}" hidden>새 이름으로 다시 시작</a>
         <p id="status-message" class="status-message" role="status"></p>
         <form id="chat-form" class="chat-input-area">
           <label class="visually-hidden" for="user-message">대화 입력</label>
           <textarea id="user-message" maxlength="2000" placeholder="이웃에게 말을 걸어 보세요" aria-label="대화 입력" autocomplete="off" required disabled></textarea>
           <button id="send-btn" class="send-button" type="submit" disabled>보내기</button>
         </form>
-      </section>
+      </details>
       <details class="journal">
         <summary>나의 생각과 단서</summary>
         <p class="journal-intro">대화와 조사를 통해 알게 된 사실이 여기에 기록됩니다.</p>
         <ul id="journal-list"></ul>
+        <div id="ending-card" class="ending-card" hidden></div>
+        <button id="ending-restart" type="button" hidden>새 이름으로 다시 시작</button>
       </details>
       <nav class="story-actions" aria-label="할 수 있는 일">
         <div id="action-list" class="action-list"></div>
