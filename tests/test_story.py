@@ -159,8 +159,44 @@ class StoryTest(unittest.TestCase):
         with patch.object(chatbot.generator, "generate", return_value={"reply": "놀랐을 뿐이에요.", "attitude": "neutral", "visual_cue": "worried"}) as generate:
             response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "왜 놀라셨어요?"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(generate.call_args.args[-1], state["scene_events"])
+        self.assertEqual(generate.call_args.args[-2], state["scene_events"])
+        self.assertIn("지미의 사진", generate.call_args.args[-1][0])
         self.assertEqual(decode_state(response.get_json()["state_token"])["scene_events"], state["scene_events"])
+
+    def test_current_incident_context_reaches_each_character_without_forcing_chat(self):
+        steps = [
+            ("visit_neighbors", None, None),
+            ("visit_karen", None, None), ("visit_bob", None, None), ("visit_cathy", None, None),
+            ("return_home", "jimmy", "캐시가"),
+            ("go_help_cathy", "cathy", "구체적인 업무는 아직 정해지지 않았다"),
+            ("help_cathy", "karen", "지미가 정육점으로 향하는"),
+            ("go_butcher", "jimmy", "지미는 정육점 지하실에서"),
+            ("approach_jimmy", None, None), ("inspect_basement", None, None),
+            ("go_upstairs", "bob", "이름과 축제 준비 날짜"),
+            ("return_home", "jimmy", "앞서 정육점 지하실에서"),
+            ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "지미는 나타나지 않았다"),
+            ("inspect_room", "karen", "지미의 사진"),
+            ("return_home", None, None), ("continue_festival", "bob", "다음 주 축제"),
+        ]
+        for action_id, character, expected in steps:
+            result = self.action(action_id)
+            if character:
+                self.assertTrue(result["view"]["available_actions"], action_id)
+                with patch.object(chatbot.generator, "generate", return_value={"reply": "글쎄요.", "attitude": "neutral", "visual_cue": "neutral"}) as generate:
+                    response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": character, "message": "무슨 일이에요?"})
+                    self.assertEqual(response.status_code, 200)
+                    self.token = response.get_json()["state_token"]
+                context = generate.call_args.args[-1]
+                self.assertIn(expected, " ".join(context), action_id)
+                if character != "jimmy" or action_id == "return_home" and "캐시가" in expected:
+                    self.assertNotIn("식인", " ".join(context), action_id)
+                self.assertEqual(result["view"]["available_actions"],
+                                 self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["available_actions"])
+                if action_id == "go_butcher":
+                    self.assertIn("식인", context[1])
+                    self.assertNotIn("식인", context[0])
+                if action_id == "return_home" and character == "jimmy" and "앞서" in expected:
+                    self.assertIn("이름과 날짜만", context[0])
 
     def test_job_offer_is_fixed_when_later_chat_lowers_affinity(self):
         state = decode_state(self.token)

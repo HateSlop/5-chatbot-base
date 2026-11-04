@@ -33,6 +33,7 @@ class StoryGenerator:
         place_name: str,
         affinity: int,
         scene_events: list[dict],
+        scene_context: tuple[str, str, str],
     ) -> dict:
         effort = os.getenv("OPENAI_REASONING_EFFORT", "none")
         if effort not in ALLOWED_REASONING_EFFORTS:
@@ -66,6 +67,17 @@ class StoryGenerator:
                 for item in scene_events
             )
             instructions += f"\n현재 장면에서 이미 일어난 공개 사건:\n{lines}"
+
+        observed, known, withheld = scene_context
+        instructions += (
+            f"\n현재 시점의 장면 정보 (오래된 대화보다 우선):\n"
+            f"플레이어가 목격한 사실: {observed}\n"
+            f"당신이 실제로 아는 사실: {known}\n"
+            f"지금 말하면 안 되는 사실: {withheld}\n"
+            "플레이어가 '왜요?', '무슨 일이에요?'처럼 물으면 직전 사건을 가리키는 것으로 해석하세요. "
+            "오래된 대화가 현재 장면과 충돌하면 현재 장면을 따르세요. "
+            "당신이 아는 사실과 플레이어가 아는 사실을 혼동하지 말고, 모르면 모른다고 답하세요."
+        )
 
         if knowledge:
             context = "\n".join(

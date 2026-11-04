@@ -6,7 +6,7 @@ from .generator import StoryGenerator
 from .image_selector import StoryImageSelector
 from .retriever import StoryRetriever
 from .state_token import decode_state, encode_state
-from .story import CHAT_DELTAS, LOCATIONS, MAX_SCORED_CHATS, adjusted_affinity, apply_action, available_characters, event, new_state, view
+from .story import CHAT_DELTAS, LOCATIONS, MAX_SCORED_CHATS, adjusted_affinity, apply_action, available_characters, event, new_state, scene_context, view
 
 
 class ChatbotService:
@@ -53,6 +53,7 @@ class ChatbotService:
         turn = self.generator.generate(
             message, state["player_name"], config["characters"][character_id], knowledge, history,
             LOCATIONS[state["location_id"]], state["affinity"], scene_events,
+            scene_context(state),
         )
         next_state = deepcopy(state)
         attitude = turn["attitude"]
