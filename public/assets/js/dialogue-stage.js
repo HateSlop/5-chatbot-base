@@ -26,7 +26,10 @@ window.DialogueStage = class {
       this.next = doc.createElement('button');
       this.pageLabel = doc.createElement('span');
       this.previous.type = this.next.type = 'button';
-      this.previous.textContent = '이전'; this.next.textContent = '다음';
+      this.previous.textContent = '◀'; this.next.textContent = '▶';
+      this.previous.setAttribute('aria-label', '이전 대사');
+      this.next.setAttribute('aria-label', '다음 대사');
+      this.pageLabel.className = 'visually-hidden';
       this.previous.addEventListener('click', () => { --this.pageIndex; this.showPage(); });
       this.next.addEventListener('click', () => { ++this.pageIndex; this.showPage(); });
       this.pager.append(this.previous, this.pageLabel, this.next);

@@ -127,5 +127,14 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .dialogue-controls .scene-actions { margin: 0; justify-content: flex-end; }
 .dialogue-box .dialogue-controls :is(.action-button, .dialogue-advance, .dialogue-pages button) { min-height: 38px; padding: 6px 13px; margin: 0; font: 500 14px/1.4 "Malgun Gothic", sans-serif; }
 .dialogue-box .action-button:hover:not(:disabled) { background: #4b3443; color: var(--v-cream); }
+.dialogue-box .dialogue-controls .dialogue-pages { gap: 2px; }
+.dialogue-pages .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dialogue-box .dialogue-controls .dialogue-pages button { width: 32px; min-height: 32px; padding: 4px; border: 0; border-radius: 3px; background: transparent; box-shadow: none; color: var(--v-gold); font: 14px/1 sans-serif; opacity: .6; }
+.dialogue-box .dialogue-pages button:disabled { visibility: hidden; }
+.dialogue-box .dialogue-pages button:hover:not(:disabled), .dialogue-box .dialogue-pages button:focus-visible { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .dialogue-box .dialogue-pages button:last-child:not(:disabled) { animation: page-cue 1.4s ease-in-out infinite; }
+  @keyframes page-cue { 0%, 100% { opacity: .4; } 50% { opacity: .9; text-shadow: 0 0 5px #f1be7866; } }
+}
 .dialogue-stage .dialogue-box { height: clamp(130px, 18vh, 160px); min-height: 0; padding: 12px 16px; }
 @media (max-width: 800px) { .post-move-stage .dialogue-box { height: 130px; padding: 8px 10px; } .post-move-stage .dialogue-box.is-paged { padding-bottom: 42px; } }
