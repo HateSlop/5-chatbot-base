@@ -14,7 +14,7 @@ TURN_SCHEMA = {
     "type": "object",
     "properties": {
         "reply": {"type": "string"},
-        "attitude": {"type": "string", "enum": ["cooperative", "neutral", "suspicious"]},
+        "attitude": {"type": "string", "enum": ["friendly", "cooperative", "neutral", "hostile"]},
         "visual_cue": {"type": "string", "enum": ["neutral", "smile", "worried"]},
     },
     "required": ["reply", "attitude", "visual_cue"],
@@ -33,6 +33,7 @@ class StoryGenerator:
         place_name: str,
         affinity: int,
         scene_events: list[dict],
+        scene_context: tuple[str, str, str],
     ) -> dict:
         effort = os.getenv("OPENAI_REASONING_EFFORT", "none")
         if effort not in ALLOWED_REASONING_EFFORTS:
@@ -56,8 +57,13 @@ class StoryGenerator:
             "장소 이동, 단서 획득, 호감도와 엔딩을 선언하지 마세요. 이전에 나눈 대화를 기억하고, 일반적인 질문에도 자연스럽게 이어서 한두 문장으로 대답하세요. "
             "현재 장면에서 이미 한 대사를 반복하거나 다시 인사하지 말고, 플레이어의 질문에 이어서 답하세요. "
             "attitude는 답변의 친절함이나 표정이 아니라 이번 사용자 발화의 행동만 분류하세요. "
-            "실제로 도움을 약속하거나 협조하면 cooperative, 근거 있는 추궁이나 적대적 행동이면 suspicious입니다. "
-            "인사, 반복 질문, 단순 정보 요청, 판단 근거가 부족한 말은 neutral입니다. visual_cue는 답변에 어울리는 표정입니다."
+            "첫 인사, 감사, 안부, 상대의 일에 대한 관심, 예의 있는 질문과 반응은 도움 약속이 없어도 friendly입니다. "
+            "예: '안녕하세요', '고맙습니다', '잘 지내셨어요?', '하시는 일은 어떠세요?', '마을 이야기를 들려주실 수 있나요?', '많이 놀라셨겠어요'는 friendly입니다. "
+            "실제로 도움을 제안·약속하거나 요청을 받아들이면 cooperative입니다. "
+            "맥락 없는 짧은 반복, 사실 확인만 하는 말, 판단하기 어려운 말은 neutral입니다. "
+            "위협·모욕, 분명한 적대 행동, 상대가 거절한 뒤에도 계속하는 압박만 hostile입니다. "
+            "사건을 이해하려는 첫 질문이나 근거 있는 추궁만으로 hostile이라 하지 마세요. '지미는 어디 있죠?', '사진은 왜 여기 있나요?'는 적대가 아닙니다. "
+            "visual_cue는 답변에 어울리는 표정이며 발화 분류와 무관합니다."
         )
 
         if scene_events:
@@ -66,6 +72,17 @@ class StoryGenerator:
                 for item in scene_events
             )
             instructions += f"\n현재 장면에서 이미 일어난 공개 사건:\n{lines}"
+
+        observed, known, withheld = scene_context
+        instructions += (
+            f"\n현재 시점의 장면 정보 (오래된 대화보다 우선):\n"
+            f"플레이어가 목격한 사실: {observed}\n"
+            f"당신이 실제로 아는 사실: {known}\n"
+            f"지금 말하면 안 되는 사실: {withheld}\n"
+            "플레이어가 '왜요?', '무슨 일이에요?'처럼 물으면 직전 사건을 가리키는 것으로 해석하세요. "
+            "오래된 대화가 현재 장면과 충돌하면 현재 장면을 따르세요. "
+            "당신이 아는 사실과 플레이어가 아는 사실을 혼동하지 말고, 모르면 모른다고 답하세요."
+        )
 
         if knowledge:
             context = "\n".join(

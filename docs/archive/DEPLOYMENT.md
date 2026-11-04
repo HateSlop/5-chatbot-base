@@ -10,8 +10,8 @@
 
 | 경로 | 현재 구조에서 할 일 | 적합한 경우 |
 | --- | --- | --- |
-| Render Python 웹 서비스 | [Render 배포 가이드](RENDER-GUIDE.md) | 현재 구조를 그대로 운영하고 싶을 때 |
-| Render Docker 웹 서비스 | [Render 배포 가이드](RENDER-GUIDE.md)와 [Docker 개발 가이드](DOCKER-GUIDE.md) | 배포도 컨테이너로 구성하고 싶을 때 |
+| Render Python 웹 서비스 | [Render 배포 가이드](../RENDER-GUIDE.md) | 현재 구조를 그대로 운영하고 싶을 때 |
+| Render Docker 웹 서비스 | [Render 배포 가이드](../RENDER-GUIDE.md)와 [Docker 개발 가이드](DOCKER-GUIDE.md) | 배포도 컨테이너로 구성하고 싶을 때 |
 | Vercel Flask Function | Git 저장소를 가져와 `app.py` 배포 | Function 실행 제약과 데이터 저장 위치를 확인한 경우 |
 | 프런트·API 분리 또는 Cloudflare | API 주소·정적 파일·서버 설정 변경 | 제품 구조에 맞게 화면과 서버를 따로 운영할 때 |
 
@@ -35,7 +35,7 @@ Render나 Vercel을 필수 플랫폼으로 지정하지 않습니다. 아래 경
 - **Python 런타임:** `requirements.txt`를 설치하고 Gunicorn으로 앱을 실행합니다. 처음 배포할 때 설정을 간단히 시작할 수 있습니다.
 - **Docker 런타임:** 저장소의 `Dockerfile`로 이미지를 빌드합니다. 배포 환경도 컨테이너로 맞추고 싶을 때 선택하세요.
 
-두 절차의 대시보드 설정, 환경 변수, 공개 URL 확인, 재배포와 문제 해결은 [Render 배포 가이드](RENDER-GUIDE.md)를 따르세요. Docker 이미지 변경과 로컬 검증은 [Docker 개발 가이드](DOCKER-GUIDE.md)에 있습니다. `docker-compose.yml`은 Render에서 실행하지 않는 로컬 개발 설정입니다.
+두 절차의 대시보드 설정, 환경 변수, 공개 URL 확인, 재배포와 문제 해결은 [Render 배포 가이드](../RENDER-GUIDE.md)를 따르세요. Docker 이미지 변경과 로컬 검증은 [Docker 개발 가이드](DOCKER-GUIDE.md)에 있습니다. `docker-compose.yml`은 Render에서 실행하지 않는 로컬 개발 설정입니다.
 
 ## 3B. Vercel Flask Function
 

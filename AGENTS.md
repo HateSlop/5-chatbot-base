@@ -9,7 +9,7 @@
 3. `docs/STORY.md`: 확정된 인물·장면·엔딩.
 4. `docs/API_CONTRACT.md`: 화면·서버 및 이미지 선택기의 고정 인터페이스.
 5. `docs/TEAM_IMPLEMENTATION.md`: 구현 순서, 담당 영역, PR 절차.
-6. 해당 작업에 영향을 주는 기존 `README.md`, `docs/PROJECT_GUIDE.md`, 코드와 테스트.
+6. 해당 작업에 영향을 주는 기존 `README.md`, 코드와 테스트. 초기 과제 기준이 필요하면 `docs/archive/PROJECT_GUIDE.md`를 참고한다.
 
 스토리의 핵심 사건과 세 엔딩은 `docs/STORY.md`를 기준으로 유지한다. 호감도 기준은 시연 후 조정할 수 있도록 설정값으로 둔다.
 

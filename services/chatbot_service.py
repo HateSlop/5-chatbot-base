@@ -1,12 +1,13 @@
 """진행 상태, 인물 대화, 이미지와 API 응답을 연결한다."""
 
 from copy import deepcopy
+from hashlib import sha256
 
 from .generator import StoryGenerator
 from .image_selector import StoryImageSelector
 from .retriever import StoryRetriever
 from .state_token import decode_state, encode_state
-from .story import CHAT_DELTAS, LOCATIONS, MAX_SCORED_CHATS, adjusted_affinity, apply_action, available_characters, event, new_state, view
+from .story import CHAT_DELTAS, LOCATIONS, MAX_HOSTILE_CHATS_PER_SCENE, adjusted_affinity, apply_action, available_characters, event, new_state, scene_context, view
 
 
 class ChatbotService:
@@ -53,17 +54,43 @@ class ChatbotService:
         turn = self.generator.generate(
             message, state["player_name"], config["characters"][character_id], knowledge, history,
             LOCATIONS[state["location_id"]], state["affinity"], scene_events,
+            scene_context(state),
         )
         next_state = deepcopy(state)
         attitude = turn["attitude"]
-        score_key = f"{state['scene_id']}:{character_id}:{attitude}"
+        score_key = f"{state['scene_id']}:{character_id}"
         message_key = " ".join(message.casefold().split())
-        if (CHAT_DELTAS[attitude] and score_key not in next_state["scored_chat"]
-                and message_key not in next_state.get("scored_messages", [])
-                and len(next_state["scored_chat"]) < MAX_SCORED_CHATS):
-            next_state["affinity"] = adjusted_affinity(next_state["affinity"], CHAT_DELTAS[attitude])
-            next_state["scored_chat"].append(score_key)
-            next_state.setdefault("scored_messages", []).append(message_key)
+        message_hash = sha256(message_key.encode("utf-8")).hexdigest()
+        seen = next_state.setdefault("scored_messages", [])
+        if message_key not in seen and message_hash not in seen:
+            seen.append(message_hash)
+            scored = next_state["scored_chat"]
+            before = next_state["affinity"]
+            if attitude in {"friendly", "cooperative"}:
+                friendly_key, cooperative_key = f"{score_key}:friendly", f"{score_key}:cooperative"
+                if attitude == "friendly" and friendly_key not in scored and cooperative_key not in scored:
+                    next_state["affinity"] = adjusted_affinity(before, CHAT_DELTAS[attitude])
+                    next_state.setdefault("positive_scores", {})[score_key] = before
+                    scored.append(friendly_key)
+                elif attitude == "cooperative" and cooperative_key not in scored:
+                    if friendly_key in scored:
+                        first_score = next_state.get("positive_scores", {}).get(score_key, before)
+                        extra = adjusted_affinity(first_score, CHAT_DELTAS["cooperative"]) - adjusted_affinity(first_score, CHAT_DELTAS["friendly"])
+                        next_state["affinity"] = min(100, before + extra)
+                    else:
+                        next_state["affinity"] = adjusted_affinity(before, CHAT_DELTAS[attitude])
+                    scored.append(cooperative_key)
+                if next_state["affinity"] > before:
+                    next_state["hostile_streak"] = max(0, next_state.get("hostile_streak", 0) - 1)
+            elif attitude == "hostile":
+                count = sum(key.startswith(f"{score_key}:hostile:") for key in scored)
+                count += f"{score_key}:suspicious" in scored  # Earlier tokens used this category.
+                if count < MAX_HOSTILE_CHATS_PER_SCENE:
+                    streak = next_state.get("hostile_streak", 0)
+                    next_state["affinity"] = adjusted_affinity(before, CHAT_DELTAS["hostile"] * min(streak + 1, 3))
+                    if next_state["affinity"] < before:
+                        next_state["hostile_streak"] = streak + 1
+                        scored.append(f"{score_key}:hostile:{count + 1}")
         # shortcut: 인물마다 최근 10번의 대화만 보관, 긴 대화 기억이 필요하면 요약을 추가한다.
         next_state["history"][character_id] = (history + [
             {"role": "user", "content": message[:500]},
