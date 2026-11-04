@@ -1,4 +1,4 @@
-"""인물의 대사와 대화 태도를 한 번의 모델 호출로 생성한다."""
+"""플레이어 발화를 분류하고 갱신된 마을 태도로 인물 대사를 만든다."""
 
 import json
 import os
@@ -14,15 +14,53 @@ TURN_SCHEMA = {
     "type": "object",
     "properties": {
         "reply": {"type": "string"},
-        "attitude": {"type": "string", "enum": ["friendly", "cooperative", "neutral", "hostile"]},
         "visual_cue": {"type": "string", "enum": ["neutral", "smile", "worried"]},
     },
-    "required": ["reply", "attitude", "visual_cue"],
+    "required": ["reply", "visual_cue"],
+    "additionalProperties": False,
+}
+CLASSIFICATION_SCHEMA = {
+    "type": "object",
+    "properties": {"category": {"type": "string", "enum": list(CHAT_DELTAS)}},
+    "required": ["category"],
     "additionalProperties": False,
 }
 
 
 class StoryGenerator:
+    def classify(self, question: str, history: list[dict], scene_events: list[dict]) -> str:
+        effort = os.getenv("OPENAI_REASONING_EFFORT", "none")
+        if effort not in ALLOWED_REASONING_EFFORTS:
+            raise ValueError("OPENAI_REASONING_EFFORT must be none, low, or medium.")
+        recent = [{"role": item["role"], "content": item["content"]} for item in history[-6:]]
+        scene_lines = "\n".join(item["text"] for item in scene_events)
+        response = OpenAI(timeout=20.0, max_retries=0).responses.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-6-luna"),
+            reasoning={"effort": effort},
+            instructions=(
+                "이번 플레이어 발화의 행동만 분류하세요. 주민 답변의 친절함이나 표정은 기준이 아닙니다. "
+                "첫 인사, 감사, 안부, 상대의 일에 대한 관심, 예의 있는 질문과 반응은 도움 약속이 없어도 friendly입니다. "
+                "예: '안녕하세요', '고맙습니다', '잘 지내셨어요?', '하시는 일은 어떠세요?', '마을 이야기를 들려주실 수 있나요?', '많이 놀라셨겠어요'는 friendly입니다. "
+                "실제로 도움을 제안·약속하거나 요청을 받아들이면 cooperative입니다. "
+                "맥락 없는 짧은 반복, 사실 확인만 하는 말, 판단하기 어려운 말은 neutral입니다. "
+                "위협·모욕, 분명한 적대 행동, 상대가 거절한 뒤에도 계속하는 압박만 hostile입니다. "
+                "사건을 이해하려는 첫 질문이나 근거 있는 추궁만으로 hostile이라 하지 마세요. '지미는 어디 있죠?', '사진은 왜 여기 있나요?'는 적대가 아닙니다. "
+                f"현재 공개된 대사:\n{scene_lines}"
+            ),
+            input=recent + [{"role": "user", "content": question}],
+            text={"format": {"type": "json_schema", "name": "player_action", "strict": True, "schema": CLASSIFICATION_SCHEMA}},
+            max_output_tokens=100,
+        )
+        if response.status == "incomplete":
+            raise RuntimeError("모델 분류가 완료되지 않았습니다.")
+        try:
+            category = json.loads(response.output_text)["category"]
+            if category not in CHAT_DELTAS:
+                raise ValueError("invalid category")
+        except (ValueError, KeyError, TypeError) as exc:
+            raise RuntimeError("모델 분류 형식이 올바르지 않습니다.") from exc
+        return category
+
     def generate(
         self,
         question: str,
@@ -56,14 +94,7 @@ class StoryGenerator:
             "제공된 사실 밖의 사건이나 미래의 비밀을 지어내거나 미리 밝히지 마세요. "
             "장소 이동, 단서 획득, 호감도와 엔딩을 선언하지 마세요. 이전에 나눈 대화를 기억하고, 일반적인 질문에도 자연스럽게 이어서 한두 문장으로 대답하세요. "
             "현재 장면에서 이미 한 대사를 반복하거나 다시 인사하지 말고, 플레이어의 질문에 이어서 답하세요. "
-            "attitude는 답변의 친절함이나 표정이 아니라 이번 사용자 발화의 행동만 분류하세요. "
-            "첫 인사, 감사, 안부, 상대의 일에 대한 관심, 예의 있는 질문과 반응은 도움 약속이 없어도 friendly입니다. "
-            "예: '안녕하세요', '고맙습니다', '잘 지내셨어요?', '하시는 일은 어떠세요?', '마을 이야기를 들려주실 수 있나요?', '많이 놀라셨겠어요'는 friendly입니다. "
-            "실제로 도움을 제안·약속하거나 요청을 받아들이면 cooperative입니다. "
-            "맥락 없는 짧은 반복, 사실 확인만 하는 말, 판단하기 어려운 말은 neutral입니다. "
-            "위협·모욕, 분명한 적대 행동, 상대가 거절한 뒤에도 계속하는 압박만 hostile입니다. "
-            "사건을 이해하려는 첫 질문이나 근거 있는 추궁만으로 hostile이라 하지 마세요. '지미는 어디 있죠?', '사진은 왜 여기 있나요?'는 적대가 아닙니다. "
-            "visual_cue는 답변에 어울리는 표정이며 발화 분류와 무관합니다."
+            "visual_cue는 호감도 숫자만이 아니라 인물의 성격과 실제 답변에 어울리는 표정입니다. 경계 단계의 캐런도 겉으로 웃을 수 있습니다."
         )
 
         if scene_events:
@@ -110,8 +141,6 @@ class StoryGenerator:
             turn = json.loads(response.output_text)
             if not isinstance(turn["reply"], str) or not turn["reply"].strip():
                 raise ValueError("empty reply")
-            if turn["attitude"] not in CHAT_DELTAS:
-                raise ValueError("invalid attitude")
             if turn["visual_cue"] not in {"neutral", "smile", "worried"}:
                 raise ValueError("invalid visual cue")
         except (ValueError, KeyError, TypeError) as exc:
