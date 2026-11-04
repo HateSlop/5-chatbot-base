@@ -10,7 +10,7 @@ from services.generator import StoryGenerator
 
 class GeneratorTest(unittest.TestCase):
     def test_low_affinity_and_prior_chat_reach_model(self):
-        answer = {"reply": "기억해요.", "attitude": "neutral", "visual_cue": "neutral"}
+        answer = {"reply": "기억해요.", "visual_cue": "neutral"}
         history = [{"role": "user", "content": "나는 커피를 좋아해"}, {"role": "assistant", "content": "기억할게요."}]
         with patch("services.generator.OpenAI") as client:
             client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
@@ -30,7 +30,7 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(request["input"][0]["content"], "나는 커피를 좋아해")
 
     def test_village_stages_keep_persona_and_score_private(self):
-        answer = {"reply": "어서 오세요.", "attitude": "neutral", "visual_cue": "smile"}
+        answer = {"reply": "어서 오세요.", "visual_cue": "smile"}
         with patch("services.generator.OpenAI") as client:
             client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
             for score, stage in ((20, "경계:"), (50, "평소:"), (70, "환대:")):
@@ -42,17 +42,17 @@ class GeneratorTest(unittest.TestCase):
                     self.assertNotIn(f"{score}점", instructions)
 
     def test_everyday_korean_examples_and_investigation_are_in_classification_rules(self):
-        answer = {"reply": "반가워요.", "attitude": "friendly", "visual_cue": "smile"}
+        answer = {"category": "friendly"}
         with patch("services.generator.OpenAI") as client:
             client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
-            StoryGenerator().generate("안녕하세요", "알렉스", {"name": "캐런", "persona": {}}, [], [], "캐런의 집", 50, [], ("방문", "주민대표", "미래 사건"))
+            self.assertEqual(StoryGenerator().classify("안녕하세요", [], []), "friendly")
         request = client.return_value.responses.create.call_args.kwargs
         for utterance in ("안녕하세요", "고맙습니다", "잘 지내셨어요?", "하시는 일은 어떠세요?", "마을 이야기를 들려주실 수 있나요?", "많이 놀라셨겠어요"):
             self.assertIn(utterance, request["instructions"])
         for question in ("지미는 어디 있죠?", "사진은 왜 여기 있나요?"):
             self.assertIn(question, request["instructions"])
         self.assertIn("근거 있는 추궁만으로 hostile이라 하지 마세요", request["instructions"])
-        self.assertEqual(request["text"]["format"]["schema"]["properties"]["attitude"]["enum"],
+        self.assertEqual(request["text"]["format"]["schema"]["properties"]["category"]["enum"],
                          ["friendly", "cooperative", "neutral", "hostile"])
 
 

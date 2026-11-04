@@ -41,8 +41,8 @@ class SmokeTest(unittest.TestCase):
 
     def test_new_session_with_same_name_has_no_previous_play(self):
         token = self.start()
-        turn = {"reply": "도와줘서 고마워.", "attitude": "cooperative", "visual_cue": "smile"}
-        with patch.object(chatbot.generator, "generate", return_value=turn):
+        turn = {"reply": "도와줘서 고마워.", "visual_cue": "smile"}
+        with patch.object(chatbot.generator, "classify", return_value="cooperative"), patch.object(chatbot.generator, "generate", return_value=turn):
             response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "도울게"})
         self.assertEqual(response.get_json()["view"]["affinity"], 57)
         fresh = decode_state(self.start())
@@ -65,11 +65,30 @@ class SmokeTest(unittest.TestCase):
         token = self.start()
         response = self.client.post("/api/chat", json={"state_token": token, "character_id": "bob", "message": "안녕"})
         self.assertEqual(response.status_code, 409)
-        with patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
+        with patch.object(chatbot.generator, "classify", return_value="friendly"), patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
             response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "안녕"})
         self.assertEqual(response.status_code, 500)
         self.assertEqual(decode_state(token)["affinity"], 50)
         self.assertEqual(decode_state(token)["history"], {})
+
+    def test_both_model_failures_leave_original_token_usable(self):
+        token = self.start()
+        payload = {"state_token": token, "character_id": "jimmy", "message": "안녕하세요"}
+        with patch.object(chatbot.generator, "classify", side_effect=RuntimeError("offline")), patch.object(chatbot.generator, "generate") as generate, patch("app.app.logger.exception"):
+            response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json()["error"]["code"], "chat_failed")
+        self.assertNotIn("state_token", response.get_json())
+        generate.assert_not_called()
+
+        with patch.object(chatbot.generator, "classify", return_value="friendly"), patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
+            response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json()["error"]["code"], "chat_failed")
+        self.assertNotIn("state_token", response.get_json())
+        resumed = self.client.post("/api/session/resume", json={"state_token": token}).get_json()
+        self.assertEqual(resumed["view"]["affinity"], 50)
+        self.assertEqual(decode_state(resumed["state_token"])["history"], {})
 
 
 if __name__ == "__main__":

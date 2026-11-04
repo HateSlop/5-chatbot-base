@@ -51,13 +51,8 @@ class ChatbotService:
         history = state["history"].get(character_id, [])
         scene_events = [item for item in state.get("scene_events", [])
                         if item["speaker_id"] in {character_id, "narrator"}]
-        turn = self.generator.generate(
-            message, state["player_name"], config["characters"][character_id], knowledge, history,
-            LOCATIONS[state["location_id"]], state["affinity"], scene_events,
-            scene_context(state),
-        )
+        attitude = self.generator.classify(message, history, scene_events)
         next_state = deepcopy(state)
-        attitude = turn["attitude"]
         score_key = f"{state['scene_id']}:{character_id}"
         message_key = " ".join(message.casefold().split())
         message_hash = sha256(message_key.encode("utf-8")).hexdigest()
@@ -91,6 +86,11 @@ class ChatbotService:
                     if next_state["affinity"] < before:
                         next_state["hostile_streak"] = streak + 1
                         scored.append(f"{score_key}:hostile:{count + 1}")
+        turn = self.generator.generate(
+            message, state["player_name"], config["characters"][character_id], knowledge, history,
+            LOCATIONS[state["location_id"]], next_state["affinity"], scene_events,
+            scene_context(state),
+        )
         # shortcut: 인물마다 최근 10번의 대화만 보관, 긴 대화 기억이 필요하면 요약을 추가한다.
         next_state["history"][character_id] = (history + [
             {"role": "user", "content": message[:500]},
