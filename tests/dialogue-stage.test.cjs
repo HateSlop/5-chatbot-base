@@ -165,6 +165,33 @@ test('a new location reveals its dialogue only after background and character ar
   assert.equal(nodes['.dialogue-box'].hidden,false);
 });
 
+test('every character keeps the dialogue delay when an entrance is rendered again', async () => {
+  for (const character of ['jimmy', 'karen', 'bob', 'cathy']) {
+    const {nodes, stage} = setup();
+    const pauses = [];
+    stage.pause = ms => new Promise(resolve => pauses.push({ms, resolve}));
+    const settle = () => new Promise(resolve => setImmediate(resolve));
+    const scene = {background:'/shop.svg', image:`/${character}.png`, speaker:character, text:'대사'};
+    stage.render(scene);
+    await settle();
+    const old = stage.ready;
+    stage.render(scene);
+    await settle();
+    for (const pause of pauses.splice(0)) { assert.equal(pause.ms, 1000); pause.resolve(); }
+    await settle();
+    assert.equal(await old, false);
+    assert.equal(stage.root.dataset.loading, 'false');
+    assert.equal(nodes['.dialogue-box'].hidden, true);
+    assert.equal(pauses[0].ms, 400);
+    pauses.shift().resolve();
+    await stage.ready;
+    assert.equal(nodes['.dialogue-box'].hidden, false);
+    stage.render(scene);
+    await stage.ready;
+    assert.equal(pauses.length, 0);
+  }
+});
+
 test('long dialogue pages preserve every character without scroll or HTML interpretation',()=>{
   const {nodes,stage}=setup();let paged=false;
   stage.pager={hidden:true};stage.previous={};stage.next={};stage.pageLabel={};

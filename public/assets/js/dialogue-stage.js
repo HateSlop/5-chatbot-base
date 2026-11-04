@@ -177,7 +177,7 @@ window.DialogueStage = class {
       }
       this.appearancePending = false;
       this.root.dataset.loading = 'false';
-      if (dialogue && (arriving || changedScene)) {
+      if (dialogue && !continuous) {
         await this.pause(400);
         if (version !== this.version) return false;
       }
