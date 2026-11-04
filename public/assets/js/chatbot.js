@@ -174,7 +174,7 @@ async function performAction(actionId) {
   statusMessage.textContent = "이야기가 이어지는 중…";
   try {
     await request("/api/action", {state_token: stateToken, action_id: actionId});
-    statusMessage.textContent = "이야기가 이어졌습니다.";
+    statusMessage.textContent = "";
   } catch (error) { statusMessage.textContent = error.message; }
   finally { busy = false; renderView(currentView); }
 }

@@ -55,6 +55,17 @@ function response(sceneId, locationId, characterId, events, affinity = 50) {
   };
 }
 
+test('successful movement clears progress status while failures remain visible', async () => {
+  const h = setup();
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '알렉스');
+  h.context.fetch = async () => ({ok: true, json: async () => response('neighbors', 'square', null, [])});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '');
+  h.context.fetch = async () => ({ok: false, json: async () => ({error: {message: '다시 시도해 주세요'}})});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '다시 시도해 주세요');
+});
+
 test('start uses response in memory and renders the current scene', () => {
   const h = setup();
   h.context.window.startStory(response('arrival', 'player_house', 'jimmy', [

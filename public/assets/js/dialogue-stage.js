@@ -148,14 +148,14 @@ window.DialogueStage = class {
       if (background && this.background.decode) await this.background.decode().catch(() => {});
       if (version !== this.version) return false;
       if (arriving) {
-        if (this.arrivalWait) await this.pause(3000);
+        if (this.arrivalWait) await this.pause(800);
         if (version !== this.version) return false;
         await this.image(this.background, '/assets/images/player_house_open.png', '문이 열린 집');
         if (version !== this.version) return false;
         this.lastBackground = '/assets/images/player_house_open.png';
         if (this.background.decode) await this.background.decode().catch(() => {});
         if (version !== this.version) return false;
-        await this.pause(500);
+        await this.pause(200);
         if (version !== this.version) return false;
         await this.image(this.figure, image, speaker ? `${speaker}의 현재 모습` : '방문 인물');
         if (version !== this.version) return false;
