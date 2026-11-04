@@ -19,7 +19,7 @@ test('live entry begins at the pre-move house, then waits for Jimmy after depart
   assert.equal(h.renders[0].speaker,'');assert.equal(h.renders[0].text,'');
   assert.equal(h.timers.size,0);
   h.get('entry-depart').listeners.click();await new Promise(r=>setImmediate(r));
-  assert.equal(h.renders.at(-1).dialogue,false);assert.equal(h.delay,800);
+  assert.equal(h.renders.at(-1).dialogue,false);assert.equal(h.delay,1500);
   h.timers.get(1)();assert.equal(h.renders.at(-1).speaker,'지미');
   assert.equal(h.get('entry-answer').hidden,false);
   h.get('entry-answer').listeners.click();assert.equal(h.get('entry-name-dialog').open,true);assert.equal(h.get('username').focused,true);

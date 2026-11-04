@@ -17,8 +17,10 @@ class StoryImageSelector:
     ) -> str | None:
         images = self.catalog.get(character_id, {})
         cue = visual_cue
-        if character_id == "karen" and scene_id == "photo_found" and cue != "smile":
+        if character_id == "karen" and scene_id == "photo_found":
             cue = "angry"
+        if character_id == "jimmy" and scene_id in {"butcher_search", "empty_butcher", "dinner_invite"}:
+            cue = "scared"
         if cue is None and character_id == "jimmy":
             cue = "neutral"
         if cue is None:

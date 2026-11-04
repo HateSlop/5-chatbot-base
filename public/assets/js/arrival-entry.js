@@ -26,7 +26,7 @@ async function showEntry() {
     if (run !== entryRun || document.getElementById('name-screen').hidden) return;
     window.entryVisitReady = true;
     entryAnswer.hidden = false;
-  },800);
+  },1500);
 }
 entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getElementById('username').focus();});
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
