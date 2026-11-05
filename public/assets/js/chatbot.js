@@ -18,6 +18,8 @@ let playerName = "";
 let selectedCharacter = null;
 let currentView = null;
 let busy = false;
+// Frames only present the festival events already disclosed by the server.
+let festivalFrame = 0;
 // Presentation only: hide completed greeting destinations, without changing server actions.
 const greetedPlaces = new Set();
 const greetingDestinations = {visit_karen:'karen_house',visit_bob:'butcher_shop',visit_cathy:'salon'};
@@ -58,10 +60,14 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  const line = conversation.at(-1);
+  const festival = currentView.scene_id === 'festival';
+  const discovery = currentView.scene_id === 'hair_found';
+  const incident = discovery ? conversation.filter(item => item.kind === 'scene') : [];
+  const line = discovery && festivalFrame < 2 ? (festivalFrame === 1 ? incident[0] : null) : conversation.at(-1);
   dialogueStage.render({
-    background: currentView.background,
-    image: line?.image || currentView.available_characters[0]?.portrait || null,
+    background: festival ? '/assets/images/festival_meal.png' : discovery ?
+      `/assets/images/festival_${['meat', 'hair', 'stares'][festivalFrame]}.png` : currentView.background,
+    image: festival || discovery ? null : line?.image || currentView.available_characters[0]?.portrait || null,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
     visitorId: selectedCharacter,
@@ -80,10 +86,27 @@ function renderView(view) {
   document.getElementById("affinity-value").textContent = `${view.affinity} / 100`;
 
   actionList.replaceChildren();
+  const festival = ['festival', 'hair_found'].includes(view.scene_id);
+  const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
+  postMoveUI.setSplit?.(!festival);
+  if (showingDiscovery) {
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'action-button';
+    next.textContent = '다음 장면 ›';
+    next.disabled = busy;
+    next.addEventListener('click', () => {
+      if (busy) return;
+      ++festivalFrame;
+      renderView(currentView);
+    });
+    actionList.append(next);
+  }
   if (view.scene_id === 'neighbors' && Object.values(greetingDestinations).includes(view.location_id)) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
+    if (showingDiscovery) continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
@@ -118,7 +141,7 @@ function renderView(view) {
   endingCard.hidden = !view.ending;
   endingCard.textContent = view.ending ? `ENDING — ${endingNames[view.ending] || view.ending}` : "";
   document.getElementById("ending-restart").hidden = !view.ending;
-  input.disabled = busy || !character || !!view.ending;
+  input.disabled = busy || !character || !!view.ending || festival;
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
   postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
@@ -127,6 +150,7 @@ function renderView(view) {
 }
 
 function applyResponse(data, kind, characterId = null) {
+  if (currentView?.scene_id !== data.view.scene_id) festivalFrame = 0;
   stateToken = data.state_token;
   for (const item of data.events) {
     saveMessage({speaker: item.speaker_id, text: item.text, image: item.image, kind,
@@ -145,6 +169,7 @@ window.startStory = (data, name) => {
   }
   window.entryVisitReady = false;
   playerName = name;
+  festivalFrame = 0;
   transcript = [];
   greetedPlaces.clear();
   applyResponse(data, "scene");
@@ -169,6 +194,7 @@ async function request(path, payload) {
 
 async function performAction(actionId) {
   if (busy || !stateToken) return;
+  if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
   busy = true;
   renderView(currentView);
   statusMessage.textContent = "이야기가 이어지는 중…";
