@@ -17,3 +17,5 @@
 .village-start .start-scene > :not(.start-video) { position: relative; z-index: 2; }
 .village-start .start-panel { min-height: 0; display: grid; align-items: center; text-align: center; }
 .village-start .start-actions { position: static; width: min(360px, 42%); margin: 0 auto; }
+.start-music-toggle { position: absolute; top: 16px; right: 16px; z-index: 5; padding: 8px 12px; border: 1px solid #c49a64; border-radius: 6px; color: #fff5df; background: #231d2bea; font: 14px "Malgun Gothic", sans-serif; cursor: pointer; }
+.start-music-toggle:focus-visible { outline: 3px solid #ffe4a1; outline-offset: 3px; }
