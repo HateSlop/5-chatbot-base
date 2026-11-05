@@ -185,6 +185,19 @@ window.DialogueStage = class {
       }
       this.appearancePending = false;
       this.root.dataset.loading = 'false';
+      if (this.displayedFigure !== image) {
+        this.angerAnimation?.cancel();
+        const previous = /\/(jimmy|karen|bob|cathy)_(basic|neutral|smile)\.(png|svg)$/.exec(this.displayedFigure || '');
+        this.displayedFigure = image;
+        if (previous && image === `/assets/images/${previous[1]}_angry.png` &&
+            !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          this.angerAnimation = this.figure.animate?.([
+            {transform:'translateX(0)'}, {transform:'translateX(-8px)'},
+            {transform:'translateX(7px)'}, {transform:'translateX(-5px)'},
+            {transform:'translateX(3px)'}, {transform:'translateX(0)'},
+          ], {duration:360, easing:'ease-out'});
+        }
+      }
       if (dialogue && !continuous) {
         await this.pause(400);
         if (version !== this.version) return false;

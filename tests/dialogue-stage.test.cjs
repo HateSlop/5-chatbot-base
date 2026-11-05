@@ -159,6 +159,47 @@ test('continuous Jimmy dialogue keeps panels visible and preserves the requested
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_angry.png');
 });
 
+test('each resident shakes once on a visible smile-to-anger transition, not repeated renders or first appearances', async () => {
+  for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
+    const {nodes, stage} = setup();
+    let shakes = 0;
+    nodes['.dialogue-figure'].animate = (_, options) => {
+      ++shakes;
+      assert.equal(options.duration, 360);
+      return {cancel() {}};
+    };
+    const scene = image => ({background:'/assets/images/salon.svg', image:`/assets/images/${id}_${image}.png`});
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 0);
+    stage.render(scene('smile')); await stage.ready;
+    stage.render(scene('angry')); const first = stage.ready;
+    stage.render(scene('angry')); await first; await stage.ready;
+    assert.equal(shakes, 1);
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 1);
+    stage.render(scene('smile')); await stage.ready;
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 2);
+    stage.render({background:'/square.svg'}); await stage.ready;
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 2);
+  }
+});
+
+test('anger shaking respects reduced motion and does not carry across residents', async () => {
+  const {nodes, stage} = setup({window:{matchMedia:() => ({matches:true})}});
+  let shakes = 0;
+  nodes['.dialogue-figure'].animate = () => { ++shakes; };
+  stage.render({image:'/assets/images/karen_smile.png'}); await stage.ready;
+  stage.render({image:'/assets/images/karen_angry.png'}); await stage.ready;
+  assert.equal(shakes, 0);
+  const other = setup();
+  other.nodes['.dialogue-figure'].animate = () => { ++shakes; };
+  other.stage.render({image:'/assets/images/karen_smile.png'}); await other.stage.ready;
+  other.stage.render({image:'/assets/images/bob_angry.png'}); await other.stage.ready;
+  assert.equal(shakes, 0);
+});
+
 test('leaving during door opening cannot reveal Jimmy or dialogue over another scene',async()=>{
   const {nodes,stage}=setup();let release;
   stage.pause=()=>new Promise(resolve=>release=resolve);
