@@ -80,7 +80,7 @@ function renderMessages() {
   dialogueStage.render({
     background: festival ? '/assets/images/festival_meal.png' : discovery ?
       `/assets/images/festival_${['meat', 'hair', 'stares'][festivalFrame]}.png` : currentView.background,
-    image: festival || discovery ? null : portrait,
+    image: festival || discovery || dinnerEmpty ? null : portrait,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
     visitorId: selectedCharacter,
@@ -128,11 +128,25 @@ function renderView(view) {
     });
     actionList.append(next);
   }
+  if (karenGreeting) {
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'action-button';
+    next.textContent = '둘러보기 ›';
+    next.disabled = busy;
+    next.addEventListener('click', () => {
+      if (busy) return;
+      karenDinnerDismissed = true;
+      clearReaction();
+      renderView(currentView);
+    });
+    actionList.append(next);
+  }
   if (view.scene_id === 'neighbors' && Object.values(greetingDestinations).includes(view.location_id)) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
-    if (showingDiscovery) continue;
+    if (showingDiscovery || karenGreeting) continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";

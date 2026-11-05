@@ -19,8 +19,10 @@ class StoryImageSelector:
         cue = visual_cue
         if character_id == "karen" and scene_id == "photo_found":
             cue = "angry"
-        if character_id == "jimmy" and scene_id in {"butcher_search", "empty_butcher", "dinner_invite"}:
+        if character_id == "jimmy" and scene_id in {"butcher_search", "empty_butcher"}:
             cue = "scared"
+        if character_id == "jimmy" and scene_id == "dinner_invite":
+            cue = "anxiety"
         if cue is None and character_id == "jimmy":
             cue = "neutral"
         if cue is None:

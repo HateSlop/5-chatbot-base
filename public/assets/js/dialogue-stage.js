@@ -121,7 +121,7 @@ window.DialogueStage = class {
     if (sceneId === 'photo_found' && /\/karen_/.test(image || '')) image = '/assets/images/karen_angry.png';
     const isHome = background === '/assets/images/player_house.svg';
     const legacyJimmy = /\/jimmy_(neutral|smile|worried)\.svg$/.exec(image || '');
-    const isJimmy = !!legacyJimmy || /\/jimmy(?:_(basic|smile|scared|angry))?\.png$/.test(image || '');
+    const isJimmy = !!legacyJimmy || /\/jimmy(?:_(basic|smile|scared|angry|anxiety))?\.png$/.test(image || '');
     this.root.dataset.figure = isJimmy ? 'jimmy' : '';
     const visitor = isHome && image && object !== 'tv' ?
       (visitorId || (isJimmy ? 'jimmy' : /\/([a-z]+)[_.-]/.exec(image)?.[1]) || image) : null;
@@ -132,7 +132,8 @@ window.DialogueStage = class {
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
-    if (['butcher_search', 'empty_butcher', 'dinner_invite'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
+    if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
+    if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
     if (this.paths.get(this.background) !== background) this.root.dataset.backgroundReady = 'false';
