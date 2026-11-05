@@ -17,7 +17,7 @@ function setup(extra = {}) {
 
 test('disclosed frightened Jimmy and caught Karen scenes keep their incident portraits', async () => {
   const {nodes, stage} = setup();
-  for (const sceneId of ['butcher_search', 'dinner_invite']) {
+  for (const sceneId of ['butcher_search']) {
     stage.render({sceneId, background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
     await stage.ready;
     assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_scared.png');
@@ -25,6 +25,16 @@ test('disclosed frightened Jimmy and caught Karen scenes keep their incident por
   stage.render({sceneId:'photo_found', background:'/assets/images/karen_house.svg', image:'/assets/images/karen_worried.svg'});
   await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src, '/assets/images/karen_angry.png');
+});
+
+test('Jimmy keeps the anxious cutout throughout the dinner invitation', async () => {
+  const {nodes, stage} = setup();
+  for (const image of ['jimmy_neutral.svg', 'jimmy_smile.png', 'jimmy_angry.png', 'jimmy_anxiety.png']) {
+    stage.render({sceneId:'dinner_invite', background:'/assets/images/player_house.svg', image:`/assets/images/${image}`, visitorId:'jimmy'});
+    await stage.ready;
+    assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_anxiety.png');
+    assert.equal(stage.root.dataset.figure, 'jimmy');
+  }
 });
 
 test('Jimmy leaves the empty butcher scene while his farewell and background remain', async () => {
