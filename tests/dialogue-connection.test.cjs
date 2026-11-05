@@ -258,6 +258,56 @@ test('chat sends the in-memory token and keeps player and reply metadata', async
   assert.deepEqual(h.nodes.get('chat-log').children.map(item => item.children[1].textContent), ['마을은 어때요?', '답변']);
 });
 
+test('waiting and failed replies keep the last expression until a successful reply changes it', async () => {
+  const h = setup();
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', [
+    {speaker_id: 'jimmy', text: '무서워.', image: '/jimmy-worried.svg'},
+  ]), '알렉스');
+  let finish;
+  h.context.fetch = () => new Promise(resolve => { finish = resolve; });
+  h.nodes.get('user-message').value = '무슨 일이에요?';
+  const waiting = h.nodes.get('chat-form').listeners.submit({preventDefault() {}});
+  assert.equal(h.stage().text, '무서워.');
+  assert.equal(h.stage().image, '/jimmy-worried.svg');
+  assert.equal(h.nodes.get('character-portrait').src, '/jimmy-worried.svg');
+  finish({ok: true, json: async () => response('arrival', 'player_house', 'jimmy', [
+    {speaker_id: 'jimmy', text: '괜찮아졌어.', image: '/jimmy-smile.svg'},
+  ])});
+  await waiting;
+  assert.equal(h.stage().text, '괜찮아졌어.');
+  assert.equal(h.stage().image, '/jimmy-smile.svg');
+  assert.equal(h.nodes.get('character-portrait').src, '/jimmy-smile.svg');
+
+  h.nodes.get('user-message').value = '다시 말해 줘';
+  const retry = h.nodes.get('chat-form').listeners.submit({preventDefault() {}});
+  assert.equal(h.stage().text, '괜찮아졌어.');
+  assert.equal(h.stage().image, '/jimmy-smile.svg');
+  finish({ok: false, json: async () => ({error: {message: '잠시 후 재시도'}})});
+  await retry;
+  assert.equal(h.stage().text, '괜찮아졌어.');
+  assert.equal(h.stage().image, '/jimmy-smile.svg');
+  assert.equal(h.nodes.get('character-portrait').src, '/jimmy-smile.svg');
+  assert.equal(h.nodes.get('user-message').value, '다시 말해 줘');
+});
+
+test('a new scene or character cannot inherit the previous expression', () => {
+  const h = setup();
+  h.context.window.startStory(response('neighbors', 'karen_house', 'karen', [
+    {speaker_id: 'karen', text: '반가워요.', image: '/karen-smile.svg'},
+  ]), '알렉스');
+  assert.equal(h.stage().image, '/karen-smile.svg');
+  h.context.applyResponse(response('karen_dinner', 'karen_house', 'karen', []), 'scene');
+  assert.equal(h.stage().image, '/karen.svg');
+  assert.equal(h.nodes.get('character-portrait').src, '/karen.svg');
+  h.context.applyResponse(response('karen_dinner', 'karen_house', 'bob', []), 'scene');
+  assert.equal(h.stage().image, '/bob.svg');
+  assert.equal(h.nodes.get('character-portrait').src, '/bob.svg');
+  h.context.applyResponse(response('ending', 'square', null, [
+    {speaker_id: 'narrator', text: '끝', image: '/ending.svg'},
+  ]), 'scene');
+  assert.equal(h.stage().image, '/ending.svg');
+});
+
 test('leaving clears memory and a history restore reloads to the name screen', () => {
   const h = setup();
   h.context.window.startStory(response('arrival', 'player_house', 'jimmy', [

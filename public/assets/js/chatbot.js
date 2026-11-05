@@ -69,18 +69,12 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  const festival = currentView.scene_id === 'festival';
-  const discovery = currentView.scene_id === 'hair_found';
-  const incident = discovery ? conversation.filter(item => item.kind === 'scene') : [];
-  const line = discovery && festivalFrame < 2 ? (festivalFrame === 1 ? incident[0] : null) : conversation.at(-1);
-  const dinnerEmpty = currentView.scene_id === 'karen_dinner' && karenDinnerDismissed;
-  const portrait = ['jimmy', 'karen', 'bob', 'cathy'].includes(selectedCharacter) ?
-    `/assets/images/${selectedCharacter}_${angryReaction ? 'angry' : 'smile'}.png` :
-    line?.image || currentView.available_characters[0]?.portrait || null;
+  const line = conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: festival ? '/assets/images/festival_meal.png' : discovery ?
-      `/assets/images/festival_${['meat', 'hair', 'stares'][festivalFrame]}.png` : currentView.background,
-    image: festival || discovery || dinnerEmpty ? null : portrait,
+    background: currentView.background,
+    image: (selectedCharacter
+      ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
+      : line?.image) || null,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
     visitorId: selectedCharacter,
