@@ -119,6 +119,26 @@ test('replacement images keep the old background visible until decoding finishes
   assert.equal(bg.src,'/open.png');assert.equal(bg.hidden,false);
 });
 
+test('location label is released with each background before the dialogue delay', async () => {
+  const pending = [];
+  const {nodes, stage} = setup({Image:class {constructor() { pending.push(this); } decode() { return Promise.resolve(); }}});
+  const pauses = [];
+  stage.pause = ms => new Promise(resolve => pauses.push({ms, resolve}));
+  for (const place of ['player_house', 'karen_house', 'butcher_shop', 'salon', 'square', 'basement']) {
+    const background = `/assets/images/${place}.svg`;
+    stage.render({background, text:'현재 장면'});
+    assert.equal(stage.root.dataset.backgroundReady, 'false');
+    await pending.shift().onload();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(nodes['.dialogue-background'].src, background);
+    assert.equal(stage.root.dataset.backgroundReady, 'true');
+    assert.equal(nodes['.dialogue-box'].hidden, true);
+    assert.equal(pauses[0].ms, 400);
+    pauses.shift().resolve();
+    await stage.ready;
+  }
+});
+
 test('continuous Jimmy dialogue keeps panels visible and preserves the requested emotion',async()=>{
   const {nodes,stage}=setup();stage.homeVisitor='jimmy';stage.visitorVisible=true;
   stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_basic.png',text:'인사'});await stage.ready;

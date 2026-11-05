@@ -91,6 +91,7 @@ window.DialogueStage = class {
           node.src = path;
           node.alt = alt || '';
           node.hidden = false;
+          if (node === this.background) this.root.dataset.backgroundReady = 'true';
           resolve(true);
         };
         pending.onerror = () => {
@@ -103,7 +104,10 @@ window.DialogueStage = class {
       return request;
     }
     node.hidden = true;
-    node.onload = () => { node.hidden = false; };
+    node.onload = () => {
+      node.hidden = false;
+      if (node === this.background) this.root.dataset.backgroundReady = 'true';
+    };
     node.onerror = () => { node.hidden = true; };
     node.alt = alt || '';
     if (path) node.src = path;
@@ -131,6 +135,7 @@ window.DialogueStage = class {
     if (['butcher_search', 'empty_butcher', 'dinner_invite'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'empty_butcher') image = null;
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
+    if (this.paths.get(this.background) !== background) this.root.dataset.backgroundReady = 'false';
     const version = ++this.version;
     const changedScene = this.lastBackground !== background;
     if (changedScene) this.appearancePending = !!image;
@@ -154,6 +159,7 @@ window.DialogueStage = class {
       if (backgroundReady) await backgroundReady;
       if (background && this.background.decode) await this.background.decode().catch(() => {});
       if (version !== this.version) return false;
+      this.root.dataset.backgroundReady = 'true';
       if (arriving) {
         if (this.arrivalWait) await this.pause(1500);
         if (version !== this.version) return false;
