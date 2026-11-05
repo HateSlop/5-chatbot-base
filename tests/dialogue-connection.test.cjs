@@ -19,6 +19,8 @@ function node() {
 function setup() {
   const nodes = new Map();
   const listeners = {};
+  const timers = new Map();
+  let timerId = 0;
   let stage;
   let move;
   let split;
@@ -37,9 +39,11 @@ function setup() {
     DialogueStage: class {render(data) { stage = data; }},
     PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
+    setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, {callback, ms}); return id; },
+    clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, stage: () => stage, move: () => move, split: () => split,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -160,6 +164,51 @@ test('current scene events and current character chat never mix other scenes or 
   ]), 'scene');
   assert.deepEqual(h.nodes.get('chat-log').children.map(item => item.children[1].textContent), ['새 장면']);
   assert.equal(h.transcript().length, 5);
+});
+
+test('all residents smile unless a chat lowers server affinity, then anger lasts 1.5 seconds', async () => {
+  for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
+    const h = setup();
+    h.context.window.startStory(response('neighbors', 'salon', id, []), '알렉스');
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id,
+      [{speaker_id:id, text:'중립 답변', image:`/assets/images/${id}_worried.svg`}]), 'chat', id);
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id,
+      [{speaker_id:id, text:'불쾌한 답변', image:null}], 48), 'chat', id);
+    h.context.renderView(vm.runInContext('currentView', h.context));
+    await Promise.resolve();
+    assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
+    assert.equal(h.timers.size, 1);
+    const timer = [...h.timers.values()][0];
+    assert.equal(timer.ms, 1500);
+    timer.callback();
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id, [], 55), 'chat', id);
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+  }
+});
+
+test('angry reaction waits for the displayed answer and is cancelled on movement and exit', async () => {
+  const h = setup();
+  h.context.window.startStory(response('neighbors', 'salon', 'cathy', []), '알렉스');
+  let ready;
+  vm.runInContext('dialogueStage.ready = pendingReady', Object.assign(h.context, {
+    pendingReady: new Promise(resolve => { ready = resolve; }),
+  }));
+  h.context.applyResponse(response('neighbors', 'salon', 'cathy', [], 48), 'chat', 'cathy');
+  await Promise.resolve();
+  assert.equal(h.timers.size, 0);
+  ready(true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 1);
+  h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 48), 'scene');
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.stage().image, '/assets/images/bob_smile.png');
+  h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 46), 'chat', 'bob');
+  await Promise.resolve();
+  h.listeners.pagehide();
+  assert.equal(h.timers.size, 0);
 });
 
 test('chat sends the in-memory token and keeps player and reply metadata', async () => {
