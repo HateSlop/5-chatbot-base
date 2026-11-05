@@ -58,10 +58,12 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  const line = conversation.at(-1);
+  const line = conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
     background: currentView.background,
-    image: line?.image || currentView.available_characters[0]?.portrait || null,
+    image: (selectedCharacter
+      ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
+      : line?.image) || null,
     speaker: line ? speakerName(line.speaker) : "",
     text: line?.text || "",
     visitorId: selectedCharacter,
