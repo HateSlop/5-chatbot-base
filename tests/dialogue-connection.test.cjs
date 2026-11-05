@@ -19,8 +19,11 @@ function node() {
 function setup() {
   const nodes = new Map();
   const listeners = {};
+  const timers = new Map();
+  let timerId = 0;
   let stage;
   let move;
+  let split;
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
@@ -34,11 +37,13 @@ function setup() {
     localStorage: new Proxy({}, {get() { throw Error('persistent storage forbidden'); }}),
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
     DialogueStage: class {render(data) { stage = data; }},
-    PostMoveUI: class {render(data) { move = data; }},
+    PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
+    setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, {callback, ms}); return id; },
+    clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, stage: () => stage, move: () => move,
+  return {context, nodes, listeners, timers, stage: () => stage, move: () => move, split: () => split,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -55,6 +60,17 @@ function response(sceneId, locationId, characterId, events, affinity = 50) {
   };
 }
 
+test('successful movement clears progress status while failures remain visible', async () => {
+  const h = setup();
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '알렉스');
+  h.context.fetch = async () => ({ok: true, json: async () => response('neighbors', 'square', null, [])});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '');
+  h.context.fetch = async () => ({ok: false, json: async () => ({error: {message: '다시 시도해 주세요'}})});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '다시 시도해 주세요');
+});
+
 test('start uses response in memory and renders the current scene', () => {
   const h = setup();
   h.context.window.startStory(response('arrival', 'player_house', 'jimmy', [
@@ -67,6 +83,45 @@ test('start uses response in memory and renders the current scene', () => {
   assert.equal(h.move().affinity, 50);
   assert.equal(h.transcript()[0].scene_id, 'arrival');
   assert.equal(h.transcript()[0].location_id, 'player_house');
+});
+
+test('festival fills the canvas in order and reveals server choices only after the stares', async () => {
+  const h = setup();
+  const meal = response('festival', 'square', 'bob', [{speaker_id:'narrator', text:'축제 식사', image:null}]);
+  meal.view.available_actions = [{id:'inspect_food', label:'음식을 살핀다', kind:'inspect'}];
+  h.context.window.startStory(meal, '알렉스');
+  assert.equal(h.stage().background, '/assets/images/festival_meal.png');
+  assert.equal(h.split(), false);
+  assert.equal(h.stage().image, null);
+  const discovery = response('hair_found', 'square', 'bob', [
+    {speaker_id:'thought', text:'금발 머리카락을 발견했다. 밥은 대머리다.', image:null},
+    {speaker_id:'thought', text:'지미의 실종과 수첩을 연결해 음식의 정체를 추리했다.', image:null},
+  ]);
+  discovery.view.available_actions = ['escape','stay'].map(id => ({id, label:id, kind:'choice'}));
+  h.context.fetch = async () => ({ok:true, json:async () => discovery});
+  await vm.runInContext("performAction('inspect_food')", h.context);
+  const buttons = () => h.nodes.get('action-list').children;
+  assert.equal(h.stage().background, '/assets/images/festival_meat.png');
+  assert.equal(h.stage().text, '');
+  assert.deepEqual(buttons().map(button => button.textContent), ['다음 장면 ›']);
+  h.context.fetch = async () => { throw Error('presentation must not call the server'); };
+  await vm.runInContext("performAction('escape')", h.context);
+  buttons()[0].listeners.click();
+  assert.equal(h.stage().background, '/assets/images/festival_hair.png');
+  assert.equal(h.stage().text, discovery.events[0].text);
+  h.context.renderView(discovery.view);
+  assert.equal(h.stage().background, '/assets/images/festival_hair.png');
+  buttons()[0].listeners.click();
+  assert.equal(h.stage().background, '/assets/images/festival_stares.png');
+  assert.equal(h.stage().text, discovery.events[1].text);
+  assert.equal(h.stage().image, null);
+  assert.deepEqual(buttons().map(button => button.textContent), ['escape','stay']);
+  h.context.applyResponse(response('ending_escape', 'square', null, []), 'scene');
+  assert.equal(h.stage().background, '/assets/images/square.svg');
+  assert.equal(h.split(), true);
+  h.context.window.startStory(meal, '새 이름');
+  h.context.applyResponse(discovery, 'scene');
+  assert.equal(h.stage().background, '/assets/images/festival_meat.png');
 });
 
 test('naming continues an already visible Jimmy visit without replaying his entrance',()=>{
@@ -109,6 +164,51 @@ test('current scene events and current character chat never mix other scenes or 
   ]), 'scene');
   assert.deepEqual(h.nodes.get('chat-log').children.map(item => item.children[1].textContent), ['새 장면']);
   assert.equal(h.transcript().length, 5);
+});
+
+test('all residents smile unless a chat lowers server affinity, then anger lasts 1.5 seconds', async () => {
+  for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
+    const h = setup();
+    h.context.window.startStory(response('neighbors', 'salon', id, []), '알렉스');
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id,
+      [{speaker_id:id, text:'중립 답변', image:`/assets/images/${id}_worried.svg`}]), 'chat', id);
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id,
+      [{speaker_id:id, text:'불쾌한 답변', image:null}], 48), 'chat', id);
+    h.context.renderView(vm.runInContext('currentView', h.context));
+    await Promise.resolve();
+    assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
+    assert.equal(h.timers.size, 1);
+    const timer = [...h.timers.values()][0];
+    assert.equal(timer.ms, 1500);
+    timer.callback();
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    h.context.applyResponse(response('neighbors', 'salon', id, [], 55), 'chat', id);
+    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+  }
+});
+
+test('angry reaction waits for the displayed answer and is cancelled on movement and exit', async () => {
+  const h = setup();
+  h.context.window.startStory(response('neighbors', 'salon', 'cathy', []), '알렉스');
+  let ready;
+  vm.runInContext('dialogueStage.ready = pendingReady', Object.assign(h.context, {
+    pendingReady: new Promise(resolve => { ready = resolve; }),
+  }));
+  h.context.applyResponse(response('neighbors', 'salon', 'cathy', [], 48), 'chat', 'cathy');
+  await Promise.resolve();
+  assert.equal(h.timers.size, 0);
+  ready(true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 1);
+  h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 48), 'scene');
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.stage().image, '/assets/images/bob_smile.png');
+  h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 46), 'chat', 'bob');
+  await Promise.resolve();
+  h.listeners.pagehide();
+  assert.equal(h.timers.size, 0);
 });
 
 test('chat sends the in-memory token and keeps player and reply metadata', async () => {

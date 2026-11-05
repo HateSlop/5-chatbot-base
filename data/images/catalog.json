@@ -10,16 +10,19 @@
   "karen": {
     "neutral": "/assets/images/karen_basic.png",
     "smile": "/assets/images/karen_smile.png",
-    "worried": "/assets/images/karen_basic.png"
+    "worried": "/assets/images/karen_basic.png",
+    "angry": "/assets/images/karen_angry.png"
   },
   "bob": {
-    "neutral": "/assets/images/bob_neutral.svg",
-    "smile": "/assets/images/bob_smile.svg",
-    "worried": "/assets/images/bob_worried.svg"
+    "neutral": "/assets/images/bob_basic.png",
+    "smile": "/assets/images/bob_smile.png",
+    "worried": "/assets/images/bob_angry.png",
+    "angry": "/assets/images/bob_angry.png"
   },
   "cathy": {
-    "neutral": "/assets/images/cathy_neutral.svg",
-    "smile": "/assets/images/cathy_smile.svg",
-    "worried": "/assets/images/cathy_worried.svg"
+    "neutral": "/assets/images/cathy_basic.png",
+    "smile": "/assets/images/cathy_smile.png",
+    "worried": "/assets/images/cathy_angry.png",
+    "angry": "/assets/images/cathy_angry.png"
   }
 }

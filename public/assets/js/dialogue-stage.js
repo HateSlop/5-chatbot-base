@@ -26,7 +26,10 @@ window.DialogueStage = class {
       this.next = doc.createElement('button');
       this.pageLabel = doc.createElement('span');
       this.previous.type = this.next.type = 'button';
-      this.previous.textContent = '이전'; this.next.textContent = '다음';
+      this.previous.textContent = '◀'; this.next.textContent = '▶';
+      this.previous.setAttribute('aria-label', '이전 대사');
+      this.next.setAttribute('aria-label', '다음 대사');
+      this.pageLabel.className = 'visually-hidden';
       this.previous.addEventListener('click', () => { --this.pageIndex; this.showPage(); });
       this.next.addEventListener('click', () => { ++this.pageIndex; this.showPage(); });
       this.pager.append(this.previous, this.pageLabel, this.next);
@@ -88,6 +91,7 @@ window.DialogueStage = class {
           node.src = path;
           node.alt = alt || '';
           node.hidden = false;
+          if (node === this.background) this.root.dataset.backgroundReady = 'true';
           resolve(true);
         };
         pending.onerror = () => {
@@ -100,7 +104,10 @@ window.DialogueStage = class {
       return request;
     }
     node.hidden = true;
-    node.onload = () => { node.hidden = false; };
+    node.onload = () => {
+      node.hidden = false;
+      if (node === this.background) this.root.dataset.backgroundReady = 'true';
+    };
     node.onerror = () => { node.hidden = true; };
     node.alt = alt || '';
     if (path) node.src = path;
@@ -111,6 +118,7 @@ window.DialogueStage = class {
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
     if (legacyKaren) image = legacyKaren[1] === 'smile' ? '/assets/images/karen_smile.png' : '/assets/images/karen_basic.png';
+    if (sceneId === 'photo_found' && /\/karen_/.test(image || '')) image = '/assets/images/karen_angry.png';
     const isHome = background === '/assets/images/player_house.svg';
     const legacyJimmy = /\/jimmy_(neutral|smile|worried)\.svg$/.exec(image || '');
     const isJimmy = !!legacyJimmy || /\/jimmy(?:_(basic|smile|scared|angry))?\.png$/.test(image || '');
@@ -124,9 +132,13 @@ window.DialogueStage = class {
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
+    if (['butcher_search', 'empty_butcher', 'dinner_invite'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
+    if (sceneId === 'empty_butcher') image = null;
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
+    if (this.paths.get(this.background) !== background) this.root.dataset.backgroundReady = 'false';
     const version = ++this.version;
     const changedScene = this.lastBackground !== background;
+    if (changedScene) this.appearancePending = !!image;
     const continuous = !arriving && this.lastBackground === background && !this.box.hidden;
     this.lastBackground = background;
     this.root.dataset.loading = continuous ? 'false' : 'true';
@@ -147,15 +159,16 @@ window.DialogueStage = class {
       if (backgroundReady) await backgroundReady;
       if (background && this.background.decode) await this.background.decode().catch(() => {});
       if (version !== this.version) return false;
+      this.root.dataset.backgroundReady = 'true';
       if (arriving) {
-        if (this.arrivalWait) await this.pause(3000);
+        if (this.arrivalWait) await this.pause(1500);
         if (version !== this.version) return false;
         await this.image(this.background, '/assets/images/player_house_open.png', '문이 열린 집');
         if (version !== this.version) return false;
         this.lastBackground = '/assets/images/player_house_open.png';
         if (this.background.decode) await this.background.decode().catch(() => {});
         if (version !== this.version) return false;
-        await this.pause(500);
+        await this.pause(1000);
         if (version !== this.version) return false;
         await this.image(this.figure, image, speaker ? `${speaker}의 현재 모습` : '방문 인물');
         if (version !== this.version) return false;
@@ -165,8 +178,13 @@ window.DialogueStage = class {
       if (figureReady) await figureReady;
       if (image && this.figure.decode) await this.figure.decode().catch(() => {});
       if (version !== this.version) return false;
+      if (!arriving && this.appearancePending) {
+        await this.pause(1000);
+        if (version !== this.version) return false;
+      }
+      this.appearancePending = false;
       this.root.dataset.loading = 'false';
-      if (dialogue && (arriving || changedScene)) {
+      if (dialogue && !continuous) {
         await this.pause(400);
         if (version !== this.version) return false;
       }
