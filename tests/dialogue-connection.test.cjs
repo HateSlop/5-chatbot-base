@@ -142,7 +142,7 @@ test('first greeting choices hide every visited place, preserve return home, and
   h.context.applyResponse(scene('butcher_shop'),'scene');
   assert.deepEqual(labels(),['visit_cathy','return_home']);
   h.context.applyResponse(scene('salon'),'scene');assert.deepEqual(labels(),['return_home']);
-  h.context.applyResponse(scene('karen_house','karen_dinner'),'scene');
+  h.context.applyResponse(scene('karen_house','photo_found'),'scene');
   assert.deepEqual(labels(),actions.map(a=>a.label));
   h.context.window.startStory(scene('square'),'새 이름');
   assert.deepEqual(labels(),actions.map(a=>a.label));
@@ -209,6 +209,30 @@ test('angry reaction waits for the displayed answer and is cancelled on movement
   await Promise.resolve();
   h.listeners.pagehide();
   assert.equal(h.timers.size, 0);
+});
+
+test('Karen welcomes dinner guests smiling and leaves before the room investigation', () => {
+  const h = setup();
+  const dinner = response('karen_dinner', 'karen_house', 'karen', [
+    {speaker_id:'karen', text:'어서 오세요. 편히 둘러보세요.', image:'/assets/images/karen_basic.png'},
+  ]);
+  dinner.view.available_actions = [{id:'inspect_room', label:'수상한 방을 살핀다', kind:'inspect'}];
+  h.context.window.startStory(dinner, '알렉스');
+  assert.equal(h.stage().image, '/assets/images/karen_smile.png');
+  const buttons = () => h.nodes.get('action-list').children;
+  assert.deepEqual(buttons().map(button => button.textContent), ['둘러보기 ›']);
+  buttons()[0].listeners.click();
+  assert.equal(h.stage().image, null);
+  assert.equal(h.stage().background, '/assets/images/karen_house.svg');
+  assert.equal(h.stage().text, dinner.events[0].text);
+  assert.equal(h.nodes.get('user-message').disabled, true);
+  assert.deepEqual(buttons().map(button => button.textContent), ['수상한 방을 살핀다']);
+  h.context.renderView(dinner.view);
+  assert.equal(h.stage().image, null);
+  h.context.applyResponse(response('photo_found', 'karen_house', 'karen', []), 'scene');
+  assert.notEqual(h.stage().image, null);
+  h.context.window.startStory(dinner, '새 이름');
+  assert.equal(h.stage().image, '/assets/images/karen_smile.png');
 });
 
 test('chat sends the in-memory token and keeps player and reply metadata', async () => {
