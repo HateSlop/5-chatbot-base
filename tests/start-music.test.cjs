@@ -36,7 +36,7 @@ test('music follows the opening video, pauses off-page, and loops the supplied f
   const h = setup();
   await Promise.resolve();
   assert.equal(h.audio.paused, false);
-  assert.equal(h.button.textContent, '음악 끄기');
+  assert.equal(h.button['aria-label'], '음소거');
   h.video.paused = true;
   h.videoEvents.pause();
   assert.equal(h.audio.paused, true);
@@ -61,13 +61,15 @@ test('blocked autoplay retries on a gesture and the music button respects the of
   const h = setup(true);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.audio.paused, true);
-  assert.equal(h.button.textContent, '음악 켜기');
+  assert.equal(h.button['aria-label'], '음악 켜기');
   h.allowAudio();
   h.documentEvents.pointerdown({target:{closest:() => false}});
   await Promise.resolve();
   assert.equal(h.audio.paused, false);
   h.buttonEvents.click();
   assert.equal(h.audio.paused, true);
+  assert.equal(h.button['aria-pressed'], 'false');
+  assert.equal(h.button['aria-label'], '음악 켜기');
   h.documentEvents.pointerdown({target:{closest:() => false}});
   h.videoEvents.playing();
   assert.equal(h.audio.paused, true);

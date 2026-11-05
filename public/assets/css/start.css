@@ -17,5 +17,8 @@
 .village-start .start-scene > :not(.start-video) { position: relative; z-index: 2; }
 .village-start .start-panel { min-height: 0; display: grid; align-items: center; text-align: center; }
 .village-start .start-actions { position: static; width: min(360px, 42%); margin: 0 auto; }
-.start-music-toggle { position: absolute; top: 16px; right: 16px; z-index: 5; padding: 8px 12px; border: 1px solid #c49a64; border-radius: 6px; color: #fff5df; background: #231d2bea; font: 14px "Malgun Gothic", sans-serif; cursor: pointer; }
+.village-start .start-music-toggle { position: absolute; top: 12px; right: 12px; z-index: 5; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 8px; border: 0; border-radius: 50%; color: #fff5df; background: rgb(20 18 22 / 25%); opacity: .6; cursor: pointer; }
+.start-music-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.start-music-toggle[aria-pressed="true"] .music-muted, .start-music-toggle[aria-pressed="false"] .music-waves { display: none; }
+.village-start .start-music-toggle:hover, .village-start .start-music-toggle:focus-visible { opacity: 1; }
 .start-music-toggle:focus-visible { outline: 3px solid #ffe4a1; outline-offset: 3px; }
