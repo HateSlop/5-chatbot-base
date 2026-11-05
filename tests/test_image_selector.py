@@ -23,7 +23,13 @@ class ImageSelectorTests(unittest.TestCase):
 
     def test_jimmy_stays_scared_after_butcher_discovery(self):
         selector = StoryImageSelector()
-        for scene in ("butcher_search", "empty_butcher", "dinner_invite"):
+        for scene in ("butcher_search", "empty_butcher"):
             for cue in (None, "neutral", "smile", "worried"):
                 self.assertEqual(selector.select("대사", "jimmy", scene, cue),
                                  "/assets/images/jimmy_scared.png")
+
+    def test_jimmy_dinner_invitation_uses_anxious_image(self):
+        selector = StoryImageSelector()
+        for cue in (None, "neutral", "smile", "worried", "angry"):
+            self.assertEqual(selector.select("캐런의 저녁 초대", "jimmy", "dinner_invite", cue),
+                             "/assets/images/jimmy_anxiety.png")

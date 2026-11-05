@@ -17,7 +17,7 @@ function setup(extra = {}) {
 
 test('disclosed frightened Jimmy and caught Karen scenes keep their incident portraits', async () => {
   const {nodes, stage} = setup();
-  for (const sceneId of ['butcher_search', 'dinner_invite']) {
+  for (const sceneId of ['butcher_search']) {
     stage.render({sceneId, background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
     await stage.ready;
     assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_scared.png');
@@ -25,6 +25,16 @@ test('disclosed frightened Jimmy and caught Karen scenes keep their incident por
   stage.render({sceneId:'photo_found', background:'/assets/images/karen_house.svg', image:'/assets/images/karen_worried.svg'});
   await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src, '/assets/images/karen_angry.png');
+});
+
+test('Jimmy keeps the anxious cutout throughout the dinner invitation', async () => {
+  const {nodes, stage} = setup();
+  for (const image of ['jimmy_neutral.svg', 'jimmy_smile.png', 'jimmy_angry.png', 'jimmy_anxiety.png']) {
+    stage.render({sceneId:'dinner_invite', background:'/assets/images/player_house.svg', image:`/assets/images/${image}`, visitorId:'jimmy'});
+    await stage.ready;
+    assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_anxiety.png');
+    assert.equal(stage.root.dataset.figure, 'jimmy');
+  }
 });
 
 test('Jimmy leaves the empty butcher scene while his farewell and background remain', async () => {
@@ -117,6 +127,26 @@ test('replacement images keep the old background visible until decoding finishes
   assert.equal(bg.src,'/closed.png');assert.equal(bg.hidden,false);
   await pending[0].onload();await ready;
   assert.equal(bg.src,'/open.png');assert.equal(bg.hidden,false);
+});
+
+test('location label is released with each background before the dialogue delay', async () => {
+  const pending = [];
+  const {nodes, stage} = setup({Image:class {constructor() { pending.push(this); } decode() { return Promise.resolve(); }}});
+  const pauses = [];
+  stage.pause = ms => new Promise(resolve => pauses.push({ms, resolve}));
+  for (const place of ['player_house', 'karen_house', 'butcher_shop', 'salon', 'square', 'basement']) {
+    const background = `/assets/images/${place}.svg`;
+    stage.render({background, text:'현재 장면'});
+    assert.equal(stage.root.dataset.backgroundReady, 'false');
+    await pending.shift().onload();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(nodes['.dialogue-background'].src, background);
+    assert.equal(stage.root.dataset.backgroundReady, 'true');
+    assert.equal(nodes['.dialogue-box'].hidden, true);
+    assert.equal(pauses[0].ms, 400);
+    pauses.shift().resolve();
+    await stage.ready;
+  }
 });
 
 test('continuous Jimmy dialogue keeps panels visible and preserves the requested emotion',async()=>{
