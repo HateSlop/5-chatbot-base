@@ -321,3 +321,21 @@ test('a server response followed by its final render cannot skip a pending home 
   assert.equal(pauses[0].ms,400);pauses.shift().resolve();await final;
   assert.equal(stage.visitorVisible,true);assert.equal(nodes['.dialogue-box'].hidden,false);
 });
+
+test('departure trembles then exits and respects reduced motion', async () => {
+  const {stage,nodes} = setup();
+  stage.root.clientWidth = 1000;
+  let frames, cancelled = false;
+  nodes['.dialogue-figure'].animate = value => {
+    frames = value;
+    return {finished:Promise.resolve(),cancel(){cancelled=true;}};
+  };
+  await stage.depart(true);
+  assert.equal(frames.length,6);
+  assert.equal(frames.at(-1).transform,'translateX(-1000px)');
+  assert.equal(nodes['.dialogue-figure'].hidden,true);
+  assert.equal(cancelled,true);
+  const quiet = setup({window:{matchMedia:()=>({matches:true})}});
+  quiet.nodes['.dialogue-figure'].animate = () => {throw Error('motion forbidden');};
+  await quiet.stage.depart(true);
+});

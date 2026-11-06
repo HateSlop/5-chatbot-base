@@ -113,6 +113,19 @@ window.DialogueStage = class {
     if (path) node.src = path;
     else { node.onload = null; node.removeAttribute('src'); }
   }
+  async depart(shake) {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !this.figure.animate) return;
+    const frames = shake ? [
+      {transform:'translateX(0)',opacity:1},
+      {transform:'translateX(-5px)',offset:.12}, {transform:'translateX(5px)',offset:.24},
+      {transform:'translateX(-5px)',offset:.36}, {transform:'translateX(4px)',offset:.48},
+      {transform:`translateX(${-this.root.clientWidth}px)`,opacity:0},
+    ] : [{opacity:1}, {opacity:0}];
+    const animation = this.figure.animate(frames, {duration:shake ? 1100 : 650,easing:'ease-in',fill:'forwards'});
+    await animation.finished.catch(() => {});
+    this.figure.hidden = true;
+    animation.cancel();
+  }
   render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null }) {
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
