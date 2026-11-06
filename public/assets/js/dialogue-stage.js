@@ -16,6 +16,10 @@ window.DialogueStage = class {
     this.pageIndex = 0;
     if (this.box.ownerDocument) {
       const doc = this.box.ownerDocument;
+      this.copy = doc.createElement('div');
+      this.copy.className = 'dialogue-copy';
+      this.copy.append(this.speaker, this.text);
+      this.box.append(this.copy);
       this.controls = doc.createElement('div');
       this.controls.className = 'dialogue-controls';
       for (const button of this.box.querySelectorAll('.dialogue-advance')) this.controls.append(button);
@@ -53,12 +57,19 @@ window.DialogueStage = class {
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
     this.pager.hidden = true;
-    if (this.controls) this.box.style.paddingBottom = `${Math.max(12, this.controls.offsetHeight + 16)}px`;
+    const viewport = this.copy || this.box;
+    const fit = () => viewport.scrollHeight <= viewport.clientHeight;
+    const reserve = () => {
+      if (!this.copy) return;
+      const status = this.box.querySelector('.status-message');
+      this.box.style.minHeight = `${Math.max(112, (this.controls?.offsetHeight || 0) + (status?.offsetHeight || 0) + 76)}px`;
+    };
+    reserve();
     this.text.textContent = this.fullText || '';
-    if (this.box.scrollHeight <= this.box.clientHeight) { this.pages = [this.fullText || '']; return; }
+    if (fit()) { this.pages = [this.fullText || '']; return; }
     this.box.classList.add('is-paged');
     this.pager.hidden = false;
-    if (this.controls) this.box.style.paddingBottom = `${this.controls.offsetHeight + 16}px`;
+    reserve();
     const characters = Array.from(this.fullText || '');
     const pages = [];
     let start = 0;
@@ -67,7 +78,7 @@ window.DialogueStage = class {
       while (low <= high) {
         const middle = Math.floor((low + high) / 2);
         this.text.textContent = characters.slice(start, start + middle).join('');
-        if (this.box.scrollHeight <= this.box.clientHeight) { count = middle; low = middle + 1; }
+        if (fit()) { count = middle; low = middle + 1; }
         else high = middle - 1;
       }
       pages.push(characters.slice(start, start + count).join(''));
@@ -113,6 +124,19 @@ window.DialogueStage = class {
     if (path) node.src = path;
     else { node.onload = null; node.removeAttribute('src'); }
   }
+  async depart(shake) {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !this.figure.animate) return;
+    const frames = shake ? [
+      {transform:'translateX(0)',opacity:1},
+      {transform:'translateX(-5px)',offset:.12}, {transform:'translateX(5px)',offset:.24},
+      {transform:'translateX(-5px)',offset:.36}, {transform:'translateX(4px)',offset:.48},
+      {transform:'translateX(0)',opacity:0},
+    ] : [{opacity:1}, {opacity:0}];
+    const animation = this.figure.animate(frames, {duration:shake ? 1100 : 650,easing:'ease-in',fill:'forwards'});
+    await animation.finished.catch(() => {});
+    this.figure.hidden = true;
+    animation.cancel();
+  }
   render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null }) {
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
@@ -143,6 +167,7 @@ window.DialogueStage = class {
     const continuous = !arriving && this.lastBackground === background && !this.box.hidden;
     this.lastBackground = background;
     this.root.dataset.loading = continuous ? 'false' : 'true';
+    this.root.dataset.simultaneous = String(sceneId === 'butcher_search');
     const composer = this.root.querySelector('.move-composer');
     if (!continuous || !dialogue) this.box.hidden = true;
     if (composer && (!continuous || !dialogue)) composer.hidden = true;
@@ -179,12 +204,25 @@ window.DialogueStage = class {
       if (figureReady) await figureReady;
       if (image && this.figure.decode) await this.figure.decode().catch(() => {});
       if (version !== this.version) return false;
-      if (!arriving && this.appearancePending) {
+      if (!arriving && this.appearancePending && sceneId !== 'butcher_search') {
         await this.pause(1000);
         if (version !== this.version) return false;
       }
       this.appearancePending = false;
       this.root.dataset.loading = 'false';
+      if (this.displayedFigure !== image) {
+        this.angerAnimation?.cancel();
+        const previous = /\/(jimmy|karen|bob|cathy)_(basic|neutral|smile)\.(png|svg)$/.exec(this.displayedFigure || '');
+        this.displayedFigure = image;
+        if (previous && image === `/assets/images/${previous[1]}_angry.png` &&
+            !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          this.angerAnimation = this.figure.animate?.([
+            {transform:'translateX(0)'}, {transform:'translateX(-8px)'},
+            {transform:'translateX(7px)'}, {transform:'translateX(-5px)'},
+            {transform:'translateX(3px)'}, {transform:'translateX(0)'},
+          ], {duration:360, easing:'ease-out'});
+        }
+      }
       if (dialogue && !continuous) {
         await this.pause(400);
         if (version !== this.version) return false;

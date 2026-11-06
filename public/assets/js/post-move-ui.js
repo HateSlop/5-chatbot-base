@@ -59,7 +59,9 @@ window.PostMoveUI = class {
     this.previousAffinity = null;
     this.nav = stage.querySelector('.move-nav');
     this.hints = frame.querySelector('.move-hints');
-    stage.querySelector('.move-composer').append(form);
+    const composer = stage.querySelector('.move-composer');
+    form.hidden = false;
+    composer.append(form);
     input.addEventListener('keydown', event => {
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
       event.preventDefault();

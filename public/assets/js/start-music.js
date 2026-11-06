@@ -4,7 +4,9 @@ const musicToggle = document.getElementById('start-music-toggle');
 let wantsMusic = true;
 
 function updateMusicButton() {
-  musicToggle.textContent = startMusic.paused ? '음악 켜기' : '음악 끄기';
+  const label = startMusic.paused ? '음악 켜기' : '음소거';
+  musicToggle.setAttribute('aria-label', label);
+  musicToggle.title = label;
   musicToggle.setAttribute('aria-pressed', String(!startMusic.paused));
 }
 

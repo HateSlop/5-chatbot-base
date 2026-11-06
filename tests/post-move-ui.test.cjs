@@ -69,3 +69,16 @@ test('heart sparkles only on an actual increase or decrease, not initial or repe
   show(40);assert.equal(effects.length,2);assert.equal(effects[1][1].transform,'scale(.96)');
   show(null);show(80);assert.equal(effects.length,2);
 });
+
+
+test('composer stays open and suggestions fill the visible input', () => {
+  const h = setup();
+  const composer = h.nodes.get('.move-composer');
+  assert.equal(composer.children.length, 1);
+  assert.equal(composer.children[0].hidden, false);
+  h.nodes.get('.move-hints').children[0].click();
+  assert.equal(h.input.focused, true);
+  h.input.disabled = true;
+  h.ui.render({locationId:'basement',locationName:'지하실'});
+  assert.equal(composer.children[0].hidden, false);
+});

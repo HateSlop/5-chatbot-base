@@ -15,10 +15,24 @@
   },
   {
     "title": "다가오는 축제",
-    "content": "마을 광장에서 다음 주 축제가 열린다. 밥이 식사를 준비한다. 음식의 재료는 아직 공개하지 않는다.",
+    "content": "마을 광장에서 축제가 열릴 예정이다. 밥이 식사를 준비한다. 음식의 재료는 아직 공개하지 않는다.",
     "characters": ["jimmy", "karen", "bob", "cathy"],
     "scenes": ["neighbors", "cathy_task", "cathy_help", "jimmy_butcher", "karen_search", "butcher_search", "bob_caught", "dinner_invite", "karen_dinner", "photo_found", "checkpoint", "festival_invite", "festival"],
     "keywords": ["축제", "행사", "음식", "고기"]
+  },
+  {
+    "title": "지미의 저녁 약속",
+    "content": "지미는 캐런의 다음 날 저녁 식사 초대를 전하며, 그날 오후 6시에 주인공의 집으로 데리러 오겠다고 약속했다.",
+    "characters": ["jimmy"],
+    "scenes": ["dinner_invite"],
+    "keywords": ["저녁", "약속", "데리러", "몇 시"]
+  },
+  {
+    "title": "밥의 축제 초대",
+    "content": "밥이 플레이어를 초대한 날의 다음 날 마을 축제가 열린다. 밥은 축제 음식을 맡는다. 음식 재료는 공개하지 않는다.",
+    "characters": ["bob"],
+    "scenes": ["festival_invite", "festival"],
+    "keywords": ["축제", "초대", "언제", "내일"]
   },
   {
     "title": "지하실의 수첩",

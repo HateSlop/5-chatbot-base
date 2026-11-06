@@ -159,6 +159,47 @@ test('continuous Jimmy dialogue keeps panels visible and preserves the requested
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_angry.png');
 });
 
+test('each resident shakes once on a visible smile-to-anger transition, not repeated renders or first appearances', async () => {
+  for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
+    const {nodes, stage} = setup();
+    let shakes = 0;
+    nodes['.dialogue-figure'].animate = (_, options) => {
+      ++shakes;
+      assert.equal(options.duration, 360);
+      return {cancel() {}};
+    };
+    const scene = image => ({background:'/assets/images/salon.svg', image:`/assets/images/${id}_${image}.png`});
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 0);
+    stage.render(scene('smile')); await stage.ready;
+    stage.render(scene('angry')); const first = stage.ready;
+    stage.render(scene('angry')); await first; await stage.ready;
+    assert.equal(shakes, 1);
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 1);
+    stage.render(scene('smile')); await stage.ready;
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 2);
+    stage.render({background:'/square.svg'}); await stage.ready;
+    stage.render(scene('angry')); await stage.ready;
+    assert.equal(shakes, 2);
+  }
+});
+
+test('anger shaking respects reduced motion and does not carry across residents', async () => {
+  const {nodes, stage} = setup({window:{matchMedia:() => ({matches:true})}});
+  let shakes = 0;
+  nodes['.dialogue-figure'].animate = () => { ++shakes; };
+  stage.render({image:'/assets/images/karen_smile.png'}); await stage.ready;
+  stage.render({image:'/assets/images/karen_angry.png'}); await stage.ready;
+  assert.equal(shakes, 0);
+  const other = setup();
+  other.nodes['.dialogue-figure'].animate = () => { ++shakes; };
+  other.stage.render({image:'/assets/images/karen_smile.png'}); await other.stage.ready;
+  other.stage.render({image:'/assets/images/bob_angry.png'}); await other.stage.ready;
+  assert.equal(shakes, 0);
+});
+
 test('leaving during door opening cannot reveal Jimmy or dialogue over another scene',async()=>{
   const {nodes,stage}=setup();let release;
   stage.pause=()=>new Promise(resolve=>release=resolve);
@@ -279,4 +320,50 @@ test('a server response followed by its final render cannot skip a pending home 
   assert.equal(pauses[0].ms,1000);pauses.shift().resolve();await settle();
   assert.equal(pauses[0].ms,400);pauses.shift().resolve();await final;
   assert.equal(stage.visitorVisible,true);assert.equal(nodes['.dialogue-box'].hidden,false);
+});
+
+test('departure trembles then fades in place and respects reduced motion', async () => {
+  const {stage,nodes} = setup();
+  stage.root.clientWidth = 1000;
+  let frames, cancelled = false;
+  nodes['.dialogue-figure'].animate = value => {
+    frames = value;
+    return {finished:Promise.resolve(),cancel(){cancelled=true;}};
+  };
+  await stage.depart(true);
+  assert.equal(frames.length,6);
+  assert.equal(frames.at(-1).transform,'translateX(0)');
+  assert.equal(nodes['.dialogue-figure'].hidden,true);
+  assert.equal(cancelled,true);
+  const quiet = setup({window:{matchMedia:()=>({matches:true})}});
+  quiet.nodes['.dialogue-figure'].animate = () => {throw Error('motion forbidden');};
+  await quiet.stage.depart(true);
+});
+
+test('pagination measures copy only, even when status and controls overflow the outer box', () => {
+  const {stage,nodes} = setup();
+  stage.pager={hidden:true};stage.previous={};stage.next={};stage.pageLabel={};
+  stage.box.hidden=false;stage.box.clientHeight=112;stage.box.scrollHeight=200;
+  stage.box.style={};stage.box.querySelector=()=>({offsetHeight:22});
+  stage.box.classList={add(){},remove(){}};
+  stage.controls={offsetHeight:38};
+  stage.copy={clientHeight:50};
+  Object.defineProperty(stage.copy,'scrollHeight',{get(){return Math.max(50,Array.from(nodes['.dialogue-text'].textContent).length);}});
+  stage.fullText='한 화면에 충분히 들어가는 대사입니다.';
+  stage.layoutPages();
+  assert.equal(stage.pages.length,1);
+  assert.equal(stage.pager.hidden,true);
+  stage.fullText='긴 대사도 한 글자씩 자르지 않고 공간을 채웁니다. '.repeat(10);
+  stage.layoutPages();
+  assert.equal(stage.pages.join(''),stage.fullText);
+  assert.equal(stage.pages[0].length,50);
+});
+
+test('frightened Jimmy skips the location entrance delay', async () => {
+  const {stage}=setup();const pauses=[];
+  stage.pause=async ms=>pauses.push(ms);
+  stage.render({sceneId:'butcher_search',background:'/assets/images/butcher_shop_open.png',image:'/assets/images/jimmy_scared.png'});
+  await stage.ready;
+  assert.equal(stage.root.dataset.simultaneous,'true');
+  assert.deepEqual(pauses,[400]);
 });
