@@ -331,3 +331,28 @@ test('failed chat keeps the draft and token so the same message can be retried',
   await h.nodes.get('chat-form').listeners.submit({preventDefault(){}});
   assert.equal(sent.message,'다시 물어볼게요');assert.equal(h.stage().text,'답변');
 });
+
+
+test('open butcher doorway reveals thought before submitting the existing basement action', async () => {
+  const h = setup();
+  const data = response('empty_butcher', 'butcher_shop', null, [{speaker_id:'jimmy',text:'작별',image:null}]);
+  data.view.available_actions = [{id:'inspect_basement',label:'지하실을 살핀다',kind:'inspect'}];
+  h.context.window.startStory(data, '테스트');
+  assert.equal(h.stage().background, '/assets/images/butcher_shop_open.png');
+  assert.equal(h.stage().text, '');
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  const door = h.nodes.get('dialogue-stage').children[0];
+  assert.equal(door.hidden, false);
+  door.listeners.click();
+  assert.equal(h.stage().text, '어? 왜 문이 열려있지?');
+  assert.equal(h.nodes.get('action-list').children[0].textContent, '지하실에 내려가본다');
+  let submitted;
+  h.context.fetch = async (_, options) => {
+    submitted = JSON.parse(options.body).action_id;
+    return {ok:true,json:async()=>response('basement','basement',null,[])};
+  };
+  h.nodes.get('action-list').children[0].listeners.click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(submitted, 'inspect_basement');
+  assert.equal(door.hidden, true);
+});

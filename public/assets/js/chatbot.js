@@ -19,6 +19,29 @@ let selectedCharacter = null;
 let currentView = null;
 let busy = false;
 // Frames only present the festival events already disclosed by the server.
+let doorExamined = false;
+const doorHotspot = document.createElement('button');
+doorHotspot.type = 'button';
+doorHotspot.className = 'door-hotspot';
+doorHotspot.setAttribute('aria-label', '열린 문 살펴보기');
+doorHotspot.hidden = true;
+document.getElementById('dialogue-stage').append(doorHotspot);
+// Match the clickable doorway to the background's cover crop at any window size.
+const shopStage = document.getElementById('dialogue-stage');
+function positionDoor() {
+  const width = shopStage.clientWidth, height = shopStage.clientHeight;
+  const scale = Math.max(width / 1445, height / 1089);
+  doorHotspot.style.left = `${(width - 1445 * scale) / 2 + 100 * scale}px`;
+  doorHotspot.style.top = `${(height - 1089 * scale) / 2 + 300 * scale}px`;
+  doorHotspot.style.width = `${110 * scale}px`;
+  doorHotspot.style.height = `${300 * scale}px`;
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(positionDoor).observe(shopStage);
+doorHotspot.addEventListener('click', () => {
+  if (busy || currentView?.scene_id !== 'empty_butcher') return;
+  doorExamined = true;
+  renderView(currentView);
+});
 let festivalFrame = 0;
 let karenDinnerDismissed = false;
 let angryReaction = null;
@@ -71,12 +94,13 @@ function renderMessages() {
   }
   const line = conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: currentView.background,
+    background: ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
+      ? '/assets/images/butcher_shop_open.png' : currentView.background,
     image: (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
-    speaker: line ? speakerName(line.speaker) : "",
-    text: line?.text || "",
+    speaker: currentView.scene_id === "empty_butcher" ? "" : line ? speakerName(line.speaker) : "",
+    text: currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
   });
@@ -96,7 +120,13 @@ function renderMessages() {
 }
 
 function renderView(view) {
+  if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
+  const emptyShop = view.scene_id === 'empty_butcher';
+  document.getElementById('dialogue-stage').setAttribute('data-empty-shop', String(emptyShop && !doorExamined));
+  doorHotspot.hidden = !emptyShop || doorExamined || !view.available_actions.some(a => a.id === 'inspect_basement');
+  doorHotspot.disabled = busy;
+  if (emptyShop) positionDoor();
   const place = view.location_name || view.location_id;
   document.getElementById("location-title").textContent = place;
   const background = document.getElementById("scene-background");
@@ -140,12 +170,12 @@ function renderView(view) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
-    if (showingDiscovery || karenGreeting) continue;
+    if (showingDiscovery || karenGreeting || emptyShop && !doorExamined) continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `action-button ${action.kind}`;
-    button.textContent = action.label;
+    button.textContent = emptyShop && action.id === 'inspect_basement' ? '지하실에 내려가본다' : action.label;
     button.disabled = busy;
     button.addEventListener("click", () => performAction(action.id));
     actionList.append(button);
