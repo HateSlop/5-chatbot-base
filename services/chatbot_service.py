@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 from hashlib import sha256
+from logging import getLogger
+from time import perf_counter
 
 from .generator import StoryGenerator
 from .image_selector import StoryImageSelector
@@ -51,7 +53,11 @@ class ChatbotService:
         history = state["history"].get(character_id, [])
         scene_events = [item for item in state.get("scene_events", [])
                         if item["speaker_id"] in {character_id, "narrator"}]
-        attitude = self.generator.classify(message, history, scene_events)
+        started = perf_counter()
+        try:
+            attitude = self.generator.classify(message, history, scene_events)
+        finally:
+            getLogger(__name__).info("chat classification %.1f ms", (perf_counter() - started) * 1000)
         next_state = deepcopy(state)
         score_key = f"{state['scene_id']}:{character_id}"
         message_key = " ".join(message.casefold().split())
@@ -86,11 +92,15 @@ class ChatbotService:
                     if next_state["affinity"] < before:
                         next_state["hostile_streak"] = streak + 1
                         scored.append(f"{score_key}:hostile:{count + 1}")
-        turn = self.generator.generate(
-            message, state["player_name"], config["characters"][character_id], knowledge, history,
-            LOCATIONS[state["location_id"]], next_state["affinity"], scene_events,
-            scene_context(state),
-        )
+        started = perf_counter()
+        try:
+            turn = self.generator.generate(
+                message, state["player_name"], config["characters"][character_id], knowledge, history,
+                LOCATIONS[state["location_id"]], next_state["affinity"], scene_events,
+                scene_context(state),
+            )
+        finally:
+            getLogger(__name__).info("chat generation %.1f ms", (perf_counter() - started) * 1000)
         # shortcut: 인물마다 최근 10번의 대화만 보관, 긴 대화 기억이 필요하면 요약을 추가한다.
         next_state["history"][character_id] = (history + [
             {"role": "user", "content": message[:500]},
