@@ -161,3 +161,11 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .post-move-stage .send-button { font: 500 14px/1.4 "Malgun Gothic", sans-serif; letter-spacing: .02em; }
 
 .is-intro .post-move-stage .move-composer { display: none; }
+
+/* Measure dialogue independently of status text and action controls. */
+.dialogue-stage .dialogue-box { display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; }
+.dialogue-copy { flex: 1; min-height: 0; overflow: hidden; }
+.dialogue-box .status-message { flex: none; order: 1; margin: 0; }
+.dialogue-box .dialogue-controls { position: static; flex: none; order: 2; }
+#name-screen .move-composer { display: none; }
+.dialogue-stage[data-simultaneous="true"][data-loading="true"] :is(.dialogue-background, .dialogue-figure) { visibility: hidden; }

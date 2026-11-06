@@ -322,7 +322,7 @@ test('a server response followed by its final render cannot skip a pending home 
   assert.equal(stage.visitorVisible,true);assert.equal(nodes['.dialogue-box'].hidden,false);
 });
 
-test('departure trembles then exits and respects reduced motion', async () => {
+test('departure trembles then fades in place and respects reduced motion', async () => {
   const {stage,nodes} = setup();
   stage.root.clientWidth = 1000;
   let frames, cancelled = false;
@@ -332,10 +332,38 @@ test('departure trembles then exits and respects reduced motion', async () => {
   };
   await stage.depart(true);
   assert.equal(frames.length,6);
-  assert.equal(frames.at(-1).transform,'translateX(-1000px)');
+  assert.equal(frames.at(-1).transform,'translateX(0)');
   assert.equal(nodes['.dialogue-figure'].hidden,true);
   assert.equal(cancelled,true);
   const quiet = setup({window:{matchMedia:()=>({matches:true})}});
   quiet.nodes['.dialogue-figure'].animate = () => {throw Error('motion forbidden');};
   await quiet.stage.depart(true);
+});
+
+test('pagination measures copy only, even when status and controls overflow the outer box', () => {
+  const {stage,nodes} = setup();
+  stage.pager={hidden:true};stage.previous={};stage.next={};stage.pageLabel={};
+  stage.box.hidden=false;stage.box.clientHeight=112;stage.box.scrollHeight=200;
+  stage.box.style={};stage.box.querySelector=()=>({offsetHeight:22});
+  stage.box.classList={add(){},remove(){}};
+  stage.controls={offsetHeight:38};
+  stage.copy={clientHeight:50};
+  Object.defineProperty(stage.copy,'scrollHeight',{get(){return Math.max(50,Array.from(nodes['.dialogue-text'].textContent).length);}});
+  stage.fullText='한 화면에 충분히 들어가는 대사입니다.';
+  stage.layoutPages();
+  assert.equal(stage.pages.length,1);
+  assert.equal(stage.pager.hidden,true);
+  stage.fullText='긴 대사도 한 글자씩 자르지 않고 공간을 채웁니다. '.repeat(10);
+  stage.layoutPages();
+  assert.equal(stage.pages.join(''),stage.fullText);
+  assert.equal(stage.pages[0].length,50);
+});
+
+test('frightened Jimmy skips the location entrance delay', async () => {
+  const {stage}=setup();const pauses=[];
+  stage.pause=async ms=>pauses.push(ms);
+  stage.render({sceneId:'butcher_search',background:'/assets/images/butcher_shop_open.png',image:'/assets/images/jimmy_scared.png'});
+  await stage.ready;
+  assert.equal(stage.root.dataset.simultaneous,'true');
+  assert.deepEqual(pauses,[400]);
 });
