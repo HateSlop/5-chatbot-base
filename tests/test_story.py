@@ -42,6 +42,14 @@ class StoryTest(unittest.TestCase):
             self.action(action_id)
         self.assertEqual(decode_state(self.token)["scene_id"], "checkpoint")
 
+    def checkpoint_at(self, score):
+        for action_id in TO_CHECKPOINT[:-1]:
+            self.action(action_id)
+        state = decode_state(self.token)
+        state["affinity"] = score
+        self.token = encode_state(state)
+        return self.action("return_home")
+
     def chat(self, character, message, attitude="cooperative"):
         turn = {"reply": "알겠습니다.", "visual_cue": "neutral"}
         with patch.object(chatbot.generator, "classify", return_value=attitude), patch.object(chatbot.generator, "generate", return_value=turn):
@@ -56,16 +64,51 @@ class StoryTest(unittest.TestCase):
         self.action("inspect_food")
         self.assertEqual(decode_state(self.token)["scene_id"], "hair_found")
 
-    def test_low_affinity_continues_to_festival_and_escape_fails_without_key(self):
-        self.checkpoint()
+    def test_low_affinity_goes_to_butcher_death_without_festival(self):
+        checkpoint = self.checkpoint_at(69)
         state = decode_state(self.token)
-        self.assertEqual(state["affinity"], 45)
+        self.assertEqual(state["affinity"], 69)
         self.assertIsNone(state["ending"])
         self.assertFalse(state["has_car_key"])
-        self.festival("continue_festival")
-        result = self.action("escape")
+        self.assertEqual([person["id"] for person in checkpoint["view"]["available_characters"]], ["karen"])
+        self.assertEqual([action["id"] for action in checkpoint["view"]["available_actions"]], ["go_butcher"])
+        self.assertIn("정육점", checkpoint["events"][0]["text"])
+        self.assertNotIn("식인", " ".join(item["text"] for item in checkpoint["events"]))
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(
+            chatbot.generator, "generate", return_value={"reply": "정육점에서 뵐게요.", "visual_cue": "neutral"}
+        ) as generate:
+            response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "왜 부르셨어요?"})
+        self.assertEqual(response.status_code, 200)
+        self.token = response.get_json()["state_token"]
+        self.assertIn("정육점으로 오라고 불렀다", generate.call_args.args[-1][0])
+        self.assertNotIn("식인", " ".join(generate.call_args.args[-1]))
+        self.chat("karen", "고마워요", "friendly")
+        self.assertGreaterEqual(decode_state(self.token)["affinity"], 70)
+        self.assertEqual([action["id"] for action in available_actions(decode_state(self.token))], ["go_butcher"])
+        result = self.action("go_butcher")
         self.assertEqual(result["view"]["ending"], "death")
+        self.assertEqual(result["view"]["location_id"], "butcher_shop")
+        self.assertEqual(result["events"][0]["image"], "/assets/images/ending_death.svg")
+        self.assertIn("캐런의 부름", result["events"][0]["text"])
+        self.assertEqual(decode_state(self.token)["journal"][-1], result["events"][0]["text"])
+        self.assertFalse(decode_state(self.token)["has_car_key"])
+        self.assertNotIn("jimmy_hair", decode_state(self.token)["clues"])
         self.assertEqual(result["view"]["available_actions"], [])
+        self.assertEqual(result["view"]["available_characters"], [])
+        for forbidden in ("continue_festival", "go_festival", "inspect_food"):
+            response = self.client.post("/api/action", json={"state_token": self.token, "action_id": forbidden})
+            self.assertEqual(response.status_code, 409)
+
+    def test_threshold_and_high_affinity_job_choices(self):
+        checkpoint = self.checkpoint_at(70)
+        self.assertEqual([action["id"] for action in checkpoint["view"]["available_actions"]], ["accept_job", "decline_job"])
+        invitation = self.action("decline_job")
+        self.assertIn("내일 마을 축제", invitation["events"][-1]["text"])
+        self.assertEqual(invitation["view"]["scene_id"], "festival_invite")
+        self.action("go_festival")
+        self.action("inspect_food")
+        self.assertFalse(decode_state(self.token)["has_car_key"])
+        self.assertEqual(self.action("escape")["view"]["ending"], "death")
 
     def test_cooperative_chat_unlocks_job_and_key_then_escape(self):
         self.chat("jimmy", "마을을 안내해 줘. 나도 도울게")
@@ -107,9 +150,9 @@ class StoryTest(unittest.TestCase):
         self.assertFalse(state["job_offered"])
         self.assertEqual(state["hostile_streak"], 10)
 
-    def test_staying_assimilates_even_when_watched(self):
-        self.checkpoint()
-        self.festival("continue_festival")
+    def test_staying_assimilates_without_key(self):
+        self.checkpoint_at(70)
+        self.festival("decline_job")
         self.assertEqual(self.action("stay")["view"]["ending"], "assimilation")
 
     def test_action_cannot_repeat_and_secret_is_gated(self):
@@ -121,6 +164,11 @@ class StoryTest(unittest.TestCase):
                              for hit in retriever.search("지미의 머리카락과 고기", "jimmy", "arrival", [])))
         self.assertFalse(any(hit.title == "축제 음식의 정체" for hit in retriever.search("지미 머리카락", "bob", "festival", [])))
         self.assertTrue(any(hit.title == "축제 음식의 정체" for hit in retriever.search("지미 머리카락", "bob", "hair_found", ["jimmy_hair"])))
+        self.assertFalse(any("다음 주" in hit.content or "내일" in hit.content
+                             for hit in retriever.search("축제", "bob", "neighbors", [])))
+        self.assertTrue(any("다음 날" in hit.content for hit in retriever.search("축제", "bob", "festival_invite", [])))
+        self.assertFalse(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "arrival", [])))
+        self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["notebook"])))
 
     def test_place_has_one_character_and_affinity_is_shared_with_bob(self):
         start = self.client.post("/api/session", json={"player_name": "검증"}).get_json()["view"]
@@ -221,14 +269,19 @@ class StoryTest(unittest.TestCase):
         self.assertIn("캐런이 내일 저녁 식사에 초대", invitation["events"][0]["text"])
         self.assertIn("네 집으로 데리러 올게", invitation["events"][0]["text"])
         self.assertIn("데리러", invitation["view"]["available_actions"][0]["label"])
-        self.assertNotRegex(invitation["events"][0]["text"], r"\d+시")
+        self.assertIn("오후 6시", invitation["events"][0]["text"])
         wait = self.action("accept_dinner_invite")
+        self.assertIn("오후 7시", wait["events"][0]["text"])
         self.assertIn("데리러 오지 않았다", wait["events"][0]["text"])
         self.assertIn("혼자", wait["view"]["available_actions"][0]["label"])
         alone = self.action("go_karen_dinner")
         self.assertEqual(alone["view"]["location_id"], "karen_house")
         self.assertEqual([person["id"] for person in alone["view"]["available_characters"]], ["karen"])
-        for action_id in ("inspect_room", "return_home", "continue_festival", "go_festival"):
+        self.action("inspect_room")
+        state = decode_state(self.token)
+        state["affinity"] = 70
+        self.token = encode_state(state)
+        for action_id in ("return_home", "decline_job", "go_festival"):
             self.action(action_id)
         food = self.action("inspect_food")
         thoughts = " ".join(item["text"] for item in food["events"])
@@ -261,12 +314,16 @@ class StoryTest(unittest.TestCase):
             ("go_butcher", "jimmy", "지미는 정육점 지하실에서"),
             ("approach_jimmy", None, None), ("inspect_basement", None, None),
             ("go_upstairs", "bob", "이름과 축제 준비 날짜"),
-            ("return_home", "jimmy", "데리러 오겠다고 약속했다"),
-            ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "혼자 캐런의 집에 왔다"),
+            ("return_home", "jimmy", "오후 6시에"),
+            ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "오후 7시까지"),
             ("inspect_room", "karen", "지미의 사진"),
-            ("return_home", None, None), ("continue_festival", "bob", "다음 주 축제"),
+            ("return_home", None, None), ("decline_job", "bob", "초대한 날의 다음 날"),
         ]
         for action_id, character, expected in steps:
+            if action_id == "return_home" and decode_state(self.token)["scene_id"] == "photo_found":
+                state = decode_state(self.token)
+                state["affinity"] = 70
+                self.token = encode_state(state)
             result = self.action(action_id)
             if character:
                 self.assertTrue(result["view"]["available_actions"], action_id)
