@@ -71,14 +71,14 @@ test('heart sparkles only on an actual increase or decrease, not initial or repe
 });
 
 
-test('composer starts folded and can be opened, folded and opened by a hint', () => {
+test('composer stays open and suggestions fill the visible input', () => {
   const h = setup();
-  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'false');
-  h.ui.composerToggle.click();
-  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'true');
-  assert.equal(h.input.focused, true);
-  h.ui.composerToggle.click();
-  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'false');
+  const composer = h.nodes.get('.move-composer');
+  assert.equal(composer.children.length, 1);
+  assert.equal(composer.children[0].hidden, false);
   h.nodes.get('.move-hints').children[0].click();
-  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'true');
+  assert.equal(h.input.focused, true);
+  h.input.disabled = true;
+  h.ui.render({locationId:'basement',locationName:'지하실'});
+  assert.equal(composer.children[0].hidden, false);
 });

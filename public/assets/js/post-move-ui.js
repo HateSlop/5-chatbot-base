@@ -60,21 +60,7 @@ window.PostMoveUI = class {
     this.nav = stage.querySelector('.move-nav');
     this.hints = frame.querySelector('.move-hints');
     const composer = stage.querySelector('.move-composer');
-    this.composerToggle = document.createElement('button');
-    this.composerToggle.type = 'button';
-    this.composerToggle.className = 'composer-toggle';
-    this.setComposer = open => {
-      form.hidden = !open;
-      this.composerToggle.textContent = open ? '접기' : '대화하기';
-      this.composerToggle.setAttribute('aria-expanded', String(open));
-    };
-    this.setComposer(false);
-    this.composerToggle.disabled = input.disabled;
-    this.composerToggle.addEventListener('click', () => {
-      this.setComposer(form.hidden);
-      if (!form.hidden) input.focus();
-    });
-    composer.append(this.composerToggle);
+    form.hidden = false;
     composer.append(form);
     input.addEventListener('keydown', event => {
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
@@ -90,7 +76,7 @@ window.PostMoveUI = class {
       button.type = 'button'; button.textContent = label;
       button.addEventListener('click', () => {
         if (input.disabled) return;
-        this.setComposer(true); input.value = text; input.focus();
+        input.value = text; input.focus();
         input.dispatchEvent(new Event('input', {bubbles: true}));
       });
       this.hints.append(button);
@@ -100,8 +86,6 @@ window.PostMoveUI = class {
     this.frame.classList.toggle('is-intro', !enabled);
   }
   render({locationId, locationName, registeredName = null, affinity = null, actions = [], busy = false}) {
-    this.composerToggle.disabled = this.input.disabled || busy;
-    if (this.input.disabled && !busy) this.setComposer(false);
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;
     this.title.title = this.title.textContent;
     const value = typeof affinity === 'number' && Number.isFinite(affinity) ? Math.max(0, Math.min(100, affinity)) : null;

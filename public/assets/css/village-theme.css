@@ -149,13 +149,15 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .post-move-screen .post-move-stage, .is-intro .post-move-stage { height: 100%; min-height: 0; aspect-ratio: auto; }
 .story-screen > .story-header, .story-screen > .story-layout { display: none; }
 .dialogue-stage .dialogue-box { height: 112px; padding: 10px 14px; }
-.post-move-stage .dialogue-box { bottom: 74px; }
-.post-move-stage .move-composer { height: 44px; min-height: 44px; bottom: 16px; display: flex; gap: 8px; }
+.post-move-stage .dialogue-box { bottom: clamp(108px, 15vh, 148px); }
+.post-move-stage .move-composer { height: 44px; min-height: 44px; bottom: clamp(50px, 7vh, 90px); display: flex; gap: 8px; }
 .move-composer .chat-input-area { flex: 1; min-width: 0; }
 .post-move-stage .chat-input-area textarea { height: 44px; padding: 9px 12px; }
-.move-composer .composer-toggle { min-height: 44px; padding: 6px 12px; box-shadow: none; }
 .post-move-stage[data-empty-shop="true"] .dialogue-box { visibility: hidden; }
-.post-move-stage .door-hotspot { position: absolute; z-index: 2; left: 6%; top: 27%; width: 9%; height: 30%; min-height: 44px; padding: 0; border: 2px solid transparent; background: transparent; box-shadow: none; border-radius: 3px; }
-.post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { border-color: #f1be78; background: #f1be7822; box-shadow: 0 0 20px #f1be7877; }
+.post-move-stage .door-hotspot { position: absolute; z-index: 2; padding: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; background-repeat: no-repeat; background-size: 100% 100%; opacity: 0; transition: opacity 180ms, filter 180ms; }
+.post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { opacity: 1; filter: brightness(1.32) saturate(1.1); outline: none; transform: none; }
+.dialogue-stage[data-scene="butcher_search"] .dialogue-figure { left: var(--jimmy-left); top: var(--jimmy-top); width: var(--jimmy-width); height: var(--jimmy-height); }
+.village-start .start-title { transform: translateY(clamp(28px, 5vh, 50px)); }
+.post-move-stage .send-button { font: 500 14px/1.4 "Malgun Gothic", sans-serif; letter-spacing: .02em; }
 
 .is-intro .post-move-stage .move-composer { display: none; }
