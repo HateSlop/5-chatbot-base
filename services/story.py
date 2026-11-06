@@ -258,10 +258,10 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("bob", "거기서 뭐 하시오? 여긴 손님이 들어올 곳이 아니야."))
     elif scene == "bob_caught":
         next_state.update(scene_id="dinner_invite", location_id="player_house")
-        events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 오후 6시에 네 집으로 데리러 올게."))
+        events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 6시에 네 집으로 데리러 올게."))
     elif scene == "dinner_invite":
         next_state["scene_id"] = "wait_dinner"
-        events.append(event("thought", "다음 날 오후 6시부터 오후 7시까지 기다렸지만 지미는 데리러 오지 않았다."))
+        events.append(event("thought", "다음 날 오후 7시가 되도록 지미는 나타나지 않았다. "))
     elif scene == "wait_dinner":
         next_state.update(scene_id="karen_dinner", location_id="karen_house")
         events.append(event("karen", "어서 오세요. 아직 준비할게 조금 남아서, 잠깐 앉아서 쉬고 계세요. "))
