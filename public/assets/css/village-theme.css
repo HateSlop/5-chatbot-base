@@ -139,3 +139,23 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 }
 .dialogue-stage .dialogue-box { height: clamp(130px, 18vh, 160px); min-height: 0; padding: 12px 16px; }
 @media (max-width: 800px) { .post-move-stage .dialogue-box { height: 130px; padding: 8px 10px; } .post-move-stage .dialogue-box.is-paged { padding-bottom: 42px; } }
+
+/* Keep every play surface within the current window. */
+.village-start .start-scene { overflow: hidden; }
+.village-start .start-scene > .start-music-toggle { position: absolute; z-index: 5; top: 12px; right: 12px; }
+#name-screen { width: 100%; height: 100dvh; }
+.story-screen { position: relative; overflow: hidden; }
+.story-screen > .post-move-screen, #name-screen > .post-move-screen { width: 100%; height: 100%; aspect-ratio: auto; }
+.post-move-screen .post-move-stage, .is-intro .post-move-stage { height: 100%; min-height: 0; aspect-ratio: auto; }
+.story-screen > .story-header, .story-screen > .story-layout { display: none; }
+.dialogue-stage .dialogue-box { height: 112px; padding: 10px 14px; }
+.post-move-stage .dialogue-box { bottom: 74px; }
+.post-move-stage .move-composer { height: 44px; min-height: 44px; bottom: 16px; display: flex; gap: 8px; }
+.move-composer .chat-input-area { flex: 1; min-width: 0; }
+.post-move-stage .chat-input-area textarea { height: 44px; padding: 9px 12px; }
+.move-composer .composer-toggle { min-height: 44px; padding: 6px 12px; box-shadow: none; }
+.post-move-stage[data-empty-shop="true"] .dialogue-box { visibility: hidden; }
+.post-move-stage .door-hotspot { position: absolute; z-index: 2; left: 6%; top: 27%; width: 9%; height: 30%; min-height: 44px; padding: 0; border: 2px solid transparent; background: transparent; box-shadow: none; border-radius: 3px; }
+.post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { border-color: #f1be78; background: #f1be7822; box-shadow: 0 0 20px #f1be7877; }
+
+.is-intro .post-move-stage .move-composer { display: none; }

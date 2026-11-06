@@ -69,3 +69,16 @@ test('heart sparkles only on an actual increase or decrease, not initial or repe
   show(40);assert.equal(effects.length,2);assert.equal(effects[1][1].transform,'scale(.96)');
   show(null);show(80);assert.equal(effects.length,2);
 });
+
+
+test('composer starts folded and can be opened, folded and opened by a hint', () => {
+  const h = setup();
+  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'false');
+  h.ui.composerToggle.click();
+  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'true');
+  assert.equal(h.input.focused, true);
+  h.ui.composerToggle.click();
+  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'false');
+  h.nodes.get('.move-hints').children[0].click();
+  assert.equal(h.ui.composerToggle.attrs['aria-expanded'], 'true');
+});
