@@ -142,7 +142,7 @@ test('first greeting choices hide every visited place, preserve return home, and
   h.context.applyResponse(scene('butcher_shop'),'scene');
   assert.deepEqual(labels(),['visit_cathy','return_home']);
   h.context.applyResponse(scene('salon'),'scene');assert.deepEqual(labels(),['return_home']);
-  h.context.applyResponse(scene('karen_house','photo_found'),'scene');
+  h.context.applyResponse(scene('butcher_shop','bob_caught'),'scene');
   assert.deepEqual(labels(),actions.map(a=>a.label));
   h.context.window.startStory(scene('square'),'새 이름');
   assert.deepEqual(labels(),actions.map(a=>a.label));
@@ -376,4 +376,25 @@ test('each first greeting requires two successful replies and resets on a new ga
   assert.equal(h.nodes.get('action-list').children.length,0);
   h.context.window.startStory(data,'다시');
   assert.equal(h.nodes.get('action-list').children.length,0);
+});
+
+test('secret discovery shows the wide room, Jimmy closeup, then angry Karen without advancing the server', () => {
+  const h=setup();
+  const data=response('photo_found','karen_house','karen',[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}]);
+  data.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+  h.context.window.startStory(data,'테스트');
+  assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
+  assert.equal(h.stage().text,'저기 뭔가 익숙한 얼굴이..?');
+  assert.equal(h.stage().image,null);
+  assert.equal(h.move().actions.length,0);
+  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
+  assert.equal(h.stage().text,'지미??????');
+  assert.equal(h.stage().image,null);
+  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(h.stage().image,'/assets/images/karen_angry.png');
+  assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
+  h.context.window.startStory(data,'다시');
+  assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
 });
