@@ -9,10 +9,12 @@ function node() {
     children: [], listeners: {}, style: {}, hidden: false, disabled: false,
     append(item) { this.children.push(item); },
     replaceChildren(...items) { this.children = items; },
-    setAttribute() {},
+    attrs: {},
+    setAttribute(key, value) { this.attrs[key] = value; },
+    showModal() { this.open = true; },
     addEventListener(name, callback) { this.listeners[name] = callback; },
     focus() { this.focused = true; },
-    close() { this.hidden = true; },
+    close() { this.hidden = true; this.open = false; },
   };
 }
 
@@ -397,4 +399,31 @@ test('secret discovery shows the wide room, Jimmy closeup, then angry Karen with
   assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
   h.context.window.startStory(data,'다시');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
+});
+
+test('Jimmy frame opens only on angle2, flips, closes and resets without changing the story', () => {
+  const h=setup();
+  const data=response('photo_found','karen_house','karen',[]);
+  h.context.window.startStory(data,'테스트');
+  const hotspot=h.nodes.get('dialogue-stage').children[1];
+  const dialog=h.nodes.get('photo-dialog'), flip=h.nodes.get('photo-flip');
+  assert.equal(hotspot.hidden,true);
+  hotspot.listeners.click();
+  assert.notEqual(dialog.open,true);
+  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(hotspot.hidden,false);
+  hotspot.listeners.click();
+  assert.equal(dialog.open,true);
+  assert.equal(flip.attrs['data-back'],'false');
+  flip.listeners.click();
+  assert.equal(flip.attrs['data-back'],'true');
+  assert.match(h.nodes.get('photo-hint').textContent,/Jimmy/);
+  h.nodes.get('photo-close').listeners.click();
+  assert.equal(dialog.open,false);
+  assert.equal(h.stage().text,'지미??????');
+  hotspot.listeners.click();
+  assert.equal(flip.attrs['data-back'],'false');
+  h.context.window.startStory(response('arrival','player_house','jimmy',[]),'다시');
+  assert.equal(dialog.open,false);
+  assert.equal(hotspot.hidden,true);
 });
