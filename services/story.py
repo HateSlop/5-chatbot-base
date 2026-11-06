@@ -24,8 +24,8 @@ SCENE_CONTEXT = {
     "arrival": ("플레이어가 새집에 이사 왔고 지미가 마을을 소개했다.", "지미는 한 달 먼저 이사 온 주민이다.", "이후 사건을 미리 말하지 않는다."),
     "cathy_task": ("지미가 캐시의 일손이 부족해 보인다고 말하며 도움을 권했다.", "지미는 캐시가 왜 바쁜지나 구체적으로 무슨 일을 하는지 모른다.", "모르는 업무 내용을 지어내지 않는다."),
     "cathy_help": ("캐시가 미용실에서 도움을 부탁했다.", "캐시는 미용실에 일손이 필요하다. 구체적인 업무는 아직 정해지지 않았다.", "업무나 새로운 사건을 구체적으로 지어내지 않는다."),
-    "jimmy_butcher": ("캐시를 돕고 집에 돌아오자 지미가 잠깐 정육점에 다녀오겠다고 직접 말했다.", "지미는 아직 정육점 지하실에서 무슨 일이 일어날지 모른다.", "이후 정육점 사건이나 마을의 비밀을 미리 밝히지 않는다."),
-    "karen_search": ("지미가 정육점에 가겠다며 떠난 뒤 캐런이 집에 찾아와 지미를 봤는지 물었다.", "캐런은 지미가 정육점으로 향한 것을 확인하지 못했다.", "지미에게 일어날 일이나 정육점의 비밀을 미리 밝히지 않는다."),
+    "jimmy_butcher": ("캐시를 돕고 집에 돌아오자 지미가 고기를 사러 정육점에 다녀오겠다고 말했다.", "지미는 고기를 사러 간다. 아직 지하실의 비밀을 모른다.", "미래 사건을 암시하거나 이유를 물은 플레이어에게 걱정하지 말라고 하지 않는다."),
+    "karen_search": ("고기를 사러 정육점에 가겠다는 지미가 떠난 뒤 캐런이 전할 말이 있어 그를 찾아달라고 부탁했다.", "캐런은 플레이어에게 지미의 행선지를 물을 수 있다. 정육점에 간다고 들었다면 알려줘서 고맙다고 하고 그쪽에서 찾아봐 달라고 한다.", "도착 여부를 되풀이해 확인하거나 도착 시각을 캐묻지 않는다. 지미에게 일어날 일도 밝히지 않는다."),
     "butcher_search": ("정육점에서 지미의 사색이 된 얼굴을 보았다. 플레이어는 이유를 모른다.", "지미는 정육점 지하실에서 무언가를 발견해 마을의 사이비 의식과 식인의 비밀을 모두 알게 됐다. 두려워서 지금은 털어놓지 못한다.", "비밀의 내용이나 지미가 본 구체적인 물건을 플레이어에게 밝히지 않는다."),
     "bob_caught": ("플레이어는 지하실의 수첩에서 지미의 이름과 축제 준비 날짜를 보고 올라왔다. 밥이 그곳에 들어온 플레이어를 발견했다.", "밥은 플레이어가 지하실에 들어간 것을 안다. 플레이어가 비밀 전체를 안다고 단정할 수 없다.", "수첩만으로 알 수 없는 음식의 정체를 밝히지 않는다."),
     "dinner_invite": ("지미가 캐런의 다음 날 저녁 식사 초대를 전하며 함께 가자고 했다. 다음 날 오후 6시에 플레이어의 집으로 데리러 오겠다고 약속했다. 플레이어는 수첩의 이름과 날짜만 알고 있다.", "지미는 앞서 정육점 지하실에서 마을의 사이비 의식과 식인의 비밀을 알게 됐다. 두려워서 아직 직접 밝히지 못한다.", "비밀 전체나 이후 사건을 미리 밝히지 않는다."),
@@ -99,9 +99,9 @@ def available_characters(state: dict) -> list[str]:
         return ["cathy"]
     if scene == "butcher_search":
         return ["jimmy"]
-    if scene == "bob_caught" or scene == "festival_invite":
+    if scene == "festival_invite":
         return ["bob"]
-    if scene in {"karen_dinner", "photo_found"}:
+    if scene == "karen_dinner":
         return ["karen"]
     if scene == "checkpoint":
         return ["karen"]
@@ -236,11 +236,11 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["affinity"] = min(100, next_state["affinity"] + 5)
         events += [
             event("thought", "캐시를 돕고 집에 돌아왔다. 캐시는 끝까지 내 반응을 살피는 듯했다."),
-            event("jimmy", "나 잠깐 정육점에 다녀올게."),
+            event("jimmy", "고기 좀 사러 정육점에 다녀올게."),
         ]
     elif scene == "jimmy_butcher":
         next_state["scene_id"] = "karen_search"
-        events += [event("thought", "지미가 떠난 뒤 캐런이 집으로 찾아왔다."), event("karen", "혹시 지미를 보셨나요?")]
+        events += [event("thought", "지미가 떠난 뒤 캐런이 집으로 찾아왔다."), event("karen", "지미에게 전할 말이 있는데, 혹시 어디로 갔는지 아세요? 찾는 걸 도와주시겠어요?")]
     elif scene == "karen_search":
         next_state.update(scene_id="butcher_search", location_id="butcher_shop")
         events.append(event("thought", "정육점에 도착하니 지미의 얼굴이 사색이 되어 있었다."))
@@ -251,17 +251,17 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state.update(scene_id="basement", location_id="basement")
         next_state["clues"].append("notebook")
         next_state["journal"].append("지하실의 수첩에 지미의 이름과 축제 준비 날짜가 함께 적혀 있었다.")
-        next_state["affinity"] = max(0, next_state["affinity"] - 5)
         events.append(event("thought", "수첩에는 지미의 이름이 있었다. 음식의 정체까지는 알 수 없었다."))
     elif scene == "basement":
         next_state.update(scene_id="bob_caught", location_id="butcher_shop")
-        events.append(event("bob", "거기서 뭐 하시오? 여긴 손님이 들어올 곳이 아니야."))
+        next_state["affinity"] = max(0, next_state["affinity"] - 5)
+        events.append(event("bob", "거기서 뭐 하시오? 여긴 손님이 들어올 곳이 아니야. 당장 나가시오."))
     elif scene == "bob_caught":
         next_state.update(scene_id="dinner_invite", location_id="player_house")
         events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 오후 6시에 네 집으로 데리러 올게."))
     elif scene == "dinner_invite":
         next_state["scene_id"] = "wait_dinner"
-        events.append(event("thought", "다음 날 오후 6시부터 오후 7시까지 기다렸지만 지미는 데리러 오지 않았다."))
+        events.append(event("thought", "다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다."))
     elif scene == "wait_dinner":
         next_state.update(scene_id="karen_dinner", location_id="karen_house")
         events.append(event("karen", "어서 오세요. 아직 준비할게 조금 남아서, 잠깐 앉아서 쉬고 계세요. "))
@@ -273,6 +273,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events += [
             event("thought", "벽에 지미의 사진이 걸려 있었다."),
             event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
+            event("karen", "이제 그만 나가 주세요."),
         ]
     elif scene == "photo_found":
         next_state.update(scene_id="checkpoint", location_id="player_house")
@@ -291,8 +292,9 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["scene_id"] = "festival_invite"
         if action_id == "accept_job":
             next_state["has_car_key"] = True
+            next_state["affinity"] = min(100, next_state["affinity"] + 5)
             next_state["journal"].append("캐런의 유통 운전 일을 받아 차 키를 얻었다.")
-            events.append(event("karen", "잘 생각하셨어요. 이제 우리와 함께 일하게 됐군요."))
+            events.append(event("karen", "맡아 주셔서 고마워요. 함께 일하게 됐네요."))
         elif action_id == "decline_job":
             events.append(event("karen", "아쉽지만 괜찮아요. 축제에는 꼭 오세요."))
         events.append(event("bob", "고기 좋아한다고 했지? 내일 마을 축제가 있으니, 꼭 오시오."))

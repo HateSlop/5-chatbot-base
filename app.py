@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+from time import perf_counter
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, url_for
@@ -22,6 +23,20 @@ app = Flask(
     static_folder=None if IS_VERCEL else "public",
     static_url_path=None if IS_VERCEL else "",
 )
+
+
+@app.before_request
+def start_chat_timer():
+    if request.path == "/api/chat":
+        request.environ["chat_started"] = perf_counter()
+
+
+@app.after_request
+def log_chat_timer(response):
+    started = request.environ.get("chat_started")
+    if started is not None:
+        app.logger.info("/api/chat total %.1f ms", (perf_counter() - started) * 1000)
+    return response
 chatbot = ChatbotService()
 
 
