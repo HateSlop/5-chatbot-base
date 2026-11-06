@@ -84,5 +84,15 @@
       </nav>
     </main>
     </div>
+    <dialog id="photo-dialog" class="photo-dialog" aria-label="지미 액자 살펴보기">
+      <button id="photo-close" class="photo-close" type="button" aria-label="액자 닫기">닫기 ×</button>
+      <button id="photo-flip" class="photo-flip" type="button" aria-label="액자 뒤집어 뒷면 보기" data-back="false">
+        <span class="photo-card">
+          <img class="photo-front" src="{{ asset_url('assets/images/props_photo_front.png') }}" alt="안경을 쓴 지미의 사진 액자" draggable="false">
+          <img class="photo-back" src="{{ asset_url('assets/images/props_photo_back.png') }}" alt="Jimmy라는 이름이 적힌 액자 뒷면" aria-hidden="true" draggable="false">
+        </span>
+      </button>
+      <p id="photo-hint" class="photo-hint" aria-live="polite">사진을 누르면 뒷면을 볼 수 있습니다.</p>
+    </dialog>
   </body>
 </html>

@@ -26,10 +26,39 @@ doorHotspot.className = 'door-hotspot';
 doorHotspot.setAttribute('aria-label', '열린 문 살펴보기');
 doorHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(doorHotspot);
+const photoHotspot = document.createElement('button');
+photoHotspot.type = 'button';
+photoHotspot.className = 'door-hotspot photo-hotspot';
+photoHotspot.setAttribute('aria-label', '지미 액자 살펴보기');
+photoHotspot.hidden = true;
+document.getElementById('dialogue-stage').append(photoHotspot);
+const photoDialog = document.getElementById('photo-dialog');
+const photoFlip = document.getElementById('photo-flip');
+let photoBack = false;
+function showPhotoSide(back) {
+  photoBack = back;
+  photoFlip.setAttribute('data-back', String(back));
+  photoFlip.setAttribute('aria-label', back ? '액자 뒤집어 앞면 보기' : '액자 뒤집어 뒷면 보기');
+  document.querySelector('.photo-front').setAttribute('aria-hidden', String(back));
+  document.querySelector('.photo-back').setAttribute('aria-hidden', String(!back));
+  document.getElementById('photo-hint').textContent = back ? 'Jimmy… 사진을 누르면 앞면으로 돌아갑니다.' : '사진을 누르면 뒷면을 볼 수 있습니다.';
+}
+photoHotspot.addEventListener('click', () => {
+  if (busy || currentView?.scene_id !== 'photo_found' || secretFrame !== 1) return;
+  showPhotoSide(false);
+  photoDialog.showModal();
+});
+photoFlip.addEventListener('click', () => showPhotoSide(!photoBack));
+document.getElementById('photo-close').addEventListener('click', () => photoDialog.close());
 // Match the clickable doorway to the background's cover crop at any window size.
 const shopStage = document.getElementById('dialogue-stage');
 function positionDoor() {
   const width = shopStage.clientWidth, height = shopStage.clientHeight;
+  const photoScale = Math.max(width / 1232, height / 928);
+  photoHotspot.style.left = `${(width - 1232 * photoScale) / 2}px`;
+  photoHotspot.style.top = `${(height - 928 * photoScale) / 2}px`;
+  photoHotspot.style.width = `${1232 * photoScale}px`;
+  photoHotspot.style.height = `${928 * photoScale}px`;
   const scale = Math.max(width / 1445, height / 1089);
   const left = (width - 1445 * scale) / 2, top = (height - 1089 * scale) / 2;
   doorHotspot.style.left = `${left}px`;
@@ -158,13 +187,16 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
+  photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
+  photoHotspot.disabled = busy;
+  if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
   const emptyShop = view.scene_id === 'empty_butcher' || view.scene_id === 'karen_dinner' && karenDinnerDismissed;
   shopStage.setAttribute('data-scene', view.scene_id);
   document.getElementById('dialogue-stage').setAttribute('data-empty-shop', String(emptyShop && !doorExamined));
   doorHotspot.hidden = !emptyShop || doorExamined || !view.available_actions.some(a => ['inspect_basement', 'inspect_room'].includes(a.id));
   doorHotspot.disabled = busy;
   doorHotspot.setAttribute('aria-label', view.scene_id === 'karen_dinner' ? '방 문 살펴보기' : '열린 문 살펴보기');
-  if (emptyShop || view.scene_id === 'butcher_search') positionDoor();
+  if (emptyShop || view.scene_id === 'butcher_search' || !photoHotspot.hidden) positionDoor();
   const place = view.location_name || view.location_id;
   document.getElementById("location-title").textContent = place;
   const background = document.getElementById("scene-background");
@@ -279,6 +311,7 @@ window.startStory = (data, name) => {
   transcript = [];
   greetedPlaces.clear();
   greetingChats.clear();
+  if (photoDialog.open) photoDialog.close();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
   applyResponse(data, "scene");
@@ -348,6 +381,7 @@ window.addEventListener("pagehide", () => {
   clearReaction();
   greetedPlaces.clear();
   greetingChats.clear();
+  if (photoDialog.open) photoDialog.close();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
   stateToken = null;
