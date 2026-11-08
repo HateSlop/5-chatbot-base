@@ -58,7 +58,7 @@ window.DialogueStage = class {
   positionTalkCue() {
     if (!this.talkCue || !this.figure.getBoundingClientRect) return;
     const figure = this.figure.getBoundingClientRect(), root = this.root.getBoundingClientRect();
-    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2))}px`;
+    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2 + 32))}px`;
     this.talkCue.style.top = `${Math.max(20, Math.min(root.height - 70, figure.top - root.top + 8))}px`;
   }
   openDialogue() {

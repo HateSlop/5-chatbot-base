@@ -186,11 +186,22 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 
 .dialogue-stage[data-background-ready="false"] .photo-hotspot { visibility: hidden; }
 
-.dialogue-stage .character-talk-cue { position: absolute; z-index: 5; width: 46px; height: 54px; padding: 0; transform: translate(-50%, -55%); border: 1px solid #ffe3a0; border-radius: 50% 50% 45% 45%; background: #30202be8; color: #ffe3a0; box-shadow: 0 0 18px #f1be7855; font: 900 38px/1 Georgia, serif; }
-.dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.08); }
+/* A small brass badge matching the village's plum and antique-gold controls. */
+.dialogue-stage .character-talk-cue {
+  position: absolute; z-index: 5; width: 48px; height: 58px; padding: 0 0 2px;
+  transform: translate(-50%, -55%); border: 1px solid #dcb67a;
+  border-radius: 15px 15px 22px 22px;
+  background: radial-gradient(ellipse at 35% 8%, #78534688, transparent 65%), linear-gradient(145deg, #48303d, #241a27 80%);
+  color: #ffe1a0; box-shadow: inset 0 1px 0 #ffe5b766, inset 0 -3px 6px #110c16aa, 0 4px 8px #100b1699;
+  font: 700 38px/1 Georgia, serif; text-shadow: 0 1px 0 #fff0c644, 0 2px 2px #100b16;
+}
+.character-talk-cue::before { content: ''; position: absolute; inset: 4px; border: 1px solid #b88c585c; border-radius: 11px 11px 18px 18px; pointer-events: none; }
+.character-talk-cue::after { content: '✦'; position: absolute; top: -7px; right: -5px; color: #ffe8b6; font: 16px/1 Georgia, serif; text-shadow: 0 0 7px #efbd70aa; pointer-events: none; }
+.dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.06); border-color: #ffe4ad; }
+.dialogue-stage .character-talk-cue:focus-visible { outline: 2px solid #ffe4ad; outline-offset: 4px; }
 .dialogue-stage[data-awaiting-talk="true"] .dialogue-figure { cursor: pointer; }
 .dialogue-stage[data-loading="true"] .character-talk-cue { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
-  .character-talk-cue { animation: talk-sparkle 1.6s ease-in-out infinite; }
-  @keyframes talk-sparkle { 0%,100% { filter: brightness(1); box-shadow: 0 0 12px #f1be7844; } 50% { filter: brightness(1.3); box-shadow: 0 0 26px #f1be78aa; } }
+  .character-talk-cue::after { animation: talk-sparkle 2.2s ease-in-out infinite; }
+  @keyframes talk-sparkle { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.08); } }
 }
