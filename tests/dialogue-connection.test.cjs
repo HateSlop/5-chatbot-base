@@ -479,6 +479,7 @@ test('Cathy salon opens without dialogue and the basket starts a three-second re
   assert.equal(h.stage().image, null);
   assert.equal(h.split(), false);
   assert.equal(hotspot.hidden, false);
+  assert.equal(hotspot.textContent, '바구니 열기');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   assert.equal(h.move().actions.length, 0);
   assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);

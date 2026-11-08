@@ -48,6 +48,7 @@ const basketHotspot = document.createElement('button');
 basketHotspot.type = 'button';
 basketHotspot.className = 'cathy-basket-hotspot';
 basketHotspot.setAttribute('aria-label', '미용실 바구니 열기');
+basketHotspot.textContent = '바구니 열기';
 basketHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(basketHotspot);
 let basketStarted = false;
