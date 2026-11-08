@@ -290,7 +290,7 @@ function renderView(view) {
   const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
-  postMoveUI.setSplit?.(!festival && view.scene_id !== 'cathy_help');
+  postMoveUI.setSplit?.(!festival && !view.ending && view.scene_id !== 'cathy_help');
   if (showingDiscovery || secretDiscovery) {
     const next = document.createElement('button');
     next.type = 'button';
@@ -351,11 +351,13 @@ function renderView(view) {
   endingCard.hidden = !view.ending;
   endingCard.textContent = view.ending ? `ENDING — ${endingNames[view.ending] || view.ending}` : "";
   document.getElementById("ending-restart").hidden = !view.ending;
-  input.disabled = busy || !character || !!view.ending || festival || secretDiscovery ||
-    view.scene_id === 'karen_dinner' && karenDinnerDismissed;
+  const canChat = !!character && !view.ending && !festival && !secretDiscovery &&
+    !(view.scene_id === 'karen_dinner' && karenDinnerDismissed);
+  input.disabled = busy || !canChat;
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
-  postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
+  postMoveUI.render({sceneId: view.scene_id, locationId: view.location_id, locationName: place,
+    characterId: character?.id, canChat, registeredName: playerName,
     affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
