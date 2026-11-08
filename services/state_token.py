@@ -2,6 +2,7 @@
 
 import json
 import os
+from datetime import date
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -34,4 +35,12 @@ def decode_state(token: str) -> dict:
         raise InvalidStateToken("진행 기록을 읽을 수 없습니다.") from exc
     if not isinstance(state, dict) or state.get("version") != 1:
         raise InvalidStateToken("현재 버전에서 열 수 없는 진행 기록입니다.")
+    try:
+        if not isinstance(state.get("start_date"), str):
+            raise ValueError
+        date.fromisoformat(state["start_date"])
+        if type(state.get("story_day")) is not int or state["story_day"] not in (0, 1, 2):
+            raise ValueError
+    except ValueError as exc:
+        raise InvalidStateToken("날짜가 올바르지 않은 진행 기록입니다. 새로 시작해 주세요.") from exc
     return state
