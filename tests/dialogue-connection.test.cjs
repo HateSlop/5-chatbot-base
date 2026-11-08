@@ -20,8 +20,6 @@ function node() {
 
 function setup() {
   const nodes = new Map();
-  const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray'].map(tool =>
-    Object.assign(node(), {dataset: {tool}}));
   const listeners = {};
   const timers = new Map();
   let timerId = 0;
@@ -31,7 +29,6 @@ function setup() {
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
-      querySelectorAll: selector => selector === '#cathy-tool-list button' ? basketTools : [],
       getElementById: id => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
       createElement: node,
     },
@@ -48,7 +45,7 @@ function setup() {
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, stage: () => stage, move: () => move, split: () => split,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -440,47 +437,4 @@ test('Karen departure countdown waits until the character is selected', async ()
   assert.equal([...h.timers.values()].some(t=>t.ms===4500),false);
   select(true);await new Promise(resolve=>setImmediate(resolve));
   assert.equal([...h.timers.values()].some(t=>t.ms===4500),true);
-});
-
-test('Cathy request lasts three seconds, then basket submits selected tools', async () => {
-  const h = setup();
-  const task = response('cathy_help', 'salon', null, [{speaker_id:'cathy', text:'바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?', image:'/cathy.svg'}]);
-  task.view.available_actions = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray']
-    .map(tool => ({id:`choose_${tool}`, label:tool, kind:'choice'}))
-    .concat({id:'help_cathy', label:'캐시에게 전달한다', kind:'choice'});
-  h.context.window.startStory(task, '테스트');
-  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'cathy-basket-hotspot');
-  assert.equal(h.stage().text, task.events[0].text);
-  assert.equal(hotspot.hidden, true);
-  assert.equal(h.nodes.get('action-list').children.length, 0);
-  assert.equal(h.move().actions.length, 0);
-  await Promise.resolve();
-  const timer = [...h.timers.values()].find(item => item.ms === 3000);
-  assert.ok(timer);
-  timer.callback();
-  assert.equal(h.stage().text, '');
-  assert.equal(h.nodes.get('chat-log').children[0].textContent, '지금은 대화할 사람이 없습니다.');
-  assert.equal(hotspot.hidden, false);
-  hotspot.listeners.click();
-  assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
-  const sent = [];
-  h.context.fetch = async (_url, options) => {
-    const action = JSON.parse(options.body).action_id;
-    sent.push(action);
-    if (action === 'help_cathy') {
-      const result = response('cathy_result', 'salon', null, [{speaker_id:'cathy', text:'정확해요! 고마워요.', image:'/cathy.svg'}], 55);
-      result.view.available_actions = [{id:'return_home', label:'집으로 돌아간다', kind:'move'}];
-      return {ok:true, json:async () => result};
-    }
-    return {ok:true, json:async () => ({...task, events:[]})};
-  };
-  await h.basketTools[0].listeners.click();
-  await h.basketTools[1].listeners.click();
-  await h.basketTools[3].listeners.click();
-  assert.equal(h.basketTools[0].attrs['aria-pressed'], 'true');
-  await h.nodes.get('cathy-deliver').listeners.click();
-  assert.deepEqual(sent, ['choose_shampoo', 'choose_scissors', 'choose_comb', 'help_cathy']);
-  assert.equal(h.nodes.get('cathy-basket-dialog').open, false);
-  assert.equal(h.stage().text, '정확해요! 고마워요.');
-  assert.equal(hotspot.hidden, true);
 });

@@ -34,41 +34,6 @@ photoHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(photoHotspot);
 const photoDialog = document.getElementById('photo-dialog');
 const photoFlip = document.getElementById('photo-flip');
-const basketDialog = document.getElementById('cathy-basket-dialog');
-const basketHotspot = document.createElement('button');
-basketHotspot.type = 'button';
-basketHotspot.className = 'cathy-basket-hotspot';
-basketHotspot.setAttribute('aria-label', '반짝이는 미용 도구 바구니 열기');
-basketHotspot.textContent = '🧺';
-basketHotspot.hidden = true;
-document.getElementById('dialogue-stage').append(basketHotspot);
-let cathyRequestVisible = false;
-let cathyRequestTimer;
-const cathySelected = new Set();
-function renderBasket() {
-  for (const button of document.querySelectorAll('#cathy-tool-list button')) {
-    button.setAttribute('aria-pressed', String(cathySelected.has(button.dataset.tool)));
-    button.disabled = busy;
-  }
-  document.getElementById('cathy-deliver').disabled = busy;
-}
-basketHotspot.addEventListener('click', () => {
-  if (busy || currentView?.scene_id !== 'cathy_help' || cathyRequestVisible) return;
-  renderBasket();
-  basketDialog.showModal();
-});
-document.getElementById('cathy-basket-close').addEventListener('click', () => basketDialog.close());
-for (const button of document.querySelectorAll('#cathy-tool-list button')) {
-  button.addEventListener('click', async () => {
-    const tool = button.dataset.tool;
-    if (await performAction(`choose_${tool}`)) {
-      if (cathySelected.has(tool)) cathySelected.delete(tool);
-      else cathySelected.add(tool);
-    }
-    renderBasket();
-  });
-}
-document.getElementById('cathy-deliver').addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 function showPhotoSide(back) {
   photoBack = back;
@@ -167,8 +132,7 @@ function renderMessages() {
   if (!currentView) return;
   const conversation = transcript.filter(item =>
     item.scene_id === currentView.scene_id && item.location_id === currentView.location_id &&
-    (item.kind === "scene" || item.kind === "chat" && item.character_id === selectedCharacter) &&
-    !(currentView.scene_id === 'cathy_help' && !cathyRequestVisible));
+    (item.kind === "scene" || item.kind === "chat" && item.character_id === selectedCharacter));
   log.replaceChildren(...conversation.map(messageElement));
   if (!conversation.length) {
     const empty = document.createElement("p");
@@ -177,18 +141,17 @@ function renderMessages() {
     log.append(empty);
   }
   const line = conversation.findLast(item => item.speaker !== "user");
-  const cathyLine = currentView.scene_id === 'cathy_help' && transcript.findLast(item => item.scene_id === 'cathy_help' && item.speaker === 'cathy');
   dialogueStage.render({
     background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
     image: currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && selectedCharacter === "karen" ? (karenDinnerDismissed ? null : "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
-      : line?.image || cathyLine?.image) || null,
+      : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
     text: currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
-    selectCharacter: !['cathy_help', 'cathy_result'].includes(currentView.scene_id),
+    selectCharacter: true,
   });
   clearTimeout(karenDepartureTimer);
   if (currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed) {
@@ -226,9 +189,6 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
-  basketHotspot.hidden = view.scene_id !== 'cathy_help' || cathyRequestVisible;
-  basketHotspot.disabled = busy;
-  renderBasket();
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
@@ -271,7 +231,6 @@ function renderView(view) {
   }
   for (const action of view.available_actions) {
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
-    if (view.scene_id === 'cathy_help') continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
@@ -311,19 +270,8 @@ function renderView(view) {
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
   postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
-    affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
+    affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery ? [] : view.available_actions, busy});
   renderMessages();
-  if (view.scene_id === 'cathy_help' && cathyRequestVisible && !cathyRequestTimer) {
-    Promise.resolve(dialogueStage.ready).then(ready => {
-      if (ready === false || currentView?.scene_id !== 'cathy_help' || !cathyRequestVisible || cathyRequestTimer) return;
-      cathyRequestTimer = setTimeout(() => {
-        if (currentView?.scene_id !== 'cathy_help') return;
-        cathyRequestTimer = undefined;
-        cathyRequestVisible = false;
-        renderView(currentView);
-      }, 3000);
-    });
-  }
 }
 
 function applyResponse(data, kind, characterId = null) {
@@ -339,11 +287,6 @@ function applyResponse(data, kind, characterId = null) {
     festivalFrame = 0;
     secretFrame = 0;
     karenDinnerDismissed = false;
-    clearTimeout(cathyRequestTimer);
-    cathyRequestTimer = undefined;
-    cathyRequestVisible = data.view.scene_id === 'cathy_help';
-    cathySelected.clear();
-    if (basketDialog.open) basketDialog.close();
   }
   stateToken = data.state_token;
   for (const item of data.events) {
@@ -374,12 +317,7 @@ window.startStory = (data, name) => {
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
   clearTimeout(karenDepartureTimer);
-  clearTimeout(cathyRequestTimer);
-  cathyRequestTimer = undefined;
-  cathySelected.clear();
-  if (basketDialog.open) basketDialog.close();
   doorExamined = false;
-  currentView = null;
   applyResponse(data, "scene");
   const reveal = () => {
     document.getElementById("name-screen").hidden = true;
@@ -404,18 +342,17 @@ async function request(path, payload) {
 }
 
 async function performAction(actionId) {
-  if (busy || !stateToken) return false;
+  if (busy || !stateToken) return;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
   if (currentView.scene_id === 'photo_found' && secretFrame < 2) return;
   if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
   busy = true;
   renderView(currentView);
-  statusMessage.textContent = actionId.startsWith('choose_') ? "" : "이야기가 이어지는 중…";
+  statusMessage.textContent = "이야기가 이어지는 중…";
   try {
     await request("/api/action", {state_token: stateToken, action_id: actionId});
     statusMessage.textContent = "";
-    return true;
-  } catch (error) { statusMessage.textContent = error.message; return false; }
+  } catch (error) { statusMessage.textContent = error.message; }
   finally { busy = false; renderView(currentView); }
 }
 
@@ -450,9 +387,6 @@ window.addEventListener("pagehide", () => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
-  if (basketDialog.open) basketDialog.close();
-  clearTimeout(cathyRequestTimer);
-  cathySelected.clear();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
   stateToken = null;
