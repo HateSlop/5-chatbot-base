@@ -28,7 +28,7 @@
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
         <div class="dialogue-tv" hidden></div>
-        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
+        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-watch" class="dialogue-advance" type="button" hidden>TV 보기 ›</button><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
       </section>
       <form id="entry-chat" class="chat-input-area" hidden>
         <textarea id="entry-message" aria-label="이름 입력 전 대화" disabled></textarea><button id="entry-send" type="submit" disabled>보내기</button>
@@ -100,6 +100,12 @@
         <button id="death-restart" type="button">새 이야기 시작</button>
       </div>
     </section>
+    <dialog id="entry-ad-dialog" class="entry-ad-dialog" aria-label="더뉴빌리지 TV 광고">
+      <video id="entry-ad-video" controls playsinline preload="none" src="{{ asset_url('assets/videos/village-ad.mp4') }}" aria-label="더뉴빌리지 광고 영상"></video>
+      <p id="entry-ad-status" role="status"></p>
+      <button id="entry-ad-retry" type="button" hidden>광고 재생</button>
+      <button id="entry-ad-continue" type="button" hidden>계속하기 ›</button>
+    </dialog>
     <dialog id="photo-dialog" class="photo-dialog" aria-label="지미 액자 살펴보기">
       <button id="photo-close" class="photo-close" type="button" aria-label="액자 닫기">닫기 ×</button>
       <button id="photo-flip" class="photo-flip" type="button" aria-label="액자 뒤집어 뒷면 보기" data-back="false">
