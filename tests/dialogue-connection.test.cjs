@@ -18,7 +18,7 @@ function node() {
   };
 }
 
-function setup() {
+function setup({missingBasket = false} = {}) {
   const nodes = new Map();
   const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray'].map(tool =>
     Object.assign(node(), {dataset: {tool}}));
@@ -31,8 +31,8 @@ function setup() {
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
-      querySelectorAll: selector => selector === '#cathy-tool-list button' ? basketTools : [],
-      getElementById: id => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
+      querySelectorAll: selector => !missingBasket && selector === '#cathy-tool-list button' ? basketTools : [],
+      getElementById: id => { if (missingBasket && id.startsWith('cathy-')) return null; if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
       createElement: node,
     },
     window: {
@@ -474,4 +474,15 @@ test('Cathy salon opens without dialogue and the basket starts a three-second re
   assert.deepEqual(sent, ['choose_shampoo', 'choose_scissors', 'choose_comb', 'help_cathy']);
   assert.equal(h.nodes.get('cathy-basket-dialog').open, false);
   assert.equal(h.stage().text, '정확해요!');
+});
+
+test('name entry still initializes when an older chat page lacks basket markup', async () => {
+  const h = setup({missingBasket:true});
+  assert.equal(typeof h.context.window.startStory, 'function');
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '테스트');
+  assert.equal(h.nodes.get('game-screen').hidden, false);
+  h.context.window.startStory(response('festival_invite', 'player_house', 'bob', []), '테스트');
+  h.context.fetch = async () => ({ok:true, json:async () => response('neighbors', 'square', null, [])});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '');
 });

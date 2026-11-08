@@ -37,6 +37,7 @@ const photoFlip = document.getElementById('photo-flip');
 const basketDialog = document.getElementById('cathy-basket-dialog');
 const basketImage = document.getElementById('cathy-basket-image');
 const basketRequest = document.getElementById('cathy-basket-request');
+const basketStatus = document.getElementById('cathy-basket-status');
 const basketHotspot = document.createElement('button');
 basketHotspot.type = 'button';
 basketHotspot.className = 'cathy-basket-hotspot';
@@ -48,6 +49,7 @@ let basketReady = false;
 let basketTimer;
 const cathySelected = new Set();
 function renderBasket() {
+  if (!basketDialog) return;
   basketRequest.hidden = !basketStarted || basketReady;
   document.getElementById('cathy-tool-list').hidden = !basketReady;
   document.getElementById('cathy-basket-hint').hidden = !basketReady;
@@ -59,7 +61,7 @@ function renderBasket() {
   }
 }
 basketHotspot.addEventListener('click', () => {
-  if (busy || currentView?.scene_id !== 'cathy_help') return;
+  if (!basketDialog || busy || currentView?.scene_id !== 'cathy_help') return;
   if (!basketStarted) {
     basketStarted = true;
     basketRequest.textContent = transcript.findLast(item => item.scene_id === 'cathy_help' && item.speaker === 'cathy')?.text || '';
@@ -74,7 +76,7 @@ basketHotspot.addEventListener('click', () => {
   }
   basketDialog.showModal();
 });
-document.getElementById('cathy-basket-close').addEventListener('click', () => basketDialog.close());
+document.getElementById('cathy-basket-close')?.addEventListener('click', () => basketDialog.close());
 for (const button of document.querySelectorAll('#cathy-tool-list button')) {
   button.addEventListener('click', async () => {
     const tool = button.dataset.tool;
@@ -85,7 +87,7 @@ for (const button of document.querySelectorAll('#cathy-tool-list button')) {
     renderBasket();
   });
 }
-document.getElementById('cathy-deliver').addEventListener('click', () => performAction('help_cathy'));
+document.getElementById('cathy-deliver')?.addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 function showPhotoSide(back) {
   photoBack = back;
@@ -241,7 +243,7 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
-  basketHotspot.hidden = view.scene_id !== 'cathy_help';
+  basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog;
   basketHotspot.disabled = busy;
   renderBasket();
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
@@ -348,7 +350,7 @@ function applyResponse(data, kind, characterId = null) {
     basketStarted = false;
     basketReady = false;
     cathySelected.clear();
-    if (basketDialog.open) basketDialog.close();
+    if (basketDialog?.open) basketDialog.close();
   }
   stateToken = data.state_token;
   for (const item of data.events) {
@@ -376,7 +378,7 @@ window.startStory = (data, name) => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
-  if (basketDialog.open) basketDialog.close();
+  if (basketDialog?.open) basketDialog.close();
   clearTimeout(basketTimer);
   basketTimer = undefined;
   basketStarted = false;
@@ -419,11 +421,11 @@ async function performAction(actionId) {
   try {
     await request("/api/action", {state_token: stateToken, action_id: actionId});
     statusMessage.textContent = "";
-    document.getElementById('cathy-basket-status').textContent = '';
+    if (basketStatus) basketStatus.textContent = '';
     return true;
   } catch (error) {
     statusMessage.textContent = error.message;
-    if (currentView?.scene_id === 'cathy_help') document.getElementById('cathy-basket-status').textContent = error.message;
+    if (basketStatus && currentView?.scene_id === 'cathy_help') basketStatus.textContent = error.message;
     return false;
   }
   finally { busy = false; renderView(currentView); }
@@ -459,7 +461,7 @@ window.addEventListener("pagehide", () => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
-  if (basketDialog.open) basketDialog.close();
+  if (basketDialog?.open) basketDialog.close();
   clearTimeout(basketTimer);
   basketTimer = undefined;
   basketStarted = false;
