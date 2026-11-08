@@ -16,6 +16,14 @@ window.DialogueStage = class {
     this.pageIndex = 0;
     if (this.box.ownerDocument) {
       const doc = this.box.ownerDocument;
+      this.box.addEventListener('click', event => {
+        if (!event.target.closest?.('button')) this.finishTyping();
+      });
+      this.box.addEventListener('keydown', event => {
+        if (event.target === this.box && ['Enter', ' '].includes(event.key) && this.typingTimer) {
+          event.preventDefault(); this.finishTyping();
+        }
+      });
       this.talkCue = doc.createElement('button');
       this.talkCue.type = 'button';
       this.talkCue.className = 'character-talk-cue';
@@ -50,7 +58,10 @@ window.DialogueStage = class {
       this.box.append(this.controls);
       this.pager.hidden = true;
       if (typeof ResizeObserver !== 'undefined') {
-        const observer = new ResizeObserver(() => this.layoutPages());
+        const observer = new ResizeObserver(() => {
+          if (this.typingTimer && this.box.clientWidth === this.typingWidth && this.box.clientHeight === this.typingHeight) return;
+          this.layoutPages();
+        });
         observer.observe(this.box); observer.observe(this.controls);
       }
     }
@@ -71,23 +82,55 @@ window.DialogueStage = class {
     const composer = this.root.querySelector('.move-composer');
     if (composer) composer.hidden = false;
     this.layoutPages();
+    this.typeCurrentPage();
     this.box.focus?.({preventScroll:true});
     this.resolveOpened?.(true);
   }
   resetSelection() {
+    this.finishTyping();
+    this.lastTypedText = null;
     this.resolveOpened?.(false);
     this.selectionKey = null;
     this.selectionOpened = false;
     this.awaitingSelection = false;
   }
-  showPage() {
+  finishTyping() {
+    if (this.typingTimer) {
+      clearTimeout(this.typingTimer);
+      this.typingTimer = null;
+      this.text.textContent = this.typingText;
+    }
+  }
+  typeCurrentPage() {
+    const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
+    this.finishTyping();
+    this.text.textContent = text;
+    if (this.box.hidden || this.lastTypedText === text) return;
+    this.lastTypedText = text;
+    if (typeof setTimeout !== 'function' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    this.typingText = text;
+    this.typingWidth = this.box.clientWidth;
+    this.typingHeight = this.box.clientHeight;
+    const letters = Array.from(text);
+    let count = 0;
+    const step = Math.max(1, Math.ceil(letters.length / 100));
+    const tick = () => {
+      count += step;
+      this.text.textContent = letters.slice(0, count).join('');
+      this.typingTimer = count < letters.length ? setTimeout(tick, 12) : null;
+    };
+    tick();
+  }
+  showPage(animate = true) {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex, this.pages.length - 1));
     this.text.textContent = this.pages[this.pageIndex];
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
+    if (animate) this.typeCurrentPage();
   }
   layoutPages() {
+    this.finishTyping();
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
     this.pager.hidden = true;
@@ -119,7 +162,7 @@ window.DialogueStage = class {
       start += count;
     }
     this.pages = pages.length ? pages : [''];
-    this.showPage();
+    this.showPage(false);
   }
   pause(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   image(node, path, alt) {
@@ -172,6 +215,7 @@ window.DialogueStage = class {
     animation.cancel();
   }
   render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false }) {
+    this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
@@ -285,6 +329,7 @@ window.DialogueStage = class {
       }
       if (!this.awaitingSelection) this.resolveOpened?.(true);
       this.layoutPages();
+      if (!this.box.hidden) this.typeCurrentPage();
       return true;
     })();
     if (!selectionKey) this.opened = this.ready;

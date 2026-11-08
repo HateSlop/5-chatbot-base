@@ -401,3 +401,15 @@ test('continuing the selected naming visit does not ask for another character cl
   assert.equal(stage.awaitingSelection,false);
   assert.equal(nodes['.dialogue-box'].hidden,false);
 });
+
+test('fast text reveal preserves Unicode and can be completed immediately', () => {
+  const timers=new Map();let id=0;
+  const {stage,nodes}=setup({setTimeout:(fn)=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});
+  stage.box.hidden=false;stage.fullText='안녕하세요 😀 반갑습니다.';stage.pages=[stage.fullText];
+  stage.typeCurrentPage();assert.equal(nodes['.dialogue-text'].textContent,'안');
+  stage.finishTyping();assert.equal(nodes['.dialogue-text'].textContent,stage.fullText);assert.equal(timers.size,0);
+  stage.typeCurrentPage();assert.equal(timers.size,0);
+  stage.lastTypedText=null;stage.typeCurrentPage();
+  while(timers.size){const [key,fn]=timers.entries().next().value;timers.delete(key);fn();}
+  assert.equal(nodes['.dialogue-text'].textContent,stage.fullText);
+});
