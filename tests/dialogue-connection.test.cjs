@@ -18,8 +18,10 @@ function node() {
   };
 }
 
-function setup() {
+function setup({missingBasket = false} = {}) {
   const nodes = new Map();
+  const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray'].map(tool =>
+    Object.assign(node(), {dataset: {tool}}));
   const listeners = {};
   const timers = new Map();
   let timerId = 0;
@@ -29,7 +31,8 @@ function setup() {
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
-      getElementById: id => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
+      querySelectorAll: selector => !missingBasket && selector === '#cathy-tool-list button' ? basketTools : [],
+      getElementById: id => { if (missingBasket && id.startsWith('cathy-')) return null; if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
       createElement: node,
     },
     window: {
@@ -45,7 +48,7 @@ function setup() {
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, timers, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -215,9 +218,12 @@ test('angry reaction waits for the displayed answer and is cancelled on movement
 
 test('Karen leaves after her greeting, then the door reveals the existing room action', async () => {
   const h = setup();
-  const dinner = response('karen_dinner','karen_house','karen', [{speaker_id:'karen',text:'편히 둘러보세요.',image:null}]);
+  const dinner = response('karen_dinner','karen_house',null, [{speaker_id:'karen',text:'편히 둘러보세요.',image:'/assets/images/karen_smile.png'}]);
   dinner.view.available_actions = [{id:'inspect_room',label:'수상한 방을 살핀다',kind:'inspect'}];
   h.context.window.startStory(dinner,'테스트');
+  assert.equal(h.nodes.get('user-message').disabled,true);
+  assert.equal(h.nodes.get('send-btn').disabled,true);
+  assert.equal(h.stage().text,'편히 둘러보세요.');
   assert.equal(h.stage().image,'/assets/images/karen_smile.png');
   assert.equal(h.nodes.get('action-list').children.length,0);
   await Promise.resolve();
@@ -225,6 +231,7 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   await timer.callback();
   assert.equal(h.stage().image,null);
   assert.equal(h.stage().text,'');
+  assert.equal(h.nodes.get('user-message').disabled,true);
   const door = h.nodes.get('dialogue-stage').children[0];
   assert.equal(door.hidden,false);
   door.listeners.click();
@@ -233,7 +240,7 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   let action;
   h.context.fetch = async (_, options) => {
     action = JSON.parse(options.body).action_id;
-    return {ok:true,json:async()=>response('photo_found','karen_house','karen',[])};
+    return {ok:true,json:async()=>response('photo_found','karen_house',null,[])};
   };
   h.nodes.get('action-list').children[0].listeners.click();
   await new Promise(resolve=>setImmediate(resolve));
@@ -363,6 +370,41 @@ test('open butcher doorway reveals thought before submitting the existing baseme
   assert.equal(door.hidden, true);
 });
 
+test('basement brazier click alone requests its clue and then reveals the exit', async () => {
+  const h = setup();
+  const basement = response('basement', 'basement', null, []);
+  basement.view.available_actions = [{id:'inspect_brazier', label:'화로를 조사한다', kind:'inspect'}];
+  h.context.window.startStory(basement, '테스트');
+  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'door-hotspot brazier-hotspot');
+  assert.equal(h.stage().background, '/assets/images/basement.svg');
+  assert.equal(hotspot.hidden, false);
+  assert.equal(hotspot.attrs['aria-label'], '지하실 화로 조사하기');
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  h.context.renderView(basement.view);
+  assert.equal(hotspot.hidden, false);
+  let sent;
+  h.context.fetch = async (_, options) => {
+    sent = JSON.parse(options.body).action_id;
+    return {ok:false, json:async()=>({error:{message:'잠시 후 다시 시도해 주세요.'}})};
+  };
+  await hotspot.listeners.click();
+  assert.equal(sent, 'inspect_brazier');
+  assert.equal(hotspot.hidden, false);
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  h.context.fetch = async () => {
+    const inspected = response('basement', 'basement', null, [{speaker_id:'thought', text:'불탄 생활 소품', image:null}]);
+    inspected.view.available_actions = [{id:'go_upstairs', label:'지하실에서 나온다', kind:'move'}];
+    return {ok:true, json:async()=>inspected};
+  };
+  await hotspot.listeners.click();
+  assert.equal(hotspot.hidden, true);
+  assert.equal(h.stage().text, '불탄 생활 소품');
+  assert.equal(h.nodes.get('action-list').children[0].textContent, '지하실에서 나온다');
+  h.context.renderView(vm.runInContext('currentView', h.context));
+  assert.equal(hotspot.hidden, true);
+  assert.equal(h.nodes.get('action-list').children.length, 1);
+});
+
 test('each first greeting requires two successful replies and resets on a new game', async () => {
   const h = setup();
   const data = response('neighbors','karen_house','karen',[]);
@@ -380,10 +422,10 @@ test('each first greeting requires two successful replies and resets on a new ga
   assert.equal(h.nodes.get('action-list').children.length,0);
 });
 
-test('secret discovery shows the wide room, Jimmy closeup, then angry Karen without advancing the server', () => {
+test('secret discovery asks the server to recognize Jimmy before Karen reacts and affinity drops', async () => {
   const h=setup();
-  const data=response('photo_found','karen_house','karen',[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}]);
-  data.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+  const data=response('photo_found','karen_house',null,[]);
+  data.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
   h.context.window.startStory(data,'테스트');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
   assert.equal(h.stage().text,'저기 뭔가 익숙한 얼굴이..?');
@@ -393,9 +435,19 @@ test('secret discovery shows the wide room, Jimmy closeup, then angry Karen with
   assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
   assert.equal(h.stage().text,'지미??????');
   assert.equal(h.stage().image,null);
-  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(h.nodes.get('affinity-value').textContent,'50 / 100');
+  let requested;
+  h.context.fetch=async (_,options)=>{
+    requested=JSON.parse(options.body).action_id;
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}],45);
+    found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+    return {ok:true,json:async()=>found};
+  };
+  await h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(requested,'recognize_photo');
   assert.equal(h.stage().image,'/assets/images/karen_angry.png');
   assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
+  assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
   h.context.window.startStory(data,'다시');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
@@ -428,6 +480,61 @@ test('Jimmy frame opens only on angle2, flips, closes and resets without changin
   assert.equal(hotspot.hidden,true);
 });
 
+test('Cathy salon opens without dialogue and the basket starts a three-second request', async () => {
+  const h = setup();
+  const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
+  const task = response('cathy_help', 'salon', null, [{speaker_id:'cathy', text:request, image:'/cathy.svg'}]);
+  task.view.available_actions = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray']
+    .map(tool => ({id:`choose_${tool}`, label:tool, kind:'choice'}))
+    .concat({id:'help_cathy', label:'캐시에게 전달한다', kind:'choice'});
+  h.context.window.startStory(task, '테스트');
+  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'cathy-basket-hotspot');
+  assert.equal(h.stage().dialogue, false);
+  assert.equal(h.stage().image, null);
+  assert.equal(h.split(), false);
+  assert.equal(hotspot.hidden, false);
+  assert.equal(hotspot.textContent, '바구니 열기');
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  assert.equal(h.move().actions.length, 0);
+  assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);
+  hotspot.listeners.click();
+  assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
+  assert.equal(h.nodes.get('cathy-basket-request').textContent, request);
+  assert.equal(h.nodes.get('cathy-tool-list').hidden, true);
+  await Promise.resolve();
+  const timer = [...h.timers.values()].find(item => item.ms === 3000);
+  assert.ok(timer);
+  timer.callback();
+  assert.equal(h.nodes.get('cathy-basket-request').hidden, true);
+  assert.equal(h.nodes.get('cathy-tool-list').hidden, false);
+  const sent = [];
+  h.context.fetch = async (_url, options) => {
+    const action = JSON.parse(options.body).action_id;
+    sent.push(action);
+    if (action === 'help_cathy') {
+      const result = response('cathy_result', 'salon', null, [{speaker_id:'cathy', text:'정확해요!', image:'/cathy.svg'}], 55);
+      result.view.available_actions = [{id:'return_home', label:'집으로 돌아간다', kind:'move'}];
+      return {ok:true, json:async () => result};
+    }
+    return {ok:true, json:async () => ({...task, events:[]})};
+  };
+  for (const button of [h.basketTools[0], h.basketTools[1], h.basketTools[3]]) await button.listeners.click();
+  assert.equal(h.basketTools[0].attrs['aria-pressed'], 'true');
+  await h.nodes.get('cathy-deliver').listeners.click();
+  assert.deepEqual(sent, ['choose_shampoo', 'choose_scissors', 'choose_comb', 'help_cathy']);
+  assert.equal(h.nodes.get('cathy-basket-dialog').open, false);
+  assert.equal(h.stage().text, '정확해요!');
+});
+
+test('name entry still initializes when an older chat page lacks basket markup', async () => {
+  const h = setup({missingBasket:true});
+  assert.equal(typeof h.context.window.startStory, 'function');
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '테스트');
+  assert.equal(h.nodes.get('game-screen').hidden, false);
+  h.context.window.startStory(response('festival_invite', 'player_house', 'bob', []), '테스트');
+  h.context.fetch = async () => ({ok:true, json:async () => response('neighbors', 'square', null, [])});
+  await vm.runInContext("performAction('visit_neighbors')", h.context);
+  assert.equal(h.nodes.get('status-message').textContent, '');
 test('Karen departure countdown waits until the character is selected', async () => {
   const h=setup();let select;
   h.context.pendingSelection=new Promise(resolve=>{select=resolve;});

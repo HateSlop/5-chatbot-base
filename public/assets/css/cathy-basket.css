@@ -1,0 +1,50 @@
+.dialogue-stage[data-scene="cathy_help"] .move-top { display: none; }
+.dialogue-stage .cathy-basket-hotspot {
+  position: absolute; z-index: 5; left: 58%; top: 38%;
+  display: flex; align-items: flex-end; justify-content: center;
+  width: clamp(150px, 18vw, 210px); height: clamp(112px, 13vw, 145px);
+  min-height: 0; padding: 0 8px 8px; border: 4px solid #ffe5a6;
+  border-radius: 16px; background: #281b2f url('../images/cathy_basket_placeholder.svg') center 4px / 100% 72% no-repeat;
+  box-shadow: 0 0 0 5px #2b1b2eaa, 0 0 28px #ffe198;
+  color: #fff4d7; font: 700 18px/1.2 "Malgun Gothic", sans-serif;
+  text-shadow: 0 2px 4px #000; cursor: pointer;
+}
+.dialogue-stage .cathy-basket-hotspot:hover { box-shadow: 0 0 0 5px #2b1b2eaa, 0 0 38px #fff3b9; transform: scale(1.04); }
+.dialogue-stage[data-background-ready="false"] .cathy-basket-hotspot { visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .cathy-basket-hotspot { animation: cathy-basket-glow 1.6s ease-in-out infinite alternate; }
+  @keyframes cathy-basket-glow { to { box-shadow: 0 0 0 5px #2b1b2eaa, 0 0 42px #fff1ac; } }
+}
+.cathy-basket-dialog {
+  width: min(960px, calc(100vw - 20px)); max-height: calc(100dvh - 20px);
+  padding: 22px; border: 2px solid #d8b485; border-radius: 18px;
+  background: #251c29; color: #fff1d8; text-align: center; box-shadow: 0 20px 60px #000a;
+}
+.cathy-basket-dialog::backdrop { background: #0b0813e0; }
+.cathy-basket-dialog[open] { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.cathy-basket-dialog [hidden] { display: none; }
+.cathy-basket-dialog #cathy-basket-close { align-self: flex-end; min-height: 40px; }
+.basket-scene { position: relative; width: min(900px, 100%); }
+.basket-scene img { display: block; width: 100%; border-radius: 12px; }
+.basket-request {
+  position: absolute; left: 8%; right: 8%; top: 35%; padding: 22px;
+  border: 2px solid #e8be7f; border-radius: 12px; background: #281d2be8;
+  font: 600 clamp(18px, 2.4vw, 28px)/1.5 "Malgun Gothic", sans-serif;
+}
+.cathy-tool-list {
+  position: absolute; inset: 33% 10% 9%; display: grid;
+  grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px;
+}
+.cathy-tool-list button { min-height: 44px; padding: 8px; font-size: clamp(14px, 1.8vw, 20px); }
+.cathy-tool-list button[aria-pressed="true"] { background: #6b4f27; border-color: #ffe09b; box-shadow: inset 0 0 0 2px #ffe09b; }
+.cathy-basket-dialog #cathy-deliver { min-height: 48px; padding: 10px 24px; }
+.cathy-basket-dialog #cathy-basket-hint { margin: 0; }
+.cathy-basket-dialog #cathy-basket-status { min-height: 1.5em; margin: 0; color: #ffd6a5; }
+.cathy-basket-dialog button:focus-visible, .cathy-basket-hotspot:focus-visible { outline: 3px solid #ffe09b; outline-offset: 3px; }
+@media (max-width: 520px) {
+  .dialogue-stage .cathy-basket-hotspot { left: 42%; top: 40%; width: 150px; height: 112px; font-size: 16px; }
+  .cathy-basket-dialog { padding: 12px; }
+  .cathy-tool-list { inset: 30% 6% 6%; gap: 5px; }
+  .cathy-tool-list button { padding: 4px; }
+  .basket-request { top: 25%; padding: 12px; }
+}

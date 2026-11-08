@@ -8,7 +8,7 @@
   },
   {
     "title": "마을 주민 소개",
-    "content": "캐런은 정중하고 밝은 주민대표다. 밥은 말수가 적은 정육점·식당 운영자다. 캐시는 상냥한 미용사다. 지미는 한 달 먼저 이사 온 금발의 친근한 주민이다.",
+    "content": "캐런은 정중하고 밝은 주민대표다. 밥은 말수가 적은 대머리 정육점·식당 운영자다. 캐시는 상냥한 미용사다. 지미는 한 달 먼저 이사 온 주황빛 적갈색 머리의 친근한 주민이다.",
     "characters": ["jimmy", "karen", "bob", "cathy"],
     "scenes": ["arrival", "neighbors", "cathy_task", "cathy_help", "karen_search", "jimmy_butcher", "butcher_search", "bob_caught", "dinner_invite", "karen_dinner", "photo_found", "checkpoint", "festival_invite", "festival", "hair_found"],
     "keywords": ["마을 사람", "사람들", "이웃", "주민", "누가 있어", "어떤 사람들이", "캐런", "밥", "캐시", "지미"]
@@ -35,12 +35,12 @@
     "keywords": ["축제", "초대", "언제", "내일"]
   },
   {
-    "title": "지하실의 수첩",
-    "content": "주인공이 정육점 지하실에서 본 수첩에는 지미의 이름과 축제 준비 날짜가 함께 적혀 있다. 그것만으로 지미의 운명을 단정할 수는 없다.",
+    "title": "지하실의 화로",
+    "content": "주인공은 정육점 지하실 화로를 조사해 여러 사람의 타다 남은 생활 소품을 보았다. 누군가 물건을 없애는 듯하지만 소품의 주인과 이유는 알 수 없다.",
     "characters": ["jimmy", "karen", "bob", "cathy"],
     "scenes": ["basement", "bob_caught", "dinner_invite", "karen_dinner", "photo_found", "checkpoint", "festival_invite", "festival"],
-    "requires": ["notebook"],
-    "keywords": ["수첩", "지미", "지하실", "기록"]
+    "requires": ["brazier"],
+    "keywords": ["화로", "불탄 소지품", "지하실", "생활 소품"]
   },
   {
     "title": "지미의 사진",
@@ -52,7 +52,7 @@
   },
   {
     "title": "축제 음식의 정체",
-    "content": "축제 음식에서 금발인 지미의 머리카락이 발견되었다. 주민들은 그가 음식의 재료가 되었다는 사실을 알고 있다. 캐런과 밥과 캐시는 비밀의 공범이다.",
+    "content": "축제 음식에서 주황빛 적갈색인 지미의 머리카락이 발견되었다. 주민들은 그가 음식의 재료가 되었다는 사실을 알고 있다. 캐런과 밥과 캐시는 비밀의 공범이다.",
     "characters": ["karen", "bob", "cathy"],
     "scenes": ["hair_found"],
     "requires": ["jimmy_hair"],

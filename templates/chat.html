@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/post-move-ui.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/arrival-preview.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/cathy-basket.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
@@ -115,6 +116,24 @@
         </span>
       </button>
       <p id="photo-hint" class="photo-hint" aria-live="polite">사진을 누르면 뒷면을 볼 수 있습니다.</p>
+    </dialog>
+    <dialog id="cathy-basket-dialog" class="cathy-basket-dialog" aria-label="미용실 바구니 확대">
+      <button id="cathy-basket-close" type="button" aria-label="바구니 닫기">닫기 ×</button>
+      <div class="basket-scene">
+        <img id="cathy-basket-image" src="{{ asset_url('assets/images/cathy_basket_placeholder.svg') }}" alt="확대된 미용 도구 바구니" draggable="false">
+        <div id="cathy-basket-request" class="basket-request" role="status" aria-live="polite" hidden></div>
+        <div id="cathy-tool-list" class="cathy-tool-list" aria-label="바구니 속 도구" hidden>
+          <button type="button" data-tool="shampoo">🧴 샴푸</button>
+          <button type="button" data-tool="scissors">✂️ 가위</button>
+          <button type="button" data-tool="conditioner">🧴 린스</button>
+          <button type="button" data-tool="comb">🪮 빗</button>
+          <button type="button" data-tool="dryer">♨️ 드라이어</button>
+          <button type="button" data-tool="spray">💈 스프레이</button>
+        </div>
+      </div>
+      <p id="cathy-basket-hint" hidden>캐시가 부탁한 도구를 모두 골라 주세요.</p>
+      <button id="cathy-deliver" type="button" hidden>캐시에게 전달한다</button>
+      <p id="cathy-basket-status" role="status" aria-live="polite"></p>
     </dialog>
   </body>
 </html>

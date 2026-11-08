@@ -16,9 +16,10 @@ from services.story import CHAT_DELTAS, START_SCORE, adjusted_affinity, availabl
 
 TO_CHECKPOINT = [
     "visit_neighbors", "visit_karen", "visit_bob", "visit_cathy", "return_home",
-    "go_help_cathy", "help_cathy", "see_jimmy_off", "go_butcher", "approach_jimmy",
-    "inspect_basement", "go_upstairs", "return_home", "accept_dinner_invite",
-    "go_karen_dinner", "inspect_room", "return_home",
+    "go_help_cathy", "choose_shampoo", "choose_scissors", "choose_comb", "help_cathy", "return_home",
+    "see_jimmy_off", "go_butcher", "approach_jimmy",
+    "inspect_basement", "inspect_brazier", "go_upstairs", "return_home", "accept_dinner_invite",
+    "go_karen_dinner", "inspect_room", "recognize_photo", "return_home",
 ]
 
 
@@ -118,7 +119,7 @@ class StoryTest(unittest.TestCase):
             characters = available_characters(state)
             if characters and state["scene_id"] != "checkpoint":
                 self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 제가 도울게요")
-        self.assertEqual(decode_state(self.token)["affinity"], 84)
+        self.assertEqual(decode_state(self.token)["affinity"], 80)
         self.assertTrue(decode_state(self.token)["job_offered"])
         self.festival("accept_job")
         self.assertTrue(decode_state(self.token)["has_car_key"])
@@ -133,7 +134,7 @@ class StoryTest(unittest.TestCase):
             if characters and state["scene_id"] != "checkpoint":
                 self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 만나 반가워요", "friendly")
         state = decode_state(self.token)
-        self.assertEqual(state["affinity"], 78)
+        self.assertEqual(state["affinity"], 73)
         self.assertTrue(state["job_offered"])
         self.assertIn("accept_job", [item["id"] for item in available_actions(state)])
 
@@ -148,7 +149,7 @@ class StoryTest(unittest.TestCase):
         state = decode_state(self.token)
         self.assertEqual(state["affinity"], 0)
         self.assertFalse(state["job_offered"])
-        self.assertEqual(state["hostile_streak"], 10)
+        self.assertEqual(state["hostile_streak"], 9)
 
     def test_staying_assimilates_without_key(self):
         self.checkpoint_at(70)
@@ -168,7 +169,7 @@ class StoryTest(unittest.TestCase):
                              for hit in retriever.search("축제", "bob", "neighbors", [])))
         self.assertTrue(any("다음 날" in hit.content for hit in retriever.search("축제", "bob", "festival_invite", [])))
         self.assertFalse(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "arrival", [])))
-        self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["notebook"])))
+        self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["brazier"])))
 
     def test_place_has_one_character_and_affinity_is_shared_with_bob(self):
         start = self.client.post("/api/session", json={"player_name": "검증"}).get_json()["view"]
@@ -241,7 +242,11 @@ class StoryTest(unittest.TestCase):
         for action_id in TO_CHECKPOINT[:6]:
             self.action(action_id)
         self.assertEqual(decode_state(self.token)["location_id"], "salon")
-        jimmy = self.action("help_cathy")
+        for action_id in ("choose_shampoo", "choose_scissors", "choose_comb"):
+            self.action(action_id)
+        result = self.action("help_cathy")
+        self.assertIn("정확해요", result["events"][0]["text"])
+        jimmy = self.action("return_home")
         self.assertEqual(jimmy["view"]["location_id"], "player_house")
         self.assertEqual([person["id"] for person in jimmy["view"]["available_characters"]], ["jimmy"])
         self.assertEqual([item["id"] for item in jimmy["view"]["available_actions"]], ["see_jimmy_off"])
@@ -256,8 +261,41 @@ class StoryTest(unittest.TestCase):
         self.assertIn("지미가 떠난 뒤", karen["events"][0]["text"])
         self.assertEqual([item["speaker_id"] for item in decode_state(self.token)["scene_events"]], ["karen"])
 
+    def test_cathy_basket_checks_exact_tools_and_failure_continues(self):
+        for action_id in TO_CHECKPOINT[:6]:
+            self.action(action_id)
+        request = decode_state(self.token)
+        self.assertEqual(request["scene_id"], "cathy_help")
+        self.assertEqual(request["cathy_tools"], [])
+        self.assertEqual(available_characters(request), [])
+        before = request["affinity"]
+        self.action("choose_shampoo")
+        self.action("choose_shampoo")
+        self.assertEqual(decode_state(self.token)["cathy_tools"], [])
+        self.action("choose_shampoo")
+        self.action("choose_scissors")
+        self.action("choose_comb")
+        self.action("choose_conditioner")
+        failed = self.action("help_cathy")
+        self.assertEqual(failed["view"]["scene_id"], "cathy_result")
+        self.assertEqual(failed["view"]["affinity"], before)
+        self.assertIn("집에 가세요", failed["events"][0]["text"])
+        self.assertEqual([a["id"] for a in failed["view"]["available_actions"]], ["return_home"])
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "help_cathy"}).status_code, 409)
+        self.assertEqual(self.action("return_home")["view"]["scene_id"], "jimmy_butcher")
+
+    def test_cathy_basket_success_adds_five_once(self):
+        for action_id in TO_CHECKPOINT[:6]:
+            self.action(action_id)
+        before = decode_state(self.token)["affinity"]
+        for tool in ("shampoo", "scissors", "comb"):
+            self.action(f"choose_{tool}")
+        result = self.action("help_cathy")
+        self.assertEqual(result["view"]["affinity"], min(100, before + 5))
+        self.assertIn("고마워요", result["events"][0]["text"])
+
     def test_butcher_visit_reason_and_karen_request_reach_model(self):
-        for action_id in TO_CHECKPOINT[:7]:
+        for action_id in TO_CHECKPOINT[:11]:
             self.action(action_id)
         with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "고기를 사러 가.", "visual_cue": "neutral"}) as generate:
             self.client.post("/api/chat", json={"state_token": self.token, "character_id": "jimmy", "message": "왜 정육점에 가요?"})
@@ -270,14 +308,31 @@ class StoryTest(unittest.TestCase):
         self.assertIn("알려줘서 고맙다", generate.call_args.args[-1][1])
         self.assertIn("도착 시각을 캐묻지 않는다", generate.call_args.args[-1][2])
 
-    def test_notebook_caught_and_photo_exit_are_fixed_events(self):
-        for action_id in TO_CHECKPOINT[:10]:
+    def test_brazier_caught_and_photo_exit_are_fixed_events(self):
+        for action_id in TO_CHECKPOINT[:14]:
             self.action(action_id)
         before = decode_state(self.token)["affinity"]
-        notebook = self.action("inspect_basement")
-        self.assertEqual(notebook["view"]["affinity"], before)
+        basement = self.action("inspect_basement")
+        self.assertEqual(basement["view"]["affinity"], before)
+        self.assertEqual(basement["events"], [])
+        self.assertNotIn("brazier", decode_state(self.token)["clues"])
+        self.assertEqual([item["id"] for item in basement["view"]["available_actions"]], ["inspect_brazier"])
+        retriever = StoryRetriever()
+        self.assertFalse(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", [])))
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
+        inspected = self.action("inspect_brazier")
+        self.assertEqual(inspected["view"]["affinity"], before)
+        self.assertIn("brazier", decode_state(self.token)["clues"])
+        self.assertIn("타다 남은 생활 소품", inspected["events"][0]["text"])
+        self.assertTrue(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
+        self.assertFalse(any("지미의 운명" in hit.content or "음식의 재료가" in hit.content for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
+        self.assertEqual([item["id"] for item in inspected["view"]["available_actions"]], ["go_upstairs"])
+        self.assertEqual(inspected["view"]["available_actions"][0]["label"], "지하실에서 나온다")
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_brazier"}).status_code, 409)
+        self.assertEqual(len(decode_state(self.token)["journal"]), 1)
         caught = self.action("go_upstairs")
         self.assertEqual(caught["view"]["affinity"], before - 5)
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
         self.assertEqual(caught["view"]["available_characters"], [])
         self.assertIn("나가시오", caught["events"][0]["text"])
         self.assertEqual([item["id"] for item in caught["view"]["available_actions"]], ["return_home"])
@@ -286,10 +341,21 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.action("return_home")["view"]["scene_id"], "dinner_invite")
         for action_id in ("accept_dinner_invite", "go_karen_dinner"):
             self.action(action_id)
-        photo = self.action("inspect_room")
+        before_photo = decode_state(self.token)["affinity"]
+        entered = self.action("inspect_room")
+        self.assertEqual(entered["events"], [])
+        self.assertEqual(entered["view"]["affinity"], before_photo)
+        self.assertEqual(entered["view"]["available_actions"][0]["id"], "recognize_photo")
+        self.assertNotIn("jimmy_photo", decode_state(self.token)["clues"])
+        self.assertFalse(any("지미의 사진" in note for note in entered["view"]["journal"]))
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "return_home"}).status_code, 409)
+        photo = self.action("recognize_photo")
+        self.assertEqual(photo["view"]["affinity"], max(0, before_photo - 5))
+        self.assertIn("jimmy_photo", decode_state(self.token)["clues"])
         self.assertEqual(photo["view"]["available_characters"], [])
         self.assertIn("나가 주세요", photo["events"][-1]["text"])
         self.assertEqual([item["id"] for item in photo["view"]["available_actions"]], ["return_home"])
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "recognize_photo"}).status_code, 409)
         rejected = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "사진이네요"})
         self.assertEqual(rejected.status_code, 409)
 
@@ -308,12 +374,12 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.action("decline_job")["view"]["affinity"], 70)
 
     def test_dinner_pickup_promise_and_festival_inference(self):
-        for action_id in TO_CHECKPOINT[:12]:
+        for action_id in TO_CHECKPOINT[:17]:
             self.action(action_id)
-        notebook = decode_state(self.token)
-        self.assertIn("notebook", notebook["clues"])
-        self.assertNotIn("jimmy_hair", notebook["clues"])
-        self.assertFalse(any("식인" in entry or "음식의 정체" in entry for entry in notebook["journal"]))
+        basement = decode_state(self.token)
+        self.assertIn("brazier", basement["clues"])
+        self.assertNotIn("jimmy_hair", basement["clues"])
+        self.assertFalse(any("식인" in entry or "음식의 정체" in entry for entry in basement["journal"]))
         invitation = self.action("return_home")
         self.assertEqual(invitation["view"]["scene_id"], "dinner_invite")
         self.assertEqual([person["id"] for person in invitation["view"]["available_characters"]], ["jimmy"])
@@ -327,8 +393,14 @@ class StoryTest(unittest.TestCase):
         self.assertIn("혼자", wait["view"]["available_actions"][0]["label"])
         alone = self.action("go_karen_dinner")
         self.assertEqual(alone["view"]["location_id"], "karen_house")
-        self.assertEqual([person["id"] for person in alone["view"]["available_characters"]], ["karen"])
+        self.assertEqual(alone["view"]["available_characters"], [])
+        self.assertEqual(alone["events"][0]["speaker_id"], "karen")
+        with patch.object(chatbot.generator, "classify") as classify:
+            blocked = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "안녕하세요"})
+        self.assertEqual(blocked.status_code, 409)
+        classify.assert_not_called()
         self.action("inspect_room")
+        self.action("recognize_photo")
         state = decode_state(self.token)
         state["affinity"] = 70
         self.token = encode_state(state)
@@ -336,7 +408,7 @@ class StoryTest(unittest.TestCase):
             self.action(action_id)
         food = self.action("inspect_food")
         thoughts = " ".join(item["text"] for item in food["events"])
-        for detail in ("금발 머리카락", "밥은 대머리", "지미는 사라졌고", "수첩", "음식의 정체"):
+        for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
             self.assertIn(detail, thoughts)
         self.assertEqual([item["id"] for item in food["view"]["available_actions"]], ["escape", "stay"])
 
@@ -358,15 +430,17 @@ class StoryTest(unittest.TestCase):
             ("visit_neighbors", None, None),
             ("visit_karen", None, None), ("visit_bob", None, None), ("visit_cathy", None, None),
             ("return_home", "jimmy", "캐시가"),
-            ("go_help_cathy", "cathy", "구체적인 업무는 아직 정해지지 않았다"),
-            ("help_cathy", "jimmy", "고기를 사러 정육점에 다녀오겠다고"),
+            ("go_help_cathy", None, None),
+            ("choose_shampoo", None, None), ("choose_scissors", None, None), ("choose_comb", None, None),
+            ("help_cathy", None, None),
+            ("return_home", "jimmy", "고기를 사러 정육점에 다녀오겠다고"),
             ("see_jimmy_off", "karen", "전할 말이 있어"),
             ("go_butcher", "jimmy", "지미는 정육점 지하실에서"),
-            ("approach_jimmy", None, None), ("inspect_basement", None, None),
+            ("approach_jimmy", None, None), ("inspect_basement", None, None), ("inspect_brazier", None, None),
             ("go_upstairs", None, None),
             ("return_home", "jimmy", "오후 6시에"),
-            ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "오후 7시까지"),
-            ("inspect_room", None, None),
+            ("accept_dinner_invite", None, None), ("go_karen_dinner", None, None),
+            ("inspect_room", None, None), ("recognize_photo", None, None),
             ("return_home", None, None), ("decline_job", "bob", "초대한 날의 다음 날"),
         ]
         for action_id, character, expected in steps:
@@ -383,7 +457,7 @@ class StoryTest(unittest.TestCase):
                     self.token = response.get_json()["state_token"]
                 context = generate.call_args.args[-1]
                 self.assertIn(expected, " ".join(context), action_id)
-                if character != "jimmy" or action_id == "help_cathy":
+                if character != "jimmy" or expected == "고기를 사러 정육점에 다녀오겠다고":
                     self.assertNotIn("식인", " ".join(context), action_id)
                 self.assertEqual(result["view"]["available_actions"],
                                  self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["available_actions"])
@@ -460,7 +534,7 @@ class StoryTest(unittest.TestCase):
         self.chat("jimmy", "꺼져", "hostile")
         state = decode_state(self.token)
         self.assertEqual(state["hostile_streak"], 1)
-        for action_id in TO_CHECKPOINT[:7]:
+        for action_id in TO_CHECKPOINT[:11]:
             self.action(action_id)
         self.assertEqual(decode_state(self.token)["hostile_streak"], 1)
 

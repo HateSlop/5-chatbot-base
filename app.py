@@ -33,6 +33,8 @@ def start_chat_timer():
 
 @app.after_request
 def log_chat_timer(response):
+    if request.path == "/chat":
+        response.cache_control.no_store = True
     started = request.environ.get("chat_started")
     if started is not None:
         app.logger.info("/api/chat total %.1f ms", (perf_counter() - started) * 1000)
