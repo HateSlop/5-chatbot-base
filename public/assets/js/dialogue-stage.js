@@ -16,6 +16,15 @@ window.DialogueStage = class {
     this.pageIndex = 0;
     if (this.box.ownerDocument) {
       const doc = this.box.ownerDocument;
+      this.talkCue = doc.createElement('button');
+      this.talkCue.type = 'button';
+      this.talkCue.className = 'character-talk-cue';
+      this.talkCue.textContent = '!';
+      this.talkCue.hidden = true;
+      root.append(this.talkCue);
+      this.talkCue.addEventListener('click', () => this.openDialogue());
+      this.figure.addEventListener('click', () => this.openDialogue());
+      if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.positionTalkCue()).observe(root);
       this.copy = doc.createElement('div');
       this.copy.className = 'dialogue-copy';
       this.copy.append(this.speaker, this.text);
@@ -45,6 +54,31 @@ window.DialogueStage = class {
         observer.observe(this.box); observer.observe(this.controls);
       }
     }
+  }
+  positionTalkCue() {
+    if (!this.talkCue || !this.figure.getBoundingClientRect) return;
+    const figure = this.figure.getBoundingClientRect(), root = this.root.getBoundingClientRect();
+    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2))}px`;
+    this.talkCue.style.top = `${Math.max(20, Math.min(root.height - 70, figure.top - root.top + 8))}px`;
+  }
+  openDialogue() {
+    if (!this.awaitingSelection || this.root.dataset.loading === 'true') return;
+    this.awaitingSelection = false;
+    this.selectionOpened = true;
+    this.root.dataset.awaitingTalk = 'false';
+    if (this.talkCue) this.talkCue.hidden = true;
+    this.box.hidden = false;
+    const composer = this.root.querySelector('.move-composer');
+    if (composer) composer.hidden = false;
+    this.layoutPages();
+    this.box.focus?.({preventScroll:true});
+    this.resolveOpened?.(true);
+  }
+  resetSelection() {
+    this.resolveOpened?.(false);
+    this.selectionKey = null;
+    this.selectionOpened = false;
+    this.awaitingSelection = false;
   }
   showPage() {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex, this.pages.length - 1));
@@ -137,7 +171,7 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false }) {
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
@@ -159,6 +193,22 @@ window.DialogueStage = class {
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
+    const identity = visitorId || /\/([a-z]+)[_.-]/.exec(image || '')?.[1];
+    const selectionKey = selectCharacter && image && object !== 'tv' && identity
+      ? `${sceneId || ''}:${background}:${identity}` : null;
+    if (selectionKey !== this.selectionKey) {
+      this.resetSelection();
+      this.selectionKey = selectionKey;
+      this.selectionOpened = !!this.skipSelectionOnce;
+      this.skipSelectionOnce = false;
+      if (selectionKey) this.opened = new Promise(resolve => { this.resolveOpened = resolve; });
+    }
+    this.awaitingSelection = !!selectionKey && !this.selectionOpened && dialogue;
+    this.root.dataset.awaitingTalk = String(this.awaitingSelection);
+    if (this.talkCue) {
+      this.talkCue.hidden = true;
+      this.talkCue.setAttribute('aria-label', `${speaker || '캐릭터'}의 이야기 듣기`);
+    }
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
     if (this.paths.get(this.background) !== background) this.root.dataset.backgroundReady = 'false';
     const version = ++this.version;
@@ -227,10 +277,16 @@ window.DialogueStage = class {
         await this.pause(400);
         if (version !== this.version) return false;
       }
-      this.box.hidden = !dialogue;
-      if (composer) composer.hidden = !dialogue;
+      this.box.hidden = !dialogue || this.awaitingSelection;
+      if (composer) composer.hidden = !dialogue || this.awaitingSelection;
+      if (this.talkCue) {
+        this.talkCue.hidden = !this.awaitingSelection;
+        this.positionTalkCue();
+      }
+      if (!this.awaitingSelection) this.resolveOpened?.(true);
       this.layoutPages();
       return true;
     })();
+    if (!selectionKey) this.opened = this.ready;
   }
 };

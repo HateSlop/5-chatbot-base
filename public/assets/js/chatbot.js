@@ -104,7 +104,7 @@ function clearReaction() {
 const greetedPlaces = new Set();
 const greetingDestinations = {visit_karen:'karen_house',visit_bob:'butcher_shop',visit_cathy:'salon'};
 function focusChatWhenReady() {
-  dialogueStage.ready?.then(() => { if (stateToken && !input.disabled) input.focus(); });
+  (dialogueStage.opened || dialogueStage.ready)?.then(opened => { if (opened !== false && stateToken && !input.disabled) input.focus(); });
 }
 
 function speakerName(id) {
@@ -151,10 +151,12 @@ function renderMessages() {
     text: currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
+    selectCharacter: true,
   });
   clearTimeout(karenDepartureTimer);
   if (currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed) {
-    Promise.resolve(dialogueStage.ready).then(() => {
+    Promise.resolve(dialogueStage.opened || dialogueStage.ready).then(opened => {
+      if (opened === false) return;
       const depart = async () => {
         if (currentView?.scene_id !== 'karen_dinner' || karenDinnerDismissed || busy) return;
         if (dialogueStage.pages && dialogueStage.pageIndex < dialogueStage.pages.length - 1) {
@@ -295,9 +297,11 @@ function applyResponse(data, kind, characterId = null) {
 }
 
 window.startStory = (data, name) => {
+  dialogueStage.resetSelection?.();
   const continuingVisit = window.entryVisitReady && data.view.location_id === 'player_house' &&
     data.view.available_characters.some(character => character.id === 'jimmy');
   if (continuingVisit) {
+    dialogueStage.skipSelectionOnce = true;
     dialogueStage.homeVisitor = 'jimmy';
     dialogueStage.visitorVisible = true;
     dialogueStage.root?.setAttribute('data-continuing', 'true');
@@ -378,6 +382,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  dialogueStage.resetSelection?.();
   clearReaction();
   greetedPlaces.clear();
   greetingChats.clear();

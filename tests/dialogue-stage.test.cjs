@@ -367,3 +367,37 @@ test('frightened Jimmy skips the location entrance delay', async () => {
   assert.equal(stage.root.dataset.simultaneous,'true');
   assert.deepEqual(pauses,[400]);
 });
+
+test('character selection reveals dialogue once per encounter and never gates empty scenes', async () => {
+  const {stage,nodes}=setup();
+  const scene={background:'/assets/images/salon.svg',image:'/assets/images/cathy_smile.png',speaker:'캐시',sceneId:'neighbors',selectCharacter:true,text:'어서 와요'};
+  stage.render(scene);await stage.ready;
+  assert.equal(stage.awaitingSelection,true);
+  assert.equal(nodes['.dialogue-box'].hidden,true);
+  assert.equal(nodes['.move-composer'].hidden,true);
+  stage.render(scene);await stage.ready;
+  assert.equal(nodes['.dialogue-box'].hidden,true);
+  stage.openDialogue();
+  assert.equal(await stage.opened,true);
+  assert.equal(nodes['.dialogue-box'].hidden,false);
+  assert.equal(nodes['.move-composer'].hidden,false);
+  stage.render({...scene,text:'이어지는 답변',image:'/assets/images/cathy_angry.png'});await stage.ready;
+  assert.equal(stage.awaitingSelection,false);
+  assert.equal(nodes['.dialogue-box'].hidden,false);
+  stage.render({...scene,sceneId:'later'});await stage.ready;
+  assert.equal(stage.awaitingSelection,true);
+  const abandoned=stage.opened;
+  stage.render({background:'/assets/images/basement.svg',text:'혼자 둘러본다',selectCharacter:true});await stage.ready;
+  assert.equal(await abandoned,false);
+  assert.equal(stage.awaitingSelection,false);
+  assert.equal(nodes['.dialogue-box'].hidden,false);
+});
+
+test('continuing the selected naming visit does not ask for another character click', async () => {
+  const {stage,nodes}=setup();
+  stage.skipSelectionOnce=true;
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.png',sceneId:'arrival',selectCharacter:true});
+  await stage.ready;
+  assert.equal(stage.awaitingSelection,false);
+  assert.equal(nodes['.dialogue-box'].hidden,false);
+});
