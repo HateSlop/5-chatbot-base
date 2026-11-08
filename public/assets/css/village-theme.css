@@ -213,3 +213,9 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .death-controls p { margin: 4px auto 10px; max-width: 900px; font: 14px/1.6 "Malgun Gothic", sans-serif; }
 .death-controls p:empty { display: none; }
 .death-controls button { padding: 8px 16px; margin: 0 5px; box-shadow: none; }
+
+body .location-music-toggle { position: fixed; top: 12px; right: 12px; z-index: 40; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 8px; border: 1px solid #c49a6455; border-radius: 50%; color: #fff0d2; background: #231d2bcc; box-shadow: none; opacity: .7; }
+.location-music-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.location-music-toggle[aria-pressed="true"] .music-muted, .location-music-toggle[aria-pressed="false"] .music-waves { display: none; }
+body .location-music-toggle:hover, body .location-music-toggle:focus-visible { opacity: 1; }
+.post-move-stage .move-top { right: 60px; }

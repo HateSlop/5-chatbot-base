@@ -189,6 +189,7 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
+  window.locationMusic?.enter(view.location_id, view.ending);
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();

@@ -15,6 +15,7 @@ async function showEntry() {
   entryDepart.hidden = true;
   const run = ++entryRun;
   entryStage.render({background:'/assets/images/player_house.svg', dialogue:false});
+  window.locationMusic?.enter('player_house');
   entryUI.render({locationId:'player_house',locationName:'새집',busy:true});
   await entryRoot.querySelector('.dialogue-background').decode().catch(() => {});
   if (run !== entryRun) return;

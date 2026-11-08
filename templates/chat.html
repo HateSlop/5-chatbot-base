@@ -14,11 +14,16 @@
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
+    <audio id="location-music" loop preload="none"></audio>
+    <button id="location-music-toggle" class="location-music-toggle" type="button" aria-label="배경음악 음소거" title="배경음악 음소거" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
+    </button>
     <div id="name-screen">
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
