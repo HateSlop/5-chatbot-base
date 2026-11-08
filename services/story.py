@@ -103,7 +103,7 @@ def available_characters(state: dict) -> list[str]:
     if scene == "festival_invite":
         return ["bob"]
     if scene == "karen_dinner":
-        return ["karen"]
+        return []
     if scene == "checkpoint":
         return ["karen"]
     if scene in {"festival", "hair_found"}:

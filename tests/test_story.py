@@ -119,7 +119,7 @@ class StoryTest(unittest.TestCase):
             characters = available_characters(state)
             if characters and state["scene_id"] != "checkpoint":
                 self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 제가 도울게요")
-        self.assertEqual(decode_state(self.token)["affinity"], 82)
+        self.assertEqual(decode_state(self.token)["affinity"], 80)
         self.assertTrue(decode_state(self.token)["job_offered"])
         self.festival("accept_job")
         self.assertTrue(decode_state(self.token)["has_car_key"])
@@ -134,7 +134,7 @@ class StoryTest(unittest.TestCase):
             if characters and state["scene_id"] != "checkpoint":
                 self.chat(characters[0], f"{characters[0]}의 {state['scene_id']}에서 만나 반가워요", "friendly")
         state = decode_state(self.token)
-        self.assertEqual(state["affinity"], 75)
+        self.assertEqual(state["affinity"], 73)
         self.assertTrue(state["job_offered"])
         self.assertIn("accept_job", [item["id"] for item in available_actions(state)])
 
@@ -149,7 +149,7 @@ class StoryTest(unittest.TestCase):
         state = decode_state(self.token)
         self.assertEqual(state["affinity"], 0)
         self.assertFalse(state["job_offered"])
-        self.assertEqual(state["hostile_streak"], 10)
+        self.assertEqual(state["hostile_streak"], 9)
 
     def test_staying_assimilates_without_key(self):
         self.checkpoint_at(70)
@@ -382,7 +382,12 @@ class StoryTest(unittest.TestCase):
         self.assertIn("혼자", wait["view"]["available_actions"][0]["label"])
         alone = self.action("go_karen_dinner")
         self.assertEqual(alone["view"]["location_id"], "karen_house")
-        self.assertEqual([person["id"] for person in alone["view"]["available_characters"]], ["karen"])
+        self.assertEqual(alone["view"]["available_characters"], [])
+        self.assertEqual(alone["events"][0]["speaker_id"], "karen")
+        with patch.object(chatbot.generator, "classify") as classify:
+            blocked = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "안녕하세요"})
+        self.assertEqual(blocked.status_code, 409)
+        classify.assert_not_called()
         self.action("inspect_room")
         state = decode_state(self.token)
         state["affinity"] = 70
@@ -422,7 +427,7 @@ class StoryTest(unittest.TestCase):
             ("approach_jimmy", None, None), ("inspect_basement", None, None), ("inspect_brazier", None, None),
             ("go_upstairs", None, None),
             ("return_home", "jimmy", "오후 6시에"),
-            ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "오후 7시까지"),
+            ("accept_dinner_invite", None, None), ("go_karen_dinner", None, None),
             ("inspect_room", None, None),
             ("return_home", None, None), ("decline_job", "bob", "초대한 날의 다음 날"),
         ]
