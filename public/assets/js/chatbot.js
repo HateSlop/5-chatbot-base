@@ -34,6 +34,58 @@ photoHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(photoHotspot);
 const photoDialog = document.getElementById('photo-dialog');
 const photoFlip = document.getElementById('photo-flip');
+const basketDialog = document.getElementById('cathy-basket-dialog');
+const basketImage = document.getElementById('cathy-basket-image');
+const basketRequest = document.getElementById('cathy-basket-request');
+const basketHotspot = document.createElement('button');
+basketHotspot.type = 'button';
+basketHotspot.className = 'cathy-basket-hotspot';
+basketHotspot.setAttribute('aria-label', '미용실 바구니 열기');
+basketHotspot.hidden = true;
+document.getElementById('dialogue-stage').append(basketHotspot);
+let basketStarted = false;
+let basketReady = false;
+let basketTimer;
+const cathySelected = new Set();
+function renderBasket() {
+  basketRequest.hidden = !basketStarted || basketReady;
+  document.getElementById('cathy-tool-list').hidden = !basketReady;
+  document.getElementById('cathy-basket-hint').hidden = !basketReady;
+  document.getElementById('cathy-deliver').hidden = !basketReady;
+  document.getElementById('cathy-deliver').disabled = busy;
+  for (const button of document.querySelectorAll('#cathy-tool-list button')) {
+    button.setAttribute('aria-pressed', String(cathySelected.has(button.dataset.tool)));
+    button.disabled = busy;
+  }
+}
+basketHotspot.addEventListener('click', () => {
+  if (busy || currentView?.scene_id !== 'cathy_help') return;
+  if (!basketStarted) {
+    basketStarted = true;
+    basketRequest.textContent = transcript.findLast(item => item.scene_id === 'cathy_help' && item.speaker === 'cathy')?.text || '';
+    renderBasket();
+    Promise.resolve(basketImage.decode?.().catch(() => {})).then(() => {
+      if (currentView?.scene_id !== 'cathy_help') return;
+      basketTimer = setTimeout(() => {
+        basketReady = true;
+        renderBasket();
+      }, 3000);
+    });
+  }
+  basketDialog.showModal();
+});
+document.getElementById('cathy-basket-close').addEventListener('click', () => basketDialog.close());
+for (const button of document.querySelectorAll('#cathy-tool-list button')) {
+  button.addEventListener('click', async () => {
+    const tool = button.dataset.tool;
+    if (await performAction(`choose_${tool}`)) {
+      if (cathySelected.has(tool)) cathySelected.delete(tool);
+      else cathySelected.add(tool);
+    }
+    renderBasket();
+  });
+}
+document.getElementById('cathy-deliver').addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 function showPhotoSide(back) {
   photoBack = back;
@@ -130,6 +182,7 @@ function saveMessage(item) {
 
 function renderMessages() {
   if (!currentView) return;
+  const cathyBasketScene = currentView.scene_id === 'cathy_help';
   const conversation = transcript.filter(item =>
     item.scene_id === currentView.scene_id && item.location_id === currentView.location_id &&
     (item.kind === "scene" || item.kind === "chat" && item.character_id === selectedCharacter));
@@ -144,13 +197,14 @@ function renderMessages() {
   dialogueStage.render({
     background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && selectedCharacter === "karen" ? (karenDinnerDismissed ? null : "/assets/images/karen_smile.png") : (selectedCharacter
+    image: cathyBasketScene || currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && selectedCharacter === "karen" ? (karenDinnerDismissed ? null : "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
     text: currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
+    dialogue: !cathyBasketScene,
   });
   clearTimeout(karenDepartureTimer);
   if (currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed) {
@@ -187,6 +241,9 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
+  basketHotspot.hidden = view.scene_id !== 'cathy_help';
+  basketHotspot.disabled = busy;
+  renderBasket();
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
@@ -209,7 +266,7 @@ function renderView(view) {
   const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
-  postMoveUI.setSplit?.(!festival);
+  postMoveUI.setSplit?.(!festival && view.scene_id !== 'cathy_help');
   if (showingDiscovery || secretDiscovery) {
     const next = document.createElement('button');
     next.type = 'button';
@@ -229,6 +286,7 @@ function renderView(view) {
   }
   for (const action of view.available_actions) {
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
+    if (view.scene_id === 'cathy_help') continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
@@ -268,7 +326,7 @@ function renderView(view) {
   document.getElementById("send-btn").disabled = input.disabled;
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
   postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
-    affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery ? [] : view.available_actions, busy});
+    affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
 }
 
@@ -285,6 +343,12 @@ function applyResponse(data, kind, characterId = null) {
     festivalFrame = 0;
     secretFrame = 0;
     karenDinnerDismissed = false;
+    clearTimeout(basketTimer);
+    basketTimer = undefined;
+    basketStarted = false;
+    basketReady = false;
+    cathySelected.clear();
+    if (basketDialog.open) basketDialog.close();
   }
   stateToken = data.state_token;
   for (const item of data.events) {
@@ -312,8 +376,15 @@ window.startStory = (data, name) => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
+  if (basketDialog.open) basketDialog.close();
+  clearTimeout(basketTimer);
+  basketTimer = undefined;
+  basketStarted = false;
+  basketReady = false;
+  cathySelected.clear();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
+  currentView = null;
   applyResponse(data, "scene");
   const reveal = () => {
     document.getElementById("name-screen").hidden = true;
@@ -338,7 +409,7 @@ async function request(path, payload) {
 }
 
 async function performAction(actionId) {
-  if (busy || !stateToken) return;
+  if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
   if (currentView.scene_id === 'photo_found' && secretFrame < 2) return;
   if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
@@ -348,7 +419,13 @@ async function performAction(actionId) {
   try {
     await request("/api/action", {state_token: stateToken, action_id: actionId});
     statusMessage.textContent = "";
-  } catch (error) { statusMessage.textContent = error.message; }
+    document.getElementById('cathy-basket-status').textContent = '';
+    return true;
+  } catch (error) {
+    statusMessage.textContent = error.message;
+    if (currentView?.scene_id === 'cathy_help') document.getElementById('cathy-basket-status').textContent = error.message;
+    return false;
+  }
   finally { busy = false; renderView(currentView); }
 }
 
@@ -382,6 +459,12 @@ window.addEventListener("pagehide", () => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
+  if (basketDialog.open) basketDialog.close();
+  clearTimeout(basketTimer);
+  basketTimer = undefined;
+  basketStarted = false;
+  basketReady = false;
+  cathySelected.clear();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
   stateToken = null;

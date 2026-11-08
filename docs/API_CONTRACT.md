@@ -45,7 +45,7 @@
 
 대화 입력은 AI 대사와 제한된 호감도 변화만 만든다. 장면 이동, 단서 획득, 차 키, 엔딩은 `action_id`로만 처리한다. 화면은 요청 중 다른 요청을 보내지 않고, 성공 응답의 새 토큰으로 이전 토큰을 교체한다. 모델 실패 시 이전 토큰을 유지한다.
 
-미용실 `cathy_help` 장면에서는 캐시의 도구 요청이 끝난 뒤 바구니를 연다. 도구 버튼은 `view.available_actions`에 있는 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_dryer`, `choose_spray`를 사용한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
+미용실 `cathy_help` 장면은 대화창 없이 배경과 바구니를 보여준다. 바구니를 누르면 확대 화면에서 서버 `events`의 캐시 요청을 3초 보여준 뒤 도구를 고를 수 있다. 도구 버튼은 `view.available_actions`에 있는 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_dryer`, `choose_spray`를 사용한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
 
 마을 호감도는 인물 사이에 공유된다. 한 인물과의 대화로 점수가 바뀌면 이후 다른 인물의 대사 태도에도 반영한다. 인물별 최근 대화는 진행 토큰에 따로 보관해 같은 인물을 다시 만났을 때 이어 쓴다. 사진 사건 뒤 귀가할 때의 일자리 판정은 그 시점에 고정하고 이후 대화로 바꾸지 않는다.
 

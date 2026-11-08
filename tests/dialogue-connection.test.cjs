@@ -20,6 +20,8 @@ function node() {
 
 function setup() {
   const nodes = new Map();
+  const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray'].map(tool =>
+    Object.assign(node(), {dataset: {tool}}));
   const listeners = {};
   const timers = new Map();
   let timerId = 0;
@@ -29,6 +31,7 @@ function setup() {
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
+      querySelectorAll: selector => selector === '#cathy-tool-list button' ? basketTools : [],
       getElementById: id => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
       createElement: node,
     },
@@ -45,7 +48,7 @@ function setup() {
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, timers, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -426,4 +429,49 @@ test('Jimmy frame opens only on angle2, flips, closes and resets without changin
   h.context.window.startStory(response('arrival','player_house','jimmy',[]),'다시');
   assert.equal(dialog.open,false);
   assert.equal(hotspot.hidden,true);
+});
+
+test('Cathy salon opens without dialogue and the basket starts a three-second request', async () => {
+  const h = setup();
+  const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
+  const task = response('cathy_help', 'salon', null, [{speaker_id:'cathy', text:request, image:'/cathy.svg'}]);
+  task.view.available_actions = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray']
+    .map(tool => ({id:`choose_${tool}`, label:tool, kind:'choice'}))
+    .concat({id:'help_cathy', label:'캐시에게 전달한다', kind:'choice'});
+  h.context.window.startStory(task, '테스트');
+  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'cathy-basket-hotspot');
+  assert.equal(h.stage().dialogue, false);
+  assert.equal(h.stage().image, null);
+  assert.equal(h.split(), false);
+  assert.equal(hotspot.hidden, false);
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  assert.equal(h.move().actions.length, 0);
+  assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);
+  hotspot.listeners.click();
+  assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
+  assert.equal(h.nodes.get('cathy-basket-request').textContent, request);
+  assert.equal(h.nodes.get('cathy-tool-list').hidden, true);
+  await Promise.resolve();
+  const timer = [...h.timers.values()].find(item => item.ms === 3000);
+  assert.ok(timer);
+  timer.callback();
+  assert.equal(h.nodes.get('cathy-basket-request').hidden, true);
+  assert.equal(h.nodes.get('cathy-tool-list').hidden, false);
+  const sent = [];
+  h.context.fetch = async (_url, options) => {
+    const action = JSON.parse(options.body).action_id;
+    sent.push(action);
+    if (action === 'help_cathy') {
+      const result = response('cathy_result', 'salon', null, [{speaker_id:'cathy', text:'정확해요!', image:'/cathy.svg'}], 55);
+      result.view.available_actions = [{id:'return_home', label:'집으로 돌아간다', kind:'move'}];
+      return {ok:true, json:async () => result};
+    }
+    return {ok:true, json:async () => ({...task, events:[]})};
+  };
+  for (const button of [h.basketTools[0], h.basketTools[1], h.basketTools[3]]) await button.listeners.click();
+  assert.equal(h.basketTools[0].attrs['aria-pressed'], 'true');
+  await h.nodes.get('cathy-deliver').listeners.click();
+  assert.deepEqual(sent, ['choose_shampoo', 'choose_scissors', 'choose_comb', 'help_cathy']);
+  assert.equal(h.nodes.get('cathy-basket-dialog').open, false);
+  assert.equal(h.stage().text, '정확해요!');
 });
