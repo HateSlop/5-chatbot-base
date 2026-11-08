@@ -10,6 +10,8 @@ WARY_SCORE = 35
 CHAT_DELTAS = {"friendly": 5, "cooperative": 7, "neutral": 0, "hostile": -2}
 MAX_HOSTILE_CHATS_PER_SCENE = 3
 CHARACTERS = {"jimmy": "지미", "karen": "캐런", "bob": "밥", "cathy": "캐시"}
+CATHY_TOOLS = {"shampoo": "샴푸", "scissors": "가위", "conditioner": "린스", "comb": "빗", "dryer": "드라이어", "spray": "스프레이"}
+CATHY_REQUEST = {"shampoo", "scissors", "comb"}
 LOCATIONS = {
     "player_house": "새집",
     "karen_house": "캐런의 집",
@@ -23,7 +25,7 @@ LOCATIONS = {
 SCENE_CONTEXT = {
     "arrival": ("플레이어가 새집에 이사 왔고 지미가 마을을 소개했다.", "지미는 한 달 먼저 이사 온 주민이다.", "이후 사건을 미리 말하지 않는다."),
     "cathy_task": ("지미가 캐시의 일손이 부족해 보인다고 말하며 도움을 권했다.", "지미는 캐시가 왜 바쁜지나 구체적으로 무슨 일을 하는지 모른다.", "모르는 업무 내용을 지어내지 않는다."),
-    "cathy_help": ("캐시가 미용실에서 도움을 부탁했다.", "캐시는 미용실에 일손이 필요하다. 구체적인 업무는 아직 정해지지 않았다.", "업무나 새로운 사건을 구체적으로 지어내지 않는다."),
+    "cathy_help": ("캐시가 샴푸, 가위, 빗을 바구니에서 가져다 달라고 부탁했다.", "캐시는 도구를 기다린다.", "이후 사건을 미리 말하지 않는다."),
     "jimmy_butcher": ("캐시를 돕고 집에 돌아오자 지미가 고기를 사러 정육점에 다녀오겠다고 말했다.", "지미는 고기를 사러 간다. 아직 지하실의 비밀을 모른다.", "미래 사건을 암시하거나 이유를 물은 플레이어에게 걱정하지 말라고 하지 않는다."),
     "karen_search": ("고기를 사러 정육점에 가겠다는 지미가 떠난 뒤 캐런이 전할 말이 있어 그를 찾아달라고 부탁했다.", "캐런은 플레이어에게 지미의 행선지를 물을 수 있다. 정육점에 간다고 들었다면 알려줘서 고맙다고 하고 그쪽에서 찾아봐 달라고 한다.", "도착 여부를 되풀이해 확인하거나 도착 시각을 캐묻지 않는다. 지미에게 일어날 일도 밝히지 않는다."),
     "butcher_search": ("정육점에서 지미의 사색이 된 얼굴을 보았다. 플레이어는 이유를 모른다.", "지미는 정육점 지하실에서 무언가를 발견해 마을의 사이비 의식과 식인의 비밀을 모두 알게 됐다. 두려워서 지금은 털어놓지 못한다.", "비밀의 내용이나 지미가 본 구체적인 물건을 플레이어에게 밝히지 않는다."),
@@ -71,6 +73,7 @@ def new_state(player_name: str) -> dict:
         "ending": None,
         "history": {},
         "scene_events": [],
+        "cathy_tools": [],
     }
 
 
@@ -95,8 +98,6 @@ def available_characters(state: dict) -> list[str]:
             "butcher_shop": ["bob"],
             "salon": ["cathy"],
         }.get(state["location_id"], [])
-    if scene == "cathy_help":
-        return ["cathy"]
     if scene == "butcher_search":
         return ["jimmy"]
     if scene == "festival_invite":
@@ -126,7 +127,10 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "cathy_task":
         return [_action("go_help_cathy", "캐시를 도우러 간다", "move")]
     if scene == "cathy_help":
-        return [_action("help_cathy", "캐시의 일을 돕는다", "choice")]
+        return [_action(f"choose_{tool}", f"{name} 선택", "choice") for tool, name in CATHY_TOOLS.items()] + [
+            _action("help_cathy", "캐시에게 전달한다", "choice")]
+    if scene == "cathy_result":
+        return [_action("return_home", "집으로 돌아간다", "move")]
     if scene == "jimmy_butcher":
         return [_action("see_jimmy_off", "지미를 배웅한다", "choice")]
     if scene == "karen_search":
@@ -230,12 +234,28 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             events.append(event("jimmy", "캐시가 바빠 보이더라. 도와줄 사람이 필요한 것 같던데, 미용실로 가볼래?"))
     elif scene == "cathy_task":
         next_state.update(scene_id="cathy_help", location_id="salon")
-        events.append(event("cathy", "잘 오셨어요. 이 일을 좀 도와주시겠어요?"))
+        next_state["cathy_tools"] = []
+        events.append(event("cathy", "바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?"))
     elif scene == "cathy_help":
+        if action_id.startswith("choose_"):
+            tool = action_id.removeprefix("choose_")
+            selected = next_state["cathy_tools"]
+            if tool in selected:
+                selected.remove(tool)
+            else:
+                selected.append(tool)
+        else:
+            correct = set(next_state["cathy_tools"]) == CATHY_REQUEST
+            next_state["scene_id"] = "cathy_result"
+            if correct:
+                next_state["affinity"] = min(100, next_state["affinity"] + 5)
+                events.append(event("cathy", "정확해요! 덕분에 한숨 돌리겠네요. 고마워요."))
+            else:
+                events.append(event("cathy", "그냥 내가 할게요. 집에 가세요."))
+    elif scene == "cathy_result":
         next_state.update(scene_id="jimmy_butcher", location_id="player_house")
-        next_state["affinity"] = min(100, next_state["affinity"] + 5)
         events += [
-            event("thought", "캐시를 돕고 집에 돌아왔다. 캐시는 끝까지 내 반응을 살피는 듯했다."),
+            event("thought", "미용실을 나와 집으로 돌아왔다. 캐시는 끝까지 내 반응을 살피는 듯했다."),
             event("jimmy", "고기 좀 사러 정육점에 다녀올게."),
         ]
     elif scene == "jimmy_butcher":
