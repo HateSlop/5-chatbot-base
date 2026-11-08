@@ -39,13 +39,66 @@ test('return home is gated by server permission and request lock',()=>{
   h.ui.render(data);h.nodes.get('.move-nav').children[0].click();assert.equal(h.move(),'return_home');
 });
 test('registered home name is literal text and hints fill a draft without sending',()=>{
-  const h=setup();h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'<b>예준</b>',affinity:80});
+  const h=setup();h.ui.render({sceneId:'arrival',locationId:'player_house',locationName:'새집',characterId:'jimmy',canChat:true,registeredName:'<b>예준</b>',affinity:80});
   assert.equal(h.nodes.get('.move-location').textContent,'<b>예준</b> 하우스');
   assert.equal(h.nodes.get('.move-affinity strong').textContent,'80 / 100');
   assert.equal(h.nodes.get('.move-affinity strong').parentElement.title,'호감도');
-  h.nodes.get('.move-hints').children[0].click();assert.equal(h.input.value,'마을에 대해 알려 주세요.');
+  assert.equal(h.nodes.get('.move-hints').children.length,3);
+  h.nodes.get('.move-hints').children[0].click();assert.equal(h.input.value,'이 마을은 어떤 곳이야?');
   assert.equal(h.input.focused,true);assert.equal(h.move(),undefined);
+  assert.equal(h.submissions(),0);
   h.input.disabled=true;h.input.value='유지';h.nodes.get('.move-hints').children[1].click();assert.equal(h.input.value,'유지');
+});
+
+test('suggestions follow the scene, place and speaker without revealing future clues',()=>{
+  const h=setup();
+  const cases=[
+    ['neighbors','karen_house','karen','주민대표'],
+    ['neighbors','butcher_shop','bob','정육점'],
+    ['neighbors','salon','cathy','미용실'],
+    ['cathy_task','player_house','jimmy','캐시'],
+    ['jimmy_butcher','player_house','jimmy','정육점'],
+    ['karen_search','player_house','karen','지미'],
+    ['butcher_search','butcher_shop','jimmy','괜찮아'],
+    ['dinner_invite','player_house','jimmy','몇 시'],
+    ['checkpoint','player_house','karen','무슨 일'],
+    ['festival_invite','player_house','bob','축제'],
+  ];
+  for(const [sceneId,locationId,characterId,word] of cases){
+    h.ui.render({sceneId,locationId,locationName:locationId,characterId,canChat:true});
+    const questions=h.nodes.get('.move-hints').children.map(button=>button.textContent);
+    assert.ok(questions.length>=2 && questions.length<=3,sceneId);
+    assert.ok(questions.some(question=>question.includes(word)),sceneId);
+    assert.ok(questions.every(question=>!/(실종|식인|머리카락|화로|수첩|비밀)/.test(question)),sceneId);
+  }
+  h.input.value='내가 직접 쓴 질문';
+  h.ui.render({sceneId:'checkpoint',locationId:'player_house',locationName:'집',characterId:'karen',canChat:true});
+  assert.equal(h.input.value,'내가 직접 쓴 질문');
+  assert.equal(h.submissions(),0);
+});
+
+test('scenes without a speaker show guidance instead of clickable questions',()=>{
+  const h=setup();
+  for(const [sceneId,locationId,guide] of [
+    ['neighbors','square','방문할 이웃'],
+    ['cathy_help','salon','바구니'],
+    ['empty_butcher','butcher_shop','열린 문'],
+    ['basement','basement','화로'],
+    ['photo_found','karen_house','사진'],
+    ['wait_dinner','player_house','혼자'],
+    ['hair_found','square','화면의 물건이나 행동'],
+  ]){
+    h.ui.render({sceneId,locationId,locationName:locationId,canChat:false});
+    assert.equal(h.nodes.get('.move-hints').children.length,0,sceneId);
+    assert.ok(h.nodes.get('.move-hint-caption').textContent.includes(guide),sceneId);
+  }
+  h.ui.render({sceneId:'basement',locationId:'basement',locationName:'지하실',actions:[{id:'go_upstairs',kind:'move'}]});
+  assert.match(h.nodes.get('.move-hint-caption').textContent,/지하실에서 나온다/);
+  h.ui.render({sceneId:'photo_found',locationId:'karen_house',locationName:'캐런 집',actions:[{id:'return_home',kind:'move'}]});
+  assert.match(h.nodes.get('.move-hint-caption').textContent,/집으로 돌아가/);
+  h.input.disabled=true;
+  h.ui.render({sceneId:'arrival',locationId:'player_house',locationName:'집',characterId:'jimmy',canChat:true});
+  assert.equal(h.nodes.get('.move-hints').children[0].disabled,true);
 });
 
 test('heart fills from 0 to 100 and unknown affinity stays distinct from zero',()=>{
@@ -76,6 +129,7 @@ test('composer stays open and suggestions fill the visible input', () => {
   const composer = h.nodes.get('.move-composer');
   assert.equal(composer.children.length, 1);
   assert.equal(composer.children[0].hidden, false);
+  h.ui.render({sceneId:'arrival',locationId:'player_house',locationName:'집',characterId:'jimmy',canChat:true});
   h.nodes.get('.move-hints').children[0].click();
   assert.equal(h.input.focused, true);
   h.input.disabled = true;

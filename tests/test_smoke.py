@@ -9,7 +9,7 @@ from cryptography.fernet import Fernet
 os.environ["STORY_STATE_KEY"] = Fernet.generate_key().decode("ascii")
 
 from app import app, chatbot  # noqa: E402
-from services.state_token import decode_state  # noqa: E402
+from services.state_token import decode_state, encode_state  # noqa: E402
 
 
 class SmokeTest(unittest.TestCase):
@@ -62,6 +62,14 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(response.get_json()["error"]["code"], "invalid_state_token")
         response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "x" * 2001})
         self.assertEqual(response.status_code, 413)
+
+    def test_undated_or_invalid_day_token_asks_for_new_play(self):
+        state = decode_state(self.start())
+        for change in ({"start_date": None}, {"start_date": "2024-02-30"}, {"story_day": 3}):
+            with self.subTest(change=change):
+                response = self.client.post("/api/session/resume", json={"state_token": encode_state({**state, **change})})
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.get_json()["error"]["code"], "invalid_state_token")
 
     def test_chat_failure_keeps_state_and_unavailable_character_is_rejected(self):
         token = self.start()

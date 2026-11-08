@@ -11,6 +11,30 @@ window.postMoveNavigation = function(locationId, actions) {
     id, label, icon, action: actions.find(a => a.id === actionId && a.kind === 'move') || null,
   }));
 };
+const sceneQuestions = {
+  'arrival:player_house:jimmy': ['이 마을은 어떤 곳이야?', '이웃들은 어떤 사람들이야?', '처음엔 어디를 가 보면 좋을까?'],
+  'neighbors:karen_house:karen': ['주민대표는 어떤 일을 하세요?', '이 동네에서는 보통 어떻게 지내나요?'],
+  'neighbors:butcher_shop:bob': ['정육점에서는 어떤 일을 하세요?', '이 동네 생활은 어떠세요?'],
+  'neighbors:salon:cathy': ['미용실에서는 어떤 일을 하세요?', '이 동네 생활은 어떠세요?'],
+  'cathy_task:player_house:jimmy': ['캐시가 바빠 보이던데 무슨 일이야?', '내가 캐시를 어떻게 도우면 될까?'],
+  'jimmy_butcher:player_house:jimmy': ['정육점에는 왜 가는 거야?', '정육점은 어디에 있어?'],
+  'karen_search:player_house:karen': ['지미를 왜 찾으세요?', '제가 어디를 찾아보면 될까요?'],
+  'butcher_search:butcher_shop:jimmy': ['지미, 괜찮아?', '무슨 일 있었어?'],
+  'dinner_invite:player_house:jimmy': ['내일 몇 시에 데리러 올 거야?', '우리 집으로 와서 함께 가는 거지?'],
+  'checkpoint:player_house:karen': ['무슨 일로 찾아오셨어요?', '제가 어떻게 하면 될까요?'],
+  'festival_invite:player_house:bob': ['내일 축제는 몇 시에 시작하나요?', '축제는 어디에서 열리나요?'],
+};
+const sceneGuide = {
+  neighbors: '방문할 이웃을 선택해 보세요.',
+  cathy_help: '바구니를 눌러 필요한 도구를 골라 보세요.',
+  empty_butcher: '열린 문을 살펴보세요.',
+  basement: '화로를 눌러 조사해 보세요.',
+  bob_caught: '집으로 돌아가 보세요.',
+  cathy_result: '집으로 돌아가 보세요.',
+  wait_dinner: '혼자 캐런의 집으로 가 보세요.',
+  karen_dinner: '화면의 문을 살펴보세요.',
+  photo_found: '화면의 사진을 살펴보세요.',
+};
 let affinitySequence = 0;
 window.PostMoveUI = class {
   constructor(stage, form, input, send, onMove) {
@@ -41,7 +65,7 @@ window.PostMoveUI = class {
             <span class="affinity-sparkle" aria-hidden="true">✦</span>
           </div>
         </div>
-        <div class="move-help"><p class="move-hint-caption">대화가 막힐 땐, 이 말들을 참고해 보세요.</p><div class="move-hints" aria-label="입력 도움말"></div></div>
+        <div class="move-help"><p class="move-hint-caption" aria-live="polite">대화가 막힐 땐, 이 말들을 참고해 보세요.</p><div class="move-hints" aria-label="입력 도움말"></div></div>
       </aside>`);
     frame.append(stage);
     this.frame = frame;
@@ -58,6 +82,7 @@ window.PostMoveUI = class {
     this.sparkle = frame.querySelector('.affinity-sparkle');
     this.previousAffinity = null;
     this.nav = stage.querySelector('.move-nav');
+    this.hintCaption = frame.querySelector('.move-hint-caption');
     this.hints = frame.querySelector('.move-hints');
     const composer = stage.querySelector('.move-composer');
     form.hidden = false;
@@ -67,25 +92,12 @@ window.PostMoveUI = class {
       event.preventDefault();
       if (!input.disabled && !send.disabled && input.value.trim()) form.requestSubmit();
     });
-    const suggestions = [
-      ['마을에 대해 묻기', '마을에 대해 알려 주세요.'],
-      ['자세히 물어보기', '조금 더 자세히 이야기해 주세요.'],
-    ];
-    for (const [label, text] of suggestions) {
-      const button = document.createElement('button');
-      button.type = 'button'; button.textContent = label;
-      button.addEventListener('click', () => {
-        if (input.disabled) return;
-        input.value = text; input.focus();
-        input.dispatchEvent(new Event('input', {bubbles: true}));
-      });
-      this.hints.append(button);
-    }
   }
   setSplit(enabled) {
     this.frame.classList.toggle('is-intro', !enabled);
   }
-  render({locationId, locationName, registeredName = null, affinity = null, actions = [], busy = false}) {
+  render({sceneId, locationId, locationName, characterId = null, canChat = false,
+    registeredName = null, affinity = null, actions = [], busy = false}) {
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;
     this.title.title = this.title.textContent;
     const value = typeof affinity === 'number' && Number.isFinite(affinity) ? Math.max(0, Math.min(100, affinity)) : null;
@@ -132,6 +144,24 @@ window.PostMoveUI = class {
       button.addEventListener('click', () => { if (!button.disabled) this.onMove(slot.action.id); });
       this.nav.append(button);
     }
-    for (const button of this.hints.children) button.disabled = this.input.disabled || busy;
+    const questions = canChat ? sceneQuestions[`${sceneId}:${locationId}:${characterId}`] || [] : [];
+    let guide = sceneGuide[sceneId] || '화면의 물건이나 행동을 선택해 보세요.';
+    if (sceneId === 'basement' && actions.some(action => action.id === 'go_upstairs')) guide = '지하실에서 나온다를 선택해 보세요.';
+    if (sceneId === 'photo_found' && actions.some(action => action.id === 'return_home')) guide = '집으로 돌아가 보세요.';
+    this.hintCaption.textContent = questions.length ? '대화가 막힐 땐, 이런 질문을 해 보세요.' : guide;
+    this.hints.replaceChildren();
+    for (const question of questions) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = question;
+      button.disabled = this.input.disabled || busy;
+      button.addEventListener('click', () => {
+        if (this.input.disabled || busy) return;
+        this.input.value = question;
+        this.input.focus();
+        this.input.dispatchEvent(new Event('input', {bubbles: true}));
+      });
+      this.hints.append(button);
+    }
   }
 };

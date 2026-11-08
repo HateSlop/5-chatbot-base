@@ -90,6 +90,25 @@ test('start uses response in memory and renders the current scene', () => {
   assert.equal(h.transcript()[0].location_id, 'player_house');
 });
 
+test('the left guide receives the server scene and only offers questions when chat is available', () => {
+  const h = setup();
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '알렉스');
+  assert.equal(h.move().sceneId, 'arrival');
+  assert.equal(h.move().locationId, 'player_house');
+  assert.equal(h.move().characterId, 'jimmy');
+  assert.equal(h.move().canChat, true);
+  h.context.applyResponse(response('basement', 'basement', null, []), 'scene');
+  assert.equal(h.move().canChat, false);
+  h.context.applyResponse(response('festival', 'square', 'bob', []), 'scene');
+  assert.equal(h.move().canChat, false);
+  assert.equal(h.split(), false);
+  const ending = response('ending', 'square', null, []);
+  ending.view.ending = 'assimilation';
+  h.context.applyResponse(ending, 'scene');
+  assert.equal(h.move().canChat, false);
+  assert.equal(h.split(), false);
+});
+
 test('festival fills the canvas in order and reveals server choices only after the stares', async () => {
   const h = setup();
   const meal = response('festival', 'square', 'bob', [{speaker_id:'narrator', text:'축제 식사', image:null}]);
@@ -535,6 +554,7 @@ test('name entry still initializes when an older chat page lacks basket markup',
   h.context.fetch = async () => ({ok:true, json:async () => response('neighbors', 'square', null, [])});
   await vm.runInContext("performAction('visit_neighbors')", h.context);
   assert.equal(h.nodes.get('status-message').textContent, '');
+});
 test('Karen departure countdown waits until the character is selected', async () => {
   const h=setup();let select;
   h.context.pendingSelection=new Promise(resolve=>{select=resolve;});

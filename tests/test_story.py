@@ -2,7 +2,9 @@
 
 import os
 import unittest
+from datetime import datetime, timedelta
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from cryptography.fernet import Fernet
 
@@ -69,6 +71,7 @@ class StoryTest(unittest.TestCase):
         checkpoint = self.checkpoint_at(69)
         state = decode_state(self.token)
         self.assertEqual(state["affinity"], 69)
+        self.assertEqual(state["story_day"], 1)
         self.assertIsNone(state["ending"])
         self.assertFalse(state["has_car_key"])
         self.assertEqual([person["id"] for person in checkpoint["view"]["available_characters"]], ["karen"])
@@ -88,6 +91,8 @@ class StoryTest(unittest.TestCase):
         self.assertEqual([action["id"] for action in available_actions(decode_state(self.token))], ["go_butcher"])
         result = self.action("go_butcher")
         self.assertEqual(result["view"]["ending"], "death")
+        self.assertEqual(decode_state(self.token)["story_day"], 1)
+        self.assertEqual(result["view"]["today"], checkpoint["view"]["today"])
         self.assertEqual(result["view"]["location_id"], "butcher_shop")
         self.assertEqual(result["events"][0]["image"], "/assets/images/ending_death.svg")
         self.assertIn("캐런의 부름", result["events"][0]["text"])
@@ -345,7 +350,7 @@ class StoryTest(unittest.TestCase):
         entered = self.action("inspect_room")
         self.assertEqual(entered["events"], [])
         self.assertEqual(entered["view"]["affinity"], before_photo)
-        self.assertEqual(entered["view"]["available_actions"][0]["id"], "recognize_photo")
+        self.assertEqual([item["id"] for item in entered["view"]["available_actions"]], ["inspect_photo_back", "recognize_photo"])
         self.assertNotIn("jimmy_photo", decode_state(self.token)["clues"])
         self.assertFalse(any("지미의 사진" in note for note in entered["view"]["journal"]))
         self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "return_home"}).status_code, 409)
@@ -358,6 +363,78 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "recognize_photo"}).status_code, 409)
         rejected = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "사진이네요"})
         self.assertEqual(rejected.status_code, 409)
+
+    def test_story_date_stays_fixed_until_dinner_and_festival_across_calendar_boundaries(self):
+        cases = (
+            (datetime(2024, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), "2월 28일", "2월 29일", "3월 1일"),
+            (datetime(2023, 12, 31, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), "12월 31일", "1월 1일", "1월 2일"),
+            (datetime(2023, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), "2월 28일", "3월 1일", "3월 2일"),
+        )
+        for started, first, dinner, festival in cases:
+            with self.subTest(started=started):
+                with patch("services.story.datetime") as clock:
+                    clock.now.return_value = started
+                    self.setUp()
+                    clock.now.assert_called_once_with(ZoneInfo("Asia/Seoul"))
+                self.assertEqual(decode_state(self.token)["start_date"], started.date().isoformat())
+                with patch("services.story.datetime") as later_clock:
+                    later_clock.now.return_value = started + timedelta(days=1)
+                    self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], first)
+                    later_clock.now.assert_not_called()
+                for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("accept_dinner_invite")]:
+                    self.assertEqual(self.action(action_id)["view"]["today"], first, action_id)
+                waited = self.action("accept_dinner_invite")
+                self.assertEqual(waited["view"]["today"], dinner)
+                self.assertEqual(decode_state(self.token)["story_day"], 1)
+                self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "accept_dinner_invite"}).status_code, 409)
+                self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], dinner)
+                for action_id in TO_CHECKPOINT[TO_CHECKPOINT.index("go_karen_dinner"):]:
+                    if action_id == "recognize_photo":
+                        self.assertEqual(self.action("inspect_photo_back")["view"]["photo_back_date"], first)
+                    if action_id == "return_home" and decode_state(self.token)["scene_id"] == "photo_found":
+                        state = decode_state(self.token)
+                        state["affinity"] = 70
+                        self.token = encode_state(state)
+                    self.assertEqual(self.action(action_id)["view"]["today"], dinner, action_id)
+                self.assertEqual(self.action("decline_job")["view"]["today"], dinner)
+                arrived = self.action("go_festival")
+                self.assertEqual(arrived["view"]["today"], festival)
+                self.assertEqual(decode_state(self.token)["story_day"], 2)
+                self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_festival"}).status_code, 409)
+                self.assertEqual(self.action("inspect_food")["view"]["today"], festival)
+
+    def test_photo_back_date_is_disclosed_once_only_after_back_inspection(self):
+        with patch("services.story.datetime") as clock:
+            clock.now.return_value = datetime(2024, 3, 1, 0, 1, tzinfo=ZoneInfo("Asia/Seoul"))
+            self.setUp()
+        for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("recognize_photo")]:
+            entered = self.action(action_id)
+        self.assertEqual(entered["view"]["scene_id"], "photo_found")
+        self.assertEqual(entered["view"]["today"], "3월 2일")
+        self.assertIsNone(entered["view"]["photo_back_date"])
+        self.assertNotIn("photo_back_date", decode_state(self.token)["clues"])
+        self.assertFalse(any("3월 1일" in note for note in entered["view"]["journal"]))
+        before = entered["view"]["affinity"]
+        back = self.action("inspect_photo_back")
+        self.assertEqual(back["view"]["photo_back_date"], "3월 1일")
+        self.assertEqual(back["view"]["affinity"], before)
+        self.assertIn("photo_back_date", decode_state(self.token)["clues"])
+        self.assertIn("3월 1일", back["events"][0]["text"])
+        self.assertEqual([item["id"] for item in back["view"]["available_actions"]], ["recognize_photo"])
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_photo_back"}).status_code, 409)
+        self.assertEqual(len([note for note in decode_state(self.token)["journal"] if "액자 뒷면" in note]), 1)
+        photo = self.action("recognize_photo")
+        self.assertEqual(photo["view"]["affinity"], max(0, before - 5))
+        self.assertIn("나가 주세요", photo["events"][-1]["text"])
+        self.assertEqual(photo["view"]["photo_back_date"], "3월 1일")
+        self.assertIsNone(self.action("return_home")["view"]["photo_back_date"])
+
+        self.setUp()
+        for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("recognize_photo")]:
+            self.action(action_id)
+        photo = self.action("recognize_photo")
+        self.assertIsNone(photo["view"]["photo_back_date"])
+        self.assertNotIn("photo_back_date", decode_state(self.token)["clues"])
 
     def test_accept_job_fixed_reward_and_cap(self):
         for score in (70, 98):

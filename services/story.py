@@ -1,6 +1,8 @@
 """더뉴빌리지의 고정 사건과 공개 가능한 화면 상태."""
 
 from copy import deepcopy
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 
 START_SCORE = 50
@@ -54,6 +56,14 @@ def event(speaker_id: str, text: str, image: str | None = None) -> dict:
     return {"speaker_id": speaker_id, "text": text, "image": image}
 
 
+def story_date(state: dict) -> date:
+    return date.fromisoformat(state["start_date"]) + timedelta(days=state["story_day"])
+
+
+def display_date(day: date) -> str:
+    return f"{day.month}월 {day.day}일"
+
+
 def new_state(player_name: str) -> dict:
     return {
         "version": 1,
@@ -75,6 +85,8 @@ def new_state(player_name: str) -> dict:
         "scene_events": [],
         "cathy_tools": [],
         "photo_recognized": False,
+        "start_date": datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat(),
+        "story_day": 0,
     }
 
 
@@ -152,8 +164,12 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "karen_dinner":
         return [_action("inspect_room", "수상한 방을 살핀다", "inspect")]
     if scene == "photo_found":
-        return ([_action("return_home", "집으로 돌아간다", "move")] if state.get("photo_recognized")
-                else [_action("recognize_photo", "사진을 알아본다", "inspect")])
+        if state.get("photo_recognized"):
+            return [_action("return_home", "집으로 돌아간다", "move")]
+        actions = [_action("recognize_photo", "사진을 알아본다", "inspect")]
+        if "photo_back_date" not in state["clues"]:
+            actions.insert(0, _action("inspect_photo_back", "액자 뒷면을 확인한다", "inspect"))
+        return actions
     if scene == "checkpoint":
         if state.get("job_offered", state["affinity"] >= JOB_THRESHOLD):
             return [
@@ -191,6 +207,9 @@ def view(state: dict) -> dict:
         "available_actions": available_actions(state),
         "affinity": state["affinity"],
         "journal": state["journal"],
+        "today": display_date(story_date(state)),
+        "photo_back_date": (display_date(story_date(state) - timedelta(days=1))
+                            if state["scene_id"] == "photo_found" and "photo_back_date" in state["clues"] else None),
         "ending": state["ending"],
     }
 
@@ -286,6 +305,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 오후 6시에 네 집으로 데리러 올게."))
     elif scene == "dinner_invite":
         next_state["scene_id"] = "wait_dinner"
+        next_state["story_day"] = 1
         events.append(event("thought", "다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다."))
     elif scene == "wait_dinner":
         next_state.update(scene_id="karen_dinner", location_id="karen_house")
@@ -293,7 +313,12 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
     elif scene == "karen_dinner":
         next_state["scene_id"] = "photo_found"
     elif scene == "photo_found":
-        if action_id == "recognize_photo":
+        if action_id == "inspect_photo_back":
+            date_text = display_date(story_date(state) - timedelta(days=1))
+            next_state["clues"].append("photo_back_date")
+            next_state["journal"].append(f"캐런의 방에 있는 지미 액자 뒷면에 {date_text}이 적혀 있었다.")
+            events.append(event("thought", f"액자 뒷면에 {date_text}이 적혀 있다."))
+        elif action_id == "recognize_photo":
             next_state["photo_recognized"] = True
             next_state["clues"].append("jimmy_photo")
             next_state["journal"].append("캐런의 수상한 방에서 지미의 사진을 발견했다.")
@@ -328,6 +353,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("bob", "고기 좋아한다고 했지? 내일 마을 축제가 있으니, 꼭 오시오."))
     elif scene == "festival_invite":
         next_state.update(scene_id="festival", location_id="square")
+        next_state["story_day"] = 2
         events.append(event("narrator", "광장에 축제 음식이 차려졌다. 주민들이 자리에 앉기를 권한다."))
     elif scene == "festival":
         next_state["scene_id"] = "hair_found"
