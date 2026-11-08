@@ -175,7 +175,7 @@ function clearReaction() {
 const greetedPlaces = new Set();
 const greetingDestinations = {visit_karen:'karen_house',visit_bob:'butcher_shop',visit_cathy:'salon'};
 function focusChatWhenReady() {
-  dialogueStage.ready?.then(() => { if (stateToken && !input.disabled) input.focus(); });
+  (dialogueStage.opened || dialogueStage.ready)?.then(opened => { if (opened !== false && stateToken && !input.disabled) input.focus(); });
 }
 
 function speakerName(id) {
@@ -224,10 +224,12 @@ function renderMessages() {
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
     dialogue: !cathyBasketScene,
+    selectCharacter: true,
   });
   clearTimeout(karenDepartureTimer);
   if (currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed) {
-    Promise.resolve(dialogueStage.ready).then(() => {
+    Promise.resolve(dialogueStage.opened || dialogueStage.ready).then(opened => {
+      if (opened === false) return;
       const depart = async () => {
         if (currentView?.scene_id !== 'karen_dinner' || karenDinnerDismissed || busy) return;
         if (dialogueStage.pages && dialogueStage.pageIndex < dialogueStage.pages.length - 1) {
@@ -263,6 +265,7 @@ function renderView(view) {
   basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog;
   basketHotspot.disabled = busy;
   renderBasket();
+  window.locationMusic?.enter(view.location_id, view.ending);
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
@@ -300,7 +303,11 @@ function renderView(view) {
         if (await performAction('recognize_photo')) secretFrame = 2;
       } else if (secretDiscovery) ++secretFrame;
       else ++festivalFrame;
-      renderView(currentView);
+      if (window.sceneEffects) {
+        busy = true;
+        try { await window.sceneEffects.transition(async () => { renderView(currentView); await dialogueStage.ready; }); }
+        finally { busy = false; renderView(currentView); }
+      } else renderView(currentView);
     });
     actionList.append(next);
   }
@@ -351,6 +358,8 @@ function renderView(view) {
   postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
     affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
+  const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
+  window.sceneEffects?.ending(view.ending, endingText);
 }
 
 function applyResponse(data, kind, characterId = null) {
@@ -382,9 +391,11 @@ function applyResponse(data, kind, characterId = null) {
 }
 
 window.startStory = (data, name) => {
+  dialogueStage.resetSelection?.();
   const continuingVisit = window.entryVisitReady && data.view.location_id === 'player_house' &&
     data.view.available_characters.some(character => character.id === 'jimmy');
   if (continuingVisit) {
+    dialogueStage.skipSelectionOnce = true;
     dialogueStage.homeVisitor = 'jimmy';
     dialogueStage.visitorVisible = true;
     dialogueStage.root?.setAttribute('data-continuing', 'true');
@@ -428,7 +439,13 @@ async function request(path, payload) {
   if (path === '/api/action' && payload.action_id === 'approach_jimmy' && currentView?.scene_id === 'butcher_search') {
     await dialogueStage.depart?.(true);
   }
-  applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
+  const show = async () => {
+    applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
+    await dialogueStage.ready;
+  };
+  const moving = currentView && (currentView.location_id !== data.view.location_id || currentView.background !== data.view.background || data.view.ending && !currentView.ending);
+  if (moving && window.sceneEffects) await window.sceneEffects.transition(show);
+  else await show();
 }
 
 async function performAction(actionId) {
@@ -478,6 +495,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  dialogueStage.resetSelection?.();
   clearReaction();
   greetedPlaces.clear();
   greetingChats.clear();

@@ -61,7 +61,8 @@ test('blocked autoplay retries on a gesture and the music button respects the of
   const h = setup(true);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.audio.paused, true);
-  assert.equal(h.button['aria-label'], '음악 켜기');
+  assert.equal(h.button['aria-label'], '음소거');
+  assert.equal(h.button['aria-pressed'], 'true');
   h.allowAudio();
   h.documentEvents.pointerdown({target:{closest:() => false}});
   await Promise.resolve();
@@ -77,4 +78,21 @@ test('blocked autoplay retries on a gesture and the music button respects the of
   await Promise.resolve();
   assert.equal(h.audio.paused, false);
   assert.equal(h.button['aria-pressed'], 'true');
+});
+
+test('first click mutes even when the browser blocked default playback', async () => {
+  const h = setup(true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.button['aria-pressed'], 'true');
+  h.buttonEvents.click();
+  assert.equal(h.button['aria-label'], '음악 켜기');
+  assert.equal(h.button['aria-pressed'], 'false');
+  const attempts = h.audio.attempts;
+  h.allowAudio();
+  h.documentEvents.pointerdown({target:{closest:()=>false}});
+  assert.equal(h.audio.attempts, attempts);
+  h.buttonEvents.click();
+  await Promise.resolve();
+  assert.equal(h.audio.paused, false);
+  assert.equal(h.button['aria-label'], '음소거');
 });

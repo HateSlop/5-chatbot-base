@@ -535,4 +535,13 @@ test('name entry still initializes when an older chat page lacks basket markup',
   h.context.fetch = async () => ({ok:true, json:async () => response('neighbors', 'square', null, [])});
   await vm.runInContext("performAction('visit_neighbors')", h.context);
   assert.equal(h.nodes.get('status-message').textContent, '');
+test('Karen departure countdown waits until the character is selected', async () => {
+  const h=setup();let select;
+  h.context.pendingSelection=new Promise(resolve=>{select=resolve;});
+  vm.runInContext('dialogueStage.opened = pendingSelection',h.context);
+  h.context.window.startStory(response('karen_dinner','karen_house','karen',[{speaker_id:'karen',text:'편히 둘러보세요.',image:null}]),'테스트');
+  await Promise.resolve();
+  assert.equal([...h.timers.values()].some(t=>t.ms===4500),false);
+  select(true);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal([...h.timers.values()].some(t=>t.ms===4500),true);
 });

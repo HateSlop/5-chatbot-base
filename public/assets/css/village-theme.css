@@ -186,3 +186,45 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 @media (prefers-reduced-motion: reduce) { .photo-card { transition: none; } }
 
 .dialogue-stage[data-background-ready="false"] .photo-hotspot { visibility: hidden; }
+
+/* A small brass badge matching the village's plum and antique-gold controls. */
+.dialogue-stage .character-talk-cue {
+  position: absolute; z-index: 5; width: 48px; height: 58px; padding: 0 0 2px;
+  transform: translate(-50%, -55%); border: 1px solid #dcb67a;
+  border-radius: 15px 15px 22px 22px;
+  background: radial-gradient(ellipse at 35% 8%, #78534688, transparent 65%), linear-gradient(145deg, #48303d, #241a27 80%);
+  color: #ffe1a0; box-shadow: inset 0 1px 0 #ffe5b766, inset 0 -3px 6px #110c16aa, 0 4px 8px #100b1699;
+  font: 700 38px/1 Georgia, serif; text-shadow: 0 1px 0 #fff0c644, 0 2px 2px #100b16;
+}
+.character-talk-cue::before { content: ''; position: absolute; inset: 4px; border: 1px solid #b88c585c; border-radius: 11px 11px 18px 18px; pointer-events: none; }
+.character-talk-cue::after { content: '✦'; position: absolute; top: -7px; right: -5px; color: #ffe8b6; font: 16px/1 Georgia, serif; text-shadow: 0 0 7px #efbd70aa; pointer-events: none; }
+.dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.06); border-color: #ffe4ad; }
+.dialogue-stage .character-talk-cue:focus-visible { outline: 2px solid #ffe4ad; outline-offset: 4px; }
+.dialogue-stage[data-awaiting-talk="true"] .dialogue-figure { cursor: pointer; }
+.dialogue-stage[data-loading="true"] .character-talk-cue { visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .character-talk-cue::after { animation: talk-sparkle 2.2s ease-in-out infinite; }
+  @keyframes talk-sparkle { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.08); } }
+}
+
+.scene-curtain { position: fixed; inset: 0; z-index: 100; background: #000; pointer-events: auto; }
+.death-screen { position: fixed; inset: 0; z-index: 50; background: #000; display: grid; grid-template-rows: minmax(0, 1fr) auto; color: #fff0d2; }
+.death-screen video { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.death-controls { padding: 12px 20px 18px; text-align: center; background: #100d12; }
+.death-controls p { margin: 4px auto 10px; max-width: 900px; font: 14px/1.6 "Malgun Gothic", sans-serif; }
+.death-controls p:empty { display: none; }
+.death-controls button { padding: 8px 16px; margin: 0 5px; box-shadow: none; }
+
+body .location-music-toggle { position: fixed; top: 12px; right: 12px; z-index: 40; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 8px; border: 1px solid #c49a6455; border-radius: 50%; color: #fff0d2; background: #231d2bcc; box-shadow: none; opacity: .7; }
+.location-music-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.location-music-toggle[aria-pressed="true"] .music-muted, .location-music-toggle[aria-pressed="false"] .music-waves { display: none; }
+body .location-music-toggle:hover, body .location-music-toggle:focus-visible { opacity: 1; }
+.post-move-stage .move-top { right: 60px; }
+
+.entry-ad-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #000; color: #fff0d2; }
+.entry-ad-dialog::backdrop { background: #000; }
+.entry-ad-dialog[open] { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 12px; }
+.entry-ad-dialog video { width: 100%; height: calc(100dvh - 90px); object-fit: contain; }
+.entry-ad-dialog p { flex-basis: 100%; margin: 0; text-align: center; font: 14px/1.5 "Malgun Gothic",sans-serif; }
+.entry-ad-dialog p:empty { display: none; }
+.entry-ad-dialog button { padding: 6px 16px; box-shadow: none; }

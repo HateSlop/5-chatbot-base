@@ -14,16 +14,22 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/cathy-basket.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
+    <audio id="location-music" loop preload="none"></audio>
+    <button id="location-music-toggle" class="location-music-toggle" type="button" aria-label="배경음악 음소거" title="배경음악 음소거" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
+    </button>
     <div id="name-screen">
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
         <div class="dialogue-tv" hidden></div>
-        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
+        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-watch" class="dialogue-advance" type="button" hidden>TV 보기 ›</button><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
       </section>
       <form id="entry-chat" class="chat-input-area" hidden>
         <textarea id="entry-message" aria-label="이름 입력 전 대화" disabled></textarea><button id="entry-send" type="submit" disabled>보내기</button>
@@ -85,6 +91,22 @@
       </nav>
     </main>
     </div>
+    <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden></div>
+    <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
+      <video id="death-video" controls playsinline preload="none" aria-label="사망 엔딩 영상" src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
+      <div class="death-controls">
+        <p id="death-description"></p>
+        <p id="death-status" role="status"></p>
+        <button id="death-replay" type="button">다시 재생</button>
+        <button id="death-restart" type="button">새 이야기 시작</button>
+      </div>
+    </section>
+    <dialog id="entry-ad-dialog" class="entry-ad-dialog" aria-label="더뉴빌리지 TV 광고">
+      <video id="entry-ad-video" controls playsinline preload="none" src="{{ asset_url('assets/videos/village-ad.mp4') }}" aria-label="더뉴빌리지 광고 영상"></video>
+      <p id="entry-ad-status" role="status"></p>
+      <button id="entry-ad-retry" type="button" hidden>광고 재생</button>
+      <button id="entry-ad-continue" type="button" hidden>계속하기 ›</button>
+    </dialog>
     <dialog id="photo-dialog" class="photo-dialog" aria-label="지미 액자 살펴보기">
       <button id="photo-close" class="photo-close" type="button" aria-label="액자 닫기">닫기 ×</button>
       <button id="photo-flip" class="photo-flip" type="button" aria-label="액자 뒤집어 뒷면 보기" data-back="false">
