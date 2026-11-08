@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
@@ -84,6 +85,16 @@
       </nav>
     </main>
     </div>
+    <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden></div>
+    <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
+      <video id="death-video" controls playsinline preload="none" aria-label="사망 엔딩 영상" src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
+      <div class="death-controls">
+        <p id="death-description"></p>
+        <p id="death-status" role="status"></p>
+        <button id="death-replay" type="button">다시 재생</button>
+        <button id="death-restart" type="button">새 이야기 시작</button>
+      </div>
+    </section>
     <dialog id="photo-dialog" class="photo-dialog" aria-label="지미 액자 살펴보기">
       <button id="photo-close" class="photo-close" type="button" aria-label="액자 닫기">닫기 ×</button>
       <button id="photo-flip" class="photo-flip" type="button" aria-label="액자 뒤집어 뒷면 보기" data-back="false">

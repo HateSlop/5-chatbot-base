@@ -218,11 +218,15 @@ function renderView(view) {
     next.className = 'action-button';
     next.textContent = '다음 장면 ›';
     next.disabled = busy;
-    next.addEventListener('click', () => {
+    next.addEventListener('click', async () => {
       if (busy) return;
       if (secretDiscovery) ++secretFrame;
       else ++festivalFrame;
-      renderView(currentView);
+      if (window.sceneEffects) {
+        busy = true;
+        try { await window.sceneEffects.transition(async () => { renderView(currentView); await dialogueStage.ready; }); }
+        finally { busy = false; renderView(currentView); }
+      } else renderView(currentView);
     });
     actionList.append(next);
   }
@@ -272,6 +276,8 @@ function renderView(view) {
   postMoveUI.render({locationId: view.location_id, locationName: place, registeredName: playerName,
     affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery ? [] : view.available_actions, busy});
   renderMessages();
+  const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
+  window.sceneEffects?.ending(view.ending, endingText);
 }
 
 function applyResponse(data, kind, characterId = null) {
@@ -338,7 +344,13 @@ async function request(path, payload) {
   if (path === '/api/action' && payload.action_id === 'approach_jimmy' && currentView?.scene_id === 'butcher_search') {
     await dialogueStage.depart?.(true);
   }
-  applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
+  const show = async () => {
+    applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
+    await dialogueStage.ready;
+  };
+  const moving = currentView && (currentView.location_id !== data.view.location_id || currentView.background !== data.view.background || data.view.ending && !currentView.ending);
+  if (moving && window.sceneEffects) await window.sceneEffects.transition(show);
+  else await show();
 }
 
 async function performAction(actionId) {

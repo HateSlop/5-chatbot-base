@@ -31,10 +31,11 @@ async function showEntry() {
 entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getElementById('username').focus();});
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
 window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);});
-entryDepart.addEventListener('click', () => {
+entryDepart.addEventListener('click', async () => {
   if (departed) return;
   departed = true;
-  showEntry();
+  if (window.sceneEffects) await window.sceneEffects.transition(showEntry);
+  else showEntry();
 });
 async function showIntro() {
   entryUI.setSplit(false);
