@@ -32,6 +32,12 @@ photoHotspot.className = 'door-hotspot photo-hotspot';
 photoHotspot.setAttribute('aria-label', '지미 액자 살펴보기');
 photoHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(photoHotspot);
+const brazierHotspot = document.createElement('button');
+brazierHotspot.type = 'button';
+brazierHotspot.className = 'door-hotspot brazier-hotspot';
+brazierHotspot.setAttribute('aria-label', '지하실 화로 조사하기');
+brazierHotspot.hidden = true;
+document.getElementById('dialogue-stage').append(brazierHotspot);
 const photoDialog = document.getElementById('photo-dialog');
 const photoFlip = document.getElementById('photo-flip');
 const basketDialog = document.getElementById('cathy-basket-dialog');
@@ -109,6 +115,11 @@ const shopStage = document.getElementById('dialogue-stage');
 function positionDoor() {
   const width = shopStage.clientWidth, height = shopStage.clientHeight;
   const photoScale = Math.max(width / 1232, height / 928);
+  const brazierScale = Math.max(width / 1450, height / 1085);
+  brazierHotspot.style.left = `${(width - 1450 * brazierScale) / 2}px`;
+  brazierHotspot.style.top = `${(height - 1085 * brazierScale) / 2}px`;
+  brazierHotspot.style.width = `${1450 * brazierScale}px`;
+  brazierHotspot.style.height = `${1085 * brazierScale}px`;
   photoHotspot.style.left = `${(width - 1232 * photoScale) / 2}px`;
   photoHotspot.style.top = `${(height - 928 * photoScale) / 2}px`;
   photoHotspot.style.width = `${1232 * photoScale}px`;
@@ -138,6 +149,11 @@ doorHotspot.addEventListener('click', () => {
   renderView(currentView);
 });
 let festivalFrame = 0;
+brazierHotspot.addEventListener('click', () => {
+  if (!busy && currentView?.scene_id === 'basement' && currentView.available_actions.some(a => a.id === 'inspect_brazier')) {
+    return performAction('inspect_brazier');
+  }
+});
 let secretFrame = 0;
 let karenDinnerDismissed = false;
 let karenDepartureTimer;
@@ -249,13 +265,15 @@ function renderView(view) {
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
+  brazierHotspot.hidden = view.scene_id !== 'basement' || !view.available_actions.some(a => a.id === 'inspect_brazier');
+  brazierHotspot.disabled = busy;
   const emptyShop = view.scene_id === 'empty_butcher' || view.scene_id === 'karen_dinner' && karenDinnerDismissed;
   shopStage.setAttribute('data-scene', view.scene_id);
   document.getElementById('dialogue-stage').setAttribute('data-empty-shop', String(emptyShop && !doorExamined));
   doorHotspot.hidden = !emptyShop || doorExamined || !view.available_actions.some(a => ['inspect_basement', 'inspect_room'].includes(a.id));
   doorHotspot.disabled = busy;
   doorHotspot.setAttribute('aria-label', view.scene_id === 'karen_dinner' ? '방 문 살펴보기' : '열린 문 살펴보기');
-  if (emptyShop || view.scene_id === 'butcher_search' || !photoHotspot.hidden) positionDoor();
+  if (emptyShop || view.scene_id === 'butcher_search' || !photoHotspot.hidden || !brazierHotspot.hidden) positionDoor();
   const place = view.location_name || view.location_id;
   document.getElementById("location-title").textContent = place;
   const background = document.getElementById("scene-background");
@@ -288,7 +306,7 @@ function renderView(view) {
   }
   for (const action of view.available_actions) {
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
-    if (view.scene_id === 'cathy_help') continue;
+    if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id === 'inspect_brazier') continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";

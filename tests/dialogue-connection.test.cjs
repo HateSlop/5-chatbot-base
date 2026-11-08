@@ -366,6 +366,41 @@ test('open butcher doorway reveals thought before submitting the existing baseme
   assert.equal(door.hidden, true);
 });
 
+test('basement brazier click alone requests its clue and then reveals the exit', async () => {
+  const h = setup();
+  const basement = response('basement', 'basement', null, []);
+  basement.view.available_actions = [{id:'inspect_brazier', label:'화로를 조사한다', kind:'inspect'}];
+  h.context.window.startStory(basement, '테스트');
+  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'door-hotspot brazier-hotspot');
+  assert.equal(h.stage().background, '/assets/images/basement.svg');
+  assert.equal(hotspot.hidden, false);
+  assert.equal(hotspot.attrs['aria-label'], '지하실 화로 조사하기');
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  h.context.renderView(basement.view);
+  assert.equal(hotspot.hidden, false);
+  let sent;
+  h.context.fetch = async (_, options) => {
+    sent = JSON.parse(options.body).action_id;
+    return {ok:false, json:async()=>({error:{message:'잠시 후 다시 시도해 주세요.'}})};
+  };
+  await hotspot.listeners.click();
+  assert.equal(sent, 'inspect_brazier');
+  assert.equal(hotspot.hidden, false);
+  assert.equal(h.nodes.get('action-list').children.length, 0);
+  h.context.fetch = async () => {
+    const inspected = response('basement', 'basement', null, [{speaker_id:'thought', text:'불탄 생활 소품', image:null}]);
+    inspected.view.available_actions = [{id:'go_upstairs', label:'지하실에서 나온다', kind:'move'}];
+    return {ok:true, json:async()=>inspected};
+  };
+  await hotspot.listeners.click();
+  assert.equal(hotspot.hidden, true);
+  assert.equal(h.stage().text, '불탄 생활 소품');
+  assert.equal(h.nodes.get('action-list').children[0].textContent, '지하실에서 나온다');
+  h.context.renderView(vm.runInContext('currentView', h.context));
+  assert.equal(hotspot.hidden, true);
+  assert.equal(h.nodes.get('action-list').children.length, 1);
+});
+
 test('each first greeting requires two successful replies and resets on a new game', async () => {
   const h = setup();
   const data = response('neighbors','karen_house','karen',[]);
