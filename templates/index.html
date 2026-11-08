@@ -14,8 +14,8 @@
       <video class="start-video" autoplay muted loop playsinline preload="auto" poster="{{ asset_url('assets/images/start/opening-background.png') }}" aria-hidden="true" tabindex="-1">
         <source src="{{ asset_url('assets/videos/opening-loop.mp4') }}" type="video/mp4">
       </video>
-      <audio id="start-music" loop preload="auto" src="{{ asset_url('assets/audio/sunny-little-waltz.mp3') }}"></audio>
-      <button id="start-music-toggle" class="start-music-toggle" type="button" aria-label="음악 켜기" title="음악 켜기" aria-pressed="false">
+      <audio id="start-music" loop autoplay preload="auto" src="{{ asset_url('assets/audio/sunny-little-waltz.mp3') }}"></audio>
+      <button id="start-music-toggle" class="start-music-toggle" type="button" aria-label="음소거" title="음소거" aria-pressed="true">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
       </button>
       <h1 class="start-title"><img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="Welcome to The New Village — 더뉴빌리지로 오세요" width="2172" height="724"></h1>

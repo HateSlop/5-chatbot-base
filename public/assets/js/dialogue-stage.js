@@ -16,6 +16,23 @@ window.DialogueStage = class {
     this.pageIndex = 0;
     if (this.box.ownerDocument) {
       const doc = this.box.ownerDocument;
+      this.box.addEventListener('click', event => {
+        if (!event.target.closest?.('button')) this.finishTyping();
+      });
+      this.box.addEventListener('keydown', event => {
+        if (event.target === this.box && ['Enter', ' '].includes(event.key) && this.typingTimer) {
+          event.preventDefault(); this.finishTyping();
+        }
+      });
+      this.talkCue = doc.createElement('button');
+      this.talkCue.type = 'button';
+      this.talkCue.className = 'character-talk-cue';
+      this.talkCue.textContent = '!';
+      this.talkCue.hidden = true;
+      root.append(this.talkCue);
+      this.talkCue.addEventListener('click', () => this.openDialogue());
+      this.figure.addEventListener('click', () => this.openDialogue());
+      if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.positionTalkCue()).observe(root);
       this.copy = doc.createElement('div');
       this.copy.className = 'dialogue-copy';
       this.copy.append(this.speaker, this.text);
@@ -41,19 +58,79 @@ window.DialogueStage = class {
       this.box.append(this.controls);
       this.pager.hidden = true;
       if (typeof ResizeObserver !== 'undefined') {
-        const observer = new ResizeObserver(() => this.layoutPages());
+        const observer = new ResizeObserver(() => {
+          if (this.typingTimer && this.box.clientWidth === this.typingWidth && this.box.clientHeight === this.typingHeight) return;
+          this.layoutPages();
+        });
         observer.observe(this.box); observer.observe(this.controls);
       }
     }
   }
-  showPage() {
+  positionTalkCue() {
+    if (!this.talkCue || !this.figure.getBoundingClientRect) return;
+    const figure = this.figure.getBoundingClientRect(), root = this.root.getBoundingClientRect();
+    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2 + 32))}px`;
+    this.talkCue.style.top = `${Math.max(20, Math.min(root.height - 70, figure.top - root.top + 8))}px`;
+  }
+  openDialogue() {
+    if (!this.awaitingSelection || this.root.dataset.loading === 'true') return;
+    this.awaitingSelection = false;
+    this.selectionOpened = true;
+    this.root.dataset.awaitingTalk = 'false';
+    if (this.talkCue) this.talkCue.hidden = true;
+    this.box.hidden = false;
+    const composer = this.root.querySelector('.move-composer');
+    if (composer) composer.hidden = false;
+    this.layoutPages();
+    this.typeCurrentPage();
+    this.box.focus?.({preventScroll:true});
+    this.resolveOpened?.(true);
+  }
+  resetSelection() {
+    this.finishTyping();
+    this.lastTypedText = null;
+    this.resolveOpened?.(false);
+    this.selectionKey = null;
+    this.selectionOpened = false;
+    this.awaitingSelection = false;
+  }
+  finishTyping() {
+    if (this.typingTimer) {
+      clearTimeout(this.typingTimer);
+      this.typingTimer = null;
+      this.text.textContent = this.typingText;
+    }
+  }
+  typeCurrentPage() {
+    const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
+    this.finishTyping();
+    this.text.textContent = text;
+    if (this.box.hidden || this.lastTypedText === text) return;
+    this.lastTypedText = text;
+    if (typeof setTimeout !== 'function' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    this.typingText = text;
+    this.typingWidth = this.box.clientWidth;
+    this.typingHeight = this.box.clientHeight;
+    const letters = Array.from(text);
+    let count = 0;
+    const step = Math.max(1, Math.ceil(letters.length / 100));
+    const tick = () => {
+      count += step;
+      this.text.textContent = letters.slice(0, count).join('');
+      this.typingTimer = count < letters.length ? setTimeout(tick, 12) : null;
+    };
+    tick();
+  }
+  showPage(animate = true) {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex, this.pages.length - 1));
     this.text.textContent = this.pages[this.pageIndex];
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
+    if (animate) this.typeCurrentPage();
   }
   layoutPages() {
+    this.finishTyping();
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
     this.pager.hidden = true;
@@ -85,7 +162,7 @@ window.DialogueStage = class {
       start += count;
     }
     this.pages = pages.length ? pages : [''];
-    this.showPage();
+    this.showPage(false);
   }
   pause(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   image(node, path, alt) {
@@ -137,7 +214,8 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false }) {
+    this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
@@ -159,6 +237,22 @@ window.DialogueStage = class {
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
+    const identity = visitorId || /\/([a-z]+)[_.-]/.exec(image || '')?.[1];
+    const selectionKey = selectCharacter && image && object !== 'tv' && identity
+      ? `${sceneId || ''}:${background}:${identity}` : null;
+    if (selectionKey !== this.selectionKey) {
+      this.resetSelection();
+      this.selectionKey = selectionKey;
+      this.selectionOpened = !!this.skipSelectionOnce;
+      this.skipSelectionOnce = false;
+      if (selectionKey) this.opened = new Promise(resolve => { this.resolveOpened = resolve; });
+    }
+    this.awaitingSelection = !!selectionKey && !this.selectionOpened && dialogue;
+    this.root.dataset.awaitingTalk = String(this.awaitingSelection);
+    if (this.talkCue) {
+      this.talkCue.hidden = true;
+      this.talkCue.setAttribute('aria-label', `${speaker || '캐릭터'}의 이야기 듣기`);
+    }
     if (visitor && !arriving) background = '/assets/images/player_house_open.png';
     if (this.paths.get(this.background) !== background) this.root.dataset.backgroundReady = 'false';
     const version = ++this.version;
@@ -227,10 +321,17 @@ window.DialogueStage = class {
         await this.pause(400);
         if (version !== this.version) return false;
       }
-      this.box.hidden = !dialogue;
-      if (composer) composer.hidden = !dialogue;
+      this.box.hidden = !dialogue || this.awaitingSelection;
+      if (composer) composer.hidden = !dialogue || this.awaitingSelection;
+      if (this.talkCue) {
+        this.talkCue.hidden = !this.awaitingSelection;
+        this.positionTalkCue();
+      }
+      if (!this.awaitingSelection) this.resolveOpened?.(true);
       this.layoutPages();
+      if (!this.box.hidden) this.typeCurrentPage();
       return true;
     })();
+    if (!selectionKey) this.opened = this.ready;
   }
 };
