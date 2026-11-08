@@ -2,6 +2,7 @@
 
 import json
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -9,6 +10,34 @@ from services.generator import StoryGenerator
 
 
 class GeneratorTest(unittest.TestCase):
+    def test_short_question_follows_latest_scene_after_older_chat(self):
+        answer = {"reply": "그래요.", "visual_cue": "neutral"}
+        history = [{"role": "user", "content": "이웃은 누구예요?"}, {"role": "assistant", "content": "세 사람이 있어."}]
+        cases = (
+            ("jimmy", "캐시가 바빠 보이더라. 미용실로 가볼래?", "캐시가 바빠 보인다"),
+            ("jimmy", "고기 좀 사러 정육점에 다녀올게.", "고기를 사러 간다"),
+            ("karen", "지미에게 전할 말이 있는데, 어디로 갔는지 아세요?", "지미에게 전할 말이 있다"),
+        )
+        with patch("services.generator.OpenAI") as client:
+            client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps(answer))
+            for character, line, observation in cases:
+                with self.subTest(line=line):
+                    StoryGenerator().generate("왜?", "알렉스", {"name": character, "persona": {}}, [], history,
+                                              "새집", 50, [{"speaker_id": character, "text": line}],
+                                              (observation, "현재 아는 사실", "미래 비밀 비공개"))
+                    messages = client.return_value.responses.create.call_args.kwargs["input"]
+                    self.assertEqual(messages[:2], history)
+                    self.assertEqual(messages[-2]["role"], "developer")
+                    self.assertIn(line, messages[-2]["content"])
+                    self.assertIn(observation, messages[-2]["content"])
+                    self.assertEqual(messages[-1]["content"], "알렉스: 왜?")
+
+    def test_cathy_keeps_hair_services_user_initiated(self):
+        config = json.loads((Path(__file__).resolve().parents[1] / "config" / "chatbot_config.json").read_text(encoding="utf-8"))
+        world = config["characters"]["cathy"]["persona"]["world"]
+        self.assertIn("플레이어가 먼저 요청하지 않으면", world)
+        self.assertIn("직접 머리 손질을 물으면", world)
+
     def test_low_affinity_and_prior_chat_reach_model(self):
         answer = {"reply": "기억해요.", "visual_cue": "neutral"}
         history = [{"role": "user", "content": "나는 커피를 좋아해"}, {"role": "assistant", "content": "기억할게요."}]
@@ -28,6 +57,8 @@ class GeneratorTest(unittest.TestCase):
         self.assertIn("당신이 실제로 아는 사실: 밥은 가게 주인", request["instructions"])
         self.assertIn("지금 말하면 안 되는 사실: 비밀", request["instructions"])
         self.assertEqual(request["input"][0]["content"], "나는 커피를 좋아해")
+        self.assertEqual(request["input"][-2], {"role": "developer", "content": "현재 장면에서 방금 들은 말: 고기 좋아하쇼?\n현재 목격한 상황: 가게 방문"})
+        self.assertEqual(request["input"][-1], {"role": "user", "content": "알렉스: 내 취향 기억해?"})
 
     def test_village_stages_keep_persona_and_score_private(self):
         answer = {"reply": "어서 오세요.", "visual_cue": "smile"}

@@ -125,6 +125,11 @@ class StoryGenerator:
             {"role": item["role"], "content": item["content"]}
             for item in history[-20:]
         ]
+        if scene_events:
+            conversation.append({
+                "role": "developer",
+                "content": f"현재 장면에서 방금 들은 말: {scene_events[-1]['text']}\n현재 목격한 상황: {observed}",
+            })
         conversation.append({"role": "user", "content": f"{username}: {question}"})
         response = OpenAI(timeout=20.0, max_retries=0).responses.create(
             model=os.getenv("OPENAI_MODEL", "gpt-6-luna"),
