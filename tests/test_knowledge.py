@@ -15,7 +15,7 @@ class KnowledgeTest(unittest.TestCase):
         for question in ("마을 사람들은 누가 있어요?", "이웃들은 어떤 사람들이에요?", "여기 사는 주민을 소개해 주세요"):
             hits = retriever.search(question, "karen", "neighbors", [])
             contents = " ".join(hit.content for hit in hits)
-            for public_fact in ("캐런", "주민대표", "밥", "정육점", "식당", "캐시", "미용사", "지미", "금발", "한 달"):
+            for public_fact in ("캐런", "주민대표", "밥", "정육점", "식당", "캐시", "미용사", "지미", "주황빛 적갈색", "한 달"):
                 self.assertIn(public_fact, contents, question)
             for secret in ("지하실", "실종", "식인", "공범", "음식의 재료"):
                 self.assertNotIn(secret, contents, question)
@@ -30,7 +30,7 @@ class KnowledgeTest(unittest.TestCase):
             StoryGenerator().generate(question, "알렉스", {"name": "캐런", "persona": {}}, knowledge, [], "캐런의 집", 50, [], ("방문", "주민대표", "미래 사건은 말하지 않음"))
         instructions = client.return_value.responses.create.call_args.kwargs["instructions"]
         self.assertIn("마을 주민 소개", instructions)
-        self.assertIn("금발", instructions)
+        self.assertIn("주황빛 적갈색", instructions)
         self.assertNotIn("식인", instructions)
         self.assertNotIn("공범", instructions)
 

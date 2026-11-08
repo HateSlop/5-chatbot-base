@@ -18,7 +18,7 @@ TO_CHECKPOINT = [
     "visit_neighbors", "visit_karen", "visit_bob", "visit_cathy", "return_home",
     "go_help_cathy", "choose_shampoo", "choose_scissors", "choose_comb", "help_cathy", "return_home",
     "see_jimmy_off", "go_butcher", "approach_jimmy",
-    "inspect_basement", "go_upstairs", "return_home", "accept_dinner_invite",
+    "inspect_basement", "inspect_brazier", "go_upstairs", "return_home", "accept_dinner_invite",
     "go_karen_dinner", "inspect_room", "return_home",
 ]
 
@@ -169,7 +169,7 @@ class StoryTest(unittest.TestCase):
                              for hit in retriever.search("축제", "bob", "neighbors", [])))
         self.assertTrue(any("다음 날" in hit.content for hit in retriever.search("축제", "bob", "festival_invite", [])))
         self.assertFalse(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "arrival", [])))
-        self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["notebook"])))
+        self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["brazier"])))
 
     def test_place_has_one_character_and_affinity_is_shared_with_bob(self):
         start = self.client.post("/api/session", json={"player_name": "검증"}).get_json()["view"]
@@ -308,14 +308,31 @@ class StoryTest(unittest.TestCase):
         self.assertIn("알려줘서 고맙다", generate.call_args.args[-1][1])
         self.assertIn("도착 시각을 캐묻지 않는다", generate.call_args.args[-1][2])
 
-    def test_notebook_caught_and_photo_exit_are_fixed_events(self):
+    def test_brazier_caught_and_photo_exit_are_fixed_events(self):
         for action_id in TO_CHECKPOINT[:14]:
             self.action(action_id)
         before = decode_state(self.token)["affinity"]
-        notebook = self.action("inspect_basement")
-        self.assertEqual(notebook["view"]["affinity"], before)
+        basement = self.action("inspect_basement")
+        self.assertEqual(basement["view"]["affinity"], before)
+        self.assertEqual(basement["events"], [])
+        self.assertNotIn("brazier", decode_state(self.token)["clues"])
+        self.assertEqual([item["id"] for item in basement["view"]["available_actions"]], ["inspect_brazier"])
+        retriever = StoryRetriever()
+        self.assertFalse(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", [])))
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
+        inspected = self.action("inspect_brazier")
+        self.assertEqual(inspected["view"]["affinity"], before)
+        self.assertIn("brazier", decode_state(self.token)["clues"])
+        self.assertIn("타다 남은 생활 소품", inspected["events"][0]["text"])
+        self.assertTrue(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
+        self.assertFalse(any("지미의 운명" in hit.content or "음식의 재료가" in hit.content for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
+        self.assertEqual([item["id"] for item in inspected["view"]["available_actions"]], ["go_upstairs"])
+        self.assertEqual(inspected["view"]["available_actions"][0]["label"], "지하실에서 나온다")
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_brazier"}).status_code, 409)
+        self.assertEqual(len(decode_state(self.token)["journal"]), 1)
         caught = self.action("go_upstairs")
         self.assertEqual(caught["view"]["affinity"], before - 5)
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
         self.assertEqual(caught["view"]["available_characters"], [])
         self.assertIn("나가시오", caught["events"][0]["text"])
         self.assertEqual([item["id"] for item in caught["view"]["available_actions"]], ["return_home"])
@@ -346,12 +363,12 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.action("decline_job")["view"]["affinity"], 70)
 
     def test_dinner_pickup_promise_and_festival_inference(self):
-        for action_id in TO_CHECKPOINT[:16]:
+        for action_id in TO_CHECKPOINT[:17]:
             self.action(action_id)
-        notebook = decode_state(self.token)
-        self.assertIn("notebook", notebook["clues"])
-        self.assertNotIn("jimmy_hair", notebook["clues"])
-        self.assertFalse(any("식인" in entry or "음식의 정체" in entry for entry in notebook["journal"]))
+        basement = decode_state(self.token)
+        self.assertIn("brazier", basement["clues"])
+        self.assertNotIn("jimmy_hair", basement["clues"])
+        self.assertFalse(any("식인" in entry or "음식의 정체" in entry for entry in basement["journal"]))
         invitation = self.action("return_home")
         self.assertEqual(invitation["view"]["scene_id"], "dinner_invite")
         self.assertEqual([person["id"] for person in invitation["view"]["available_characters"]], ["jimmy"])
@@ -374,7 +391,7 @@ class StoryTest(unittest.TestCase):
             self.action(action_id)
         food = self.action("inspect_food")
         thoughts = " ".join(item["text"] for item in food["events"])
-        for detail in ("금발 머리카락", "밥은 대머리", "지미는 사라졌고", "수첩", "음식의 정체"):
+        for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
             self.assertIn(detail, thoughts)
         self.assertEqual([item["id"] for item in food["view"]["available_actions"]], ["escape", "stay"])
 
@@ -402,7 +419,7 @@ class StoryTest(unittest.TestCase):
             ("return_home", "jimmy", "고기를 사러 정육점에 다녀오겠다고"),
             ("see_jimmy_off", "karen", "전할 말이 있어"),
             ("go_butcher", "jimmy", "지미는 정육점 지하실에서"),
-            ("approach_jimmy", None, None), ("inspect_basement", None, None),
+            ("approach_jimmy", None, None), ("inspect_basement", None, None), ("inspect_brazier", None, None),
             ("go_upstairs", None, None),
             ("return_home", "jimmy", "오후 6시에"),
             ("accept_dinner_invite", None, None), ("go_karen_dinner", "karen", "오후 7시까지"),
