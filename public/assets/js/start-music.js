@@ -4,10 +4,10 @@ const musicToggle = document.getElementById('start-music-toggle');
 let wantsMusic = true;
 
 function updateMusicButton() {
-  const label = startMusic.paused ? '음악 켜기' : '음소거';
+  const label = wantsMusic ? '음소거' : '음악 켜기';
   musicToggle.setAttribute('aria-label', label);
   musicToggle.title = label;
-  musicToggle.setAttribute('aria-pressed', String(!startMusic.paused));
+  musicToggle.setAttribute('aria-pressed', String(wantsMusic));
 }
 
 function syncStartMusic() {
@@ -17,11 +17,14 @@ function syncStartMusic() {
     return;
   }
   // Browsers may require a user gesture before playing audible media.
-  startMusic.play().then(updateMusicButton).catch(updateMusicButton);
+  startMusic.play().then(() => {
+    if (!wantsMusic || document.hidden || startVideo.paused) startMusic.pause();
+    updateMusicButton();
+  }).catch(updateMusicButton);
 }
 
 musicToggle.addEventListener('click', () => {
-  wantsMusic = startMusic.paused;
+  wantsMusic = !wantsMusic;
   syncStartMusic();
 });
 for (const event of ['playing', 'pause']) startVideo.addEventListener(event, syncStartMusic);
@@ -38,4 +41,5 @@ window.addEventListener('pagehide', () => {
   startMusic.currentTime = 0;
 });
 window.addEventListener('pageshow', syncStartMusic);
+updateMusicButton();
 syncStartMusic();
