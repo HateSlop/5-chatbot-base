@@ -74,6 +74,7 @@ def new_state(player_name: str) -> dict:
         "history": {},
         "scene_events": [],
         "cathy_tools": [],
+        "photo_recognized": False,
     }
 
 
@@ -151,7 +152,8 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "karen_dinner":
         return [_action("inspect_room", "수상한 방을 살핀다", "inspect")]
     if scene == "photo_found":
-        return [_action("return_home", "집으로 돌아간다", "move")]
+        return ([_action("return_home", "집으로 돌아간다", "move")] if state.get("photo_recognized")
+                else [_action("recognize_photo", "사진을 알아본다", "inspect")])
     if scene == "checkpoint":
         if state.get("job_offered", state["affinity"] >= JOB_THRESHOLD):
             return [
@@ -290,21 +292,24 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("karen", "어서 오세요. 아직 준비할게 조금 남아서, 잠깐 앉아서 쉬고 계세요. "))
     elif scene == "karen_dinner":
         next_state["scene_id"] = "photo_found"
-        next_state["clues"].append("jimmy_photo")
-        next_state["journal"].append("캐런의 수상한 방에서 지미의 사진을 발견했다.")
-        next_state["affinity"] = max(0, next_state["affinity"] - 5)
-        events += [
-            event("thought", "벽에 지미의 사진이 걸려 있었다."),
-            event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
-            event("karen", "이제 그만 나가 주세요."),
-        ]
     elif scene == "photo_found":
-        next_state.update(scene_id="checkpoint", location_id="player_house")
-        next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
-        if next_state["job_offered"]:
-            events.append(event("karen", "내일부터 함께 일하지 않을래요? 유통 운전 일을 해줄 사람이 필요하거든요. "))
+        if action_id == "recognize_photo":
+            next_state["photo_recognized"] = True
+            next_state["clues"].append("jimmy_photo")
+            next_state["journal"].append("캐런의 수상한 방에서 지미의 사진을 발견했다.")
+            next_state["affinity"] = max(0, next_state["affinity"] - 5)
+            events += [
+                event("thought", "벽에 지미의 사진이 걸려 있었다."),
+                event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
+                event("karen", "이제 그만 나가 주세요."),
+            ]
         else:
-            events.append(event("karen", "정육점으로 와 주시겠어요?"))
+            next_state.update(scene_id="checkpoint", location_id="player_house")
+            next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
+            if next_state["job_offered"]:
+                events.append(event("karen", "내일부터 함께 일하지 않을래요? 유통 운전 일을 해줄 사람이 필요하거든요. "))
+            else:
+                events.append(event("karen", "정육점으로 와 주시겠어요?"))
     elif scene == "checkpoint":
         if action_id == "go_butcher":
             next_state.update(scene_id="ending", location_id="butcher_shop", ending="death")

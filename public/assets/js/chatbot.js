@@ -216,7 +216,7 @@ function renderMessages() {
   dialogueStage.render({
     background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: cathyBasketScene || currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && selectedCharacter === "karen" ? (karenDinnerDismissed ? null : "/assets/images/karen_smile.png") : (selectedCharacter
+    image: cathyBasketScene || currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
@@ -294,9 +294,11 @@ function renderView(view) {
     next.className = 'action-button';
     next.textContent = '다음 장면 ›';
     next.disabled = busy;
-    next.addEventListener('click', () => {
+    next.addEventListener('click', async () => {
       if (busy) return;
-      if (secretDiscovery) ++secretFrame;
+      if (secretDiscovery && secretFrame === 1) {
+        if (await performAction('recognize_photo')) secretFrame = 2;
+      } else if (secretDiscovery) ++secretFrame;
       else ++festivalFrame;
       renderView(currentView);
     });
@@ -432,7 +434,7 @@ async function request(path, payload) {
 async function performAction(actionId) {
   if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
-  if (currentView.scene_id === 'photo_found' && secretFrame < 2) return;
+  if (currentView.scene_id === 'photo_found' && secretFrame < 2 && !(actionId === 'recognize_photo' && secretFrame === 1)) return;
   if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
   busy = true;
   renderView(currentView);

@@ -218,9 +218,12 @@ test('angry reaction waits for the displayed answer and is cancelled on movement
 
 test('Karen leaves after her greeting, then the door reveals the existing room action', async () => {
   const h = setup();
-  const dinner = response('karen_dinner','karen_house','karen', [{speaker_id:'karen',text:'편히 둘러보세요.',image:null}]);
+  const dinner = response('karen_dinner','karen_house',null, [{speaker_id:'karen',text:'편히 둘러보세요.',image:'/assets/images/karen_smile.png'}]);
   dinner.view.available_actions = [{id:'inspect_room',label:'수상한 방을 살핀다',kind:'inspect'}];
   h.context.window.startStory(dinner,'테스트');
+  assert.equal(h.nodes.get('user-message').disabled,true);
+  assert.equal(h.nodes.get('send-btn').disabled,true);
+  assert.equal(h.stage().text,'편히 둘러보세요.');
   assert.equal(h.stage().image,'/assets/images/karen_smile.png');
   assert.equal(h.nodes.get('action-list').children.length,0);
   await Promise.resolve();
@@ -228,6 +231,7 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   await timer.callback();
   assert.equal(h.stage().image,null);
   assert.equal(h.stage().text,'');
+  assert.equal(h.nodes.get('user-message').disabled,true);
   const door = h.nodes.get('dialogue-stage').children[0];
   assert.equal(door.hidden,false);
   door.listeners.click();
@@ -236,7 +240,7 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   let action;
   h.context.fetch = async (_, options) => {
     action = JSON.parse(options.body).action_id;
-    return {ok:true,json:async()=>response('photo_found','karen_house','karen',[])};
+    return {ok:true,json:async()=>response('photo_found','karen_house',null,[])};
   };
   h.nodes.get('action-list').children[0].listeners.click();
   await new Promise(resolve=>setImmediate(resolve));
@@ -418,10 +422,10 @@ test('each first greeting requires two successful replies and resets on a new ga
   assert.equal(h.nodes.get('action-list').children.length,0);
 });
 
-test('secret discovery shows the wide room, Jimmy closeup, then angry Karen without advancing the server', () => {
+test('secret discovery asks the server to recognize Jimmy before Karen reacts and affinity drops', async () => {
   const h=setup();
-  const data=response('photo_found','karen_house','karen',[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}]);
-  data.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+  const data=response('photo_found','karen_house',null,[]);
+  data.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
   h.context.window.startStory(data,'테스트');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
   assert.equal(h.stage().text,'저기 뭔가 익숙한 얼굴이..?');
@@ -431,9 +435,19 @@ test('secret discovery shows the wide room, Jimmy closeup, then angry Karen with
   assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
   assert.equal(h.stage().text,'지미??????');
   assert.equal(h.stage().image,null);
-  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(h.nodes.get('affinity-value').textContent,'50 / 100');
+  let requested;
+  h.context.fetch=async (_,options)=>{
+    requested=JSON.parse(options.body).action_id;
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}],45);
+    found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+    return {ok:true,json:async()=>found};
+  };
+  await h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(requested,'recognize_photo');
   assert.equal(h.stage().image,'/assets/images/karen_angry.png');
   assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
+  assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
   h.context.window.startStory(data,'다시');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');

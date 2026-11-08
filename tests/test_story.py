@@ -19,7 +19,7 @@ TO_CHECKPOINT = [
     "go_help_cathy", "choose_shampoo", "choose_scissors", "choose_comb", "help_cathy", "return_home",
     "see_jimmy_off", "go_butcher", "approach_jimmy",
     "inspect_basement", "inspect_brazier", "go_upstairs", "return_home", "accept_dinner_invite",
-    "go_karen_dinner", "inspect_room", "return_home",
+    "go_karen_dinner", "inspect_room", "recognize_photo", "return_home",
 ]
 
 
@@ -341,10 +341,21 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.action("return_home")["view"]["scene_id"], "dinner_invite")
         for action_id in ("accept_dinner_invite", "go_karen_dinner"):
             self.action(action_id)
-        photo = self.action("inspect_room")
+        before_photo = decode_state(self.token)["affinity"]
+        entered = self.action("inspect_room")
+        self.assertEqual(entered["events"], [])
+        self.assertEqual(entered["view"]["affinity"], before_photo)
+        self.assertEqual(entered["view"]["available_actions"][0]["id"], "recognize_photo")
+        self.assertNotIn("jimmy_photo", decode_state(self.token)["clues"])
+        self.assertFalse(any("지미의 사진" in note for note in entered["view"]["journal"]))
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "return_home"}).status_code, 409)
+        photo = self.action("recognize_photo")
+        self.assertEqual(photo["view"]["affinity"], max(0, before_photo - 5))
+        self.assertIn("jimmy_photo", decode_state(self.token)["clues"])
         self.assertEqual(photo["view"]["available_characters"], [])
         self.assertIn("나가 주세요", photo["events"][-1]["text"])
         self.assertEqual([item["id"] for item in photo["view"]["available_actions"]], ["return_home"])
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "recognize_photo"}).status_code, 409)
         rejected = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "사진이네요"})
         self.assertEqual(rejected.status_code, 409)
 
@@ -389,6 +400,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(blocked.status_code, 409)
         classify.assert_not_called()
         self.action("inspect_room")
+        self.action("recognize_photo")
         state = decode_state(self.token)
         state["affinity"] = 70
         self.token = encode_state(state)
@@ -428,7 +440,7 @@ class StoryTest(unittest.TestCase):
             ("go_upstairs", None, None),
             ("return_home", "jimmy", "오후 6시에"),
             ("accept_dinner_invite", None, None), ("go_karen_dinner", None, None),
-            ("inspect_room", None, None),
+            ("inspect_room", None, None), ("recognize_photo", None, None),
             ("return_home", None, None), ("decline_job", "bob", "초대한 날의 다음 날"),
         ]
         for action_id, character, expected in steps:
