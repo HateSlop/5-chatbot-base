@@ -611,7 +611,12 @@ async function request(path, payload) {
   const response = await fetch(path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
   });
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("서버 응답을 받지 못했습니다. 잠시 후 다시 보내 주세요.");
+  }
   if (!response.ok) throw new Error(data.error?.message || "요청을 처리하지 못했습니다.");
   if (path === '/api/action' && payload.action_id === 'approach_jimmy' && currentView?.scene_id === 'butcher_search') {
     await dialogueStage.depart?.(true);
