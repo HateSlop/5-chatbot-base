@@ -48,27 +48,37 @@ const basketHotspot = document.createElement('button');
 basketHotspot.type = 'button';
 basketHotspot.className = 'cathy-basket-hotspot';
 basketHotspot.setAttribute('aria-label', '미용실 바구니 열기');
-basketHotspot.textContent = '바구니 열기';
+basketHotspot.textContent = '';
 basketHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(basketHotspot);
 let basketStarted = false;
 let basketReady = false;
 let basketTimer;
+let basketGreetingDone = false;
+let basketGreetingPending = false;
+let basketGreetingTimer;
+let basketVisit = 0;
 const cathySelected = new Set();
 function renderBasket() {
   if (!basketDialog) return;
   basketRequest.hidden = !basketStarted || basketReady;
   document.getElementById('cathy-tool-list').hidden = !basketReady;
   document.getElementById('cathy-basket-hint').hidden = !basketReady;
+  const selectedLabels = currentView?.available_actions
+    .filter(action => cathySelected.has(action.id.replace('choose_', '')))
+    .map(action => action.label.replace(/ 선택$/, '')) || [];
+  document.getElementById('cathy-basket-hint').textContent = selectedLabels.length
+    ? `선택한 도구: ${selectedLabels.join(', ')} · 다시 누르면 선택 취소`
+    : '캐시가 부탁한 도구 그림을 모두 눌러 주세요.';
   document.getElementById('cathy-deliver').hidden = !basketReady;
   document.getElementById('cathy-deliver').disabled = busy;
   for (const button of document.querySelectorAll('#cathy-tool-list button')) {
     button.setAttribute('aria-pressed', String(cathySelected.has(button.dataset.tool)));
-    button.disabled = busy;
+    button.disabled = busy || !currentView?.available_actions.some(action => action.id === `choose_${button.dataset.tool}`);
   }
 }
 basketHotspot.addEventListener('click', () => {
-  if (!basketDialog || busy || currentView?.scene_id !== 'cathy_help') return;
+  if (!basketDialog || busy || !basketGreetingDone || currentView?.scene_id !== 'cathy_help') return;
   if (!basketStarted) {
     basketStarted = true;
     basketRequest.textContent = transcript.findLast(item => item.scene_id === 'cathy_help' && item.speaker === 'cathy')?.text || '';
@@ -216,17 +226,31 @@ function renderMessages() {
   dialogueStage.render({
     background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: cathyBasketScene || currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
+    image: cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
-    text: currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
+    text: cathyBasketScene ? (basketGreetingDone ? '' : conversation.find(item => item.speaker === 'cathy' && item.kind === 'scene')?.text || line?.text || '') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
     dialogueKey: line,
-    dialogue: !cathyBasketScene,
-    selectCharacter: true,
+    dialogue: !cathyBasketScene || !basketGreetingDone,
+    selectCharacter: !cathyBasketScene,
   });
+  if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
+    basketGreetingPending = true;
+    const visit = basketVisit;
+    Promise.resolve(dialogueStage.ready).then(ready => {
+      if (ready === false || visit !== basketVisit || currentView?.scene_id !== 'cathy_help') return;
+      basketGreetingTimer = setTimeout(async () => {
+        if (visit !== basketVisit || currentView?.scene_id !== 'cathy_help') return;
+        await dialogueStage.depart?.(false);
+        if (visit !== basketVisit || currentView?.scene_id !== 'cathy_help') return;
+        basketGreetingDone = true;
+        renderView(currentView);
+      }, 3500);
+    });
+  }
   clearTimeout(karenDepartureTimer);
   if (currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed) {
     Promise.resolve(dialogueStage.opened || dialogueStage.ready).then(opened => {
@@ -263,7 +287,7 @@ function renderMessages() {
 function renderView(view) {
   if (currentView?.scene_id !== view.scene_id) doorExamined = false;
   currentView = view;
-  basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog;
+  basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog || !basketGreetingDone;
   basketHotspot.disabled = busy;
   renderBasket();
   window.locationMusic?.enter(view.location_id, view.ending);
@@ -382,6 +406,10 @@ function applyResponse(data, kind, characterId = null) {
     basketTimer = undefined;
     basketStarted = false;
     basketReady = false;
+    clearTimeout(basketGreetingTimer);
+    ++basketVisit;
+    basketGreetingDone = false;
+    basketGreetingPending = false;
     cathySelected.clear();
     if (basketDialog?.open) basketDialog.close();
   }
@@ -418,6 +446,10 @@ window.startStory = (data, name) => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  clearTimeout(basketGreetingTimer);
+  ++basketVisit;
+  basketGreetingDone = false;
+  basketGreetingPending = false;
   cathySelected.clear();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;
@@ -508,6 +540,10 @@ window.addEventListener("pagehide", () => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  clearTimeout(basketGreetingTimer);
+  ++basketVisit;
+  basketGreetingDone = false;
+  basketGreetingPending = false;
   cathySelected.clear();
   clearTimeout(karenDepartureTimer);
   doorExamined = false;

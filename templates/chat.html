@@ -120,15 +120,19 @@
     <dialog id="cathy-basket-dialog" class="cathy-basket-dialog" aria-label="미용실 바구니 확대">
       <button id="cathy-basket-close" type="button" aria-label="바구니 닫기">닫기 ×</button>
       <div class="basket-scene">
-        <img id="cathy-basket-image" src="{{ asset_url('assets/images/cathy_basket_placeholder.svg') }}" alt="확대된 미용 도구 바구니" draggable="false">
+        <img id="cathy-basket-image" src="{{ asset_url('assets/images/cathy_basket.png') }}" alt="확대된 미용 도구 바구니" draggable="false">
         <div id="cathy-basket-request" class="basket-request" role="status" aria-live="polite" hidden></div>
         <div id="cathy-tool-list" class="cathy-tool-list" aria-label="바구니 속 도구" hidden>
-          <button type="button" data-tool="shampoo">🧴 샴푸</button>
-          <button type="button" data-tool="scissors">✂️ 가위</button>
-          <button type="button" data-tool="conditioner">🧴 린스</button>
-          <button type="button" data-tool="comb">🪮 빗</button>
-          <button type="button" data-tool="dryer">♨️ 드라이어</button>
-          <button type="button" data-tool="spray">💈 스프레이</button>
+          <button type="button" data-tool="shampoo" aria-label="샴푸" title="샴푸" aria-pressed="false"></button>
+          <button type="button" data-tool="scissors" aria-label="가위" title="가위" aria-pressed="false"></button>
+          <button type="button" data-tool="conditioner" aria-label="린스" title="린스" aria-pressed="false"></button>
+          <button type="button" data-tool="comb" aria-label="빗" title="빗" aria-pressed="false"></button>
+          <button type="button" data-tool="spray" aria-label="스프레이" title="스프레이" aria-pressed="false"></button>
+          <button type="button" data-tool="serum" aria-label="헤어 오일" title="헤어 오일" aria-pressed="false"></button>
+          <button type="button" data-tool="brush" aria-label="브러시" title="브러시" aria-pressed="false"></button>
+          <button type="button" data-tool="mirror" aria-label="손거울" title="손거울" aria-pressed="false"></button>
+          <button type="button" data-tool="towel" aria-label="수건" title="수건" aria-pressed="false"></button>
+          <button type="button" data-tool="roller" aria-label="헤어롤" title="헤어롤" aria-pressed="false"></button>
         </div>
       </div>
       <p id="cathy-basket-hint" hidden>캐시가 부탁한 도구를 모두 골라 주세요.</p>

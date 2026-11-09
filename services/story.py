@@ -12,7 +12,11 @@ WARY_SCORE = 35
 CHAT_DELTAS = {"friendly": 5, "cooperative": 7, "neutral": 0, "hostile": -2}
 MAX_HOSTILE_CHATS_PER_SCENE = 3
 CHARACTERS = {"jimmy": "지미", "karen": "캐런", "bob": "밥", "cathy": "캐시"}
-CATHY_TOOLS = {"shampoo": "샴푸", "scissors": "가위", "conditioner": "린스", "comb": "빗", "dryer": "드라이어", "spray": "스프레이"}
+CATHY_TOOLS = {
+    "shampoo": "샴푸", "scissors": "가위", "conditioner": "린스", "comb": "빗",
+    "spray": "스프레이", "serum": "헤어 오일", "brush": "브러시", "mirror": "손거울",
+    "towel": "수건", "roller": "헤어롤",
+}
 CATHY_REQUEST = {"shampoo", "scissors", "comb"}
 LOCATIONS = {
     "player_house": "새집",
@@ -257,6 +261,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
     elif scene == "cathy_task":
         next_state.update(scene_id="cathy_help", location_id="salon")
         next_state["cathy_tools"] = []
+        events.append(event("cathy", "지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?"))
         events.append(event("cathy", "바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?"))
     elif scene == "cathy_help":
         if action_id.startswith("choose_"):

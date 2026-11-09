@@ -1,0 +1,7 @@
+Tool: built-in image_gen (background-extraction edit, transparent_background=true)
+Source: user attachment Salon Basket_Mini Game.png
+Project asset: public/assets/images/cathy_basket.png
+Tool silhouettes: CSS clip-paths in public/assets/css/cathy-basket.css; original pixels and positions are preserved.
+
+Final prompt:
+Use case: background-extraction. Edit target: the supplied salon basket illustration. Remove ONLY the pale off-white background outside the basket and objects. Produce a clean genuinely transparent alpha PNG cutout of the entire basket INCLUDING all its contents (shampoo, rinse bottle, dropper bottle, blue spray bottle, brush, mirror, purple rolled towel, pink roller, scissors, burgundy comb). Preserve the exact original composition, placement, proportions, warm hand-painted illustration style, colors, readable SHAMPOO and RINSE labels, wicker details and silhouettes. Keep the original 1445:1089 landscape aspect ratio and alignment so each tool is at the same proportional coordinates. No added objects, no rearranging, no new background, no opaque white halo, no checkerboard drawn into the artwork. The exterior soft cast shadow may be removed to achieve a crisp clean transparent cutout. This is a game asset to be centered over an existing salon background.

@@ -20,7 +20,7 @@ function node() {
 
 function setup({missingBasket = false} = {}) {
   const nodes = new Map();
-  const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray'].map(tool =>
+  const basketTools = ['shampoo', 'scissors', 'conditioner', 'comb', 'spray', 'serum', 'brush', 'mirror', 'towel', 'roller'].map(tool =>
     Object.assign(node(), {dataset: {tool}}));
   const listeners = {};
   const timers = new Map();
@@ -499,20 +499,33 @@ test('Jimmy frame opens only on angle2, flips, closes and resets without changin
   assert.equal(hotspot.hidden,true);
 });
 
-test('Cathy salon opens without dialogue and the basket starts a three-second request', async () => {
+test('Cathy asks for help and leaves before the illustrated basket and tool request appear', async () => {
   const h = setup();
   const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
-  const task = response('cathy_help', 'salon', null, [{speaker_id:'cathy', text:request, image:'/cathy.svg'}]);
-  task.view.available_actions = ['shampoo', 'scissors', 'conditioner', 'comb', 'dryer', 'spray']
+  const task = response('cathy_help', 'salon', null, [
+    {speaker_id:'cathy', text:'지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?', image:'/cathy.svg'},
+    {speaker_id:'cathy', text:request, image:'/cathy.svg'},
+  ]);
+  task.view.available_actions = h.basketTools.map(button => button.dataset.tool)
     .map(tool => ({id:`choose_${tool}`, label:tool, kind:'choice'}))
     .concat({id:'help_cathy', label:'캐시에게 전달한다', kind:'choice'});
   h.context.window.startStory(task, '테스트');
   const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'cathy-basket-hotspot');
+  assert.equal(h.stage().dialogue, true);
+  assert.equal(h.stage().image, '/assets/images/cathy_smile.png');
+  assert.match(h.stage().text, /지금 너무 바쁘니까/);
+  assert.equal(hotspot.hidden, true);
+  await Promise.resolve();
+  const greeting = [...h.timers.values()].find(item => item.ms === 3500);
+  assert.ok(greeting);
+  await greeting.callback();
   assert.equal(h.stage().dialogue, false);
   assert.equal(h.stage().image, null);
+  assert.equal(hotspot.hidden, false);
   assert.equal(h.split(), false);
   assert.equal(hotspot.hidden, false);
-  assert.equal(hotspot.textContent, '바구니 열기');
+  assert.equal(hotspot.textContent, '');
+  assert.equal(hotspot.attrs['aria-label'], '미용실 바구니 열기');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   assert.equal(h.move().actions.length, 0);
   assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);
@@ -543,6 +556,18 @@ test('Cathy salon opens without dialogue and the basket starts a three-second re
   assert.deepEqual(sent, ['choose_shampoo', 'choose_scissors', 'choose_comb', 'help_cathy']);
   assert.equal(h.nodes.get('cathy-basket-dialog').open, false);
   assert.equal(h.stage().text, '정확해요!');
+});
+
+test('leaving or restarting cannot reveal an old Cathy basket greeting', async () => {
+  const h=setup();
+  const task=response('cathy_help','salon',null,[{speaker_id:'cathy',text:'샴푸, 가위, 빗',image:null}]);
+  h.context.window.startStory(task,'테스트');
+  await Promise.resolve();
+  const greeting=[...h.timers.values()].find(item=>item.ms===3500);
+  h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 이름');
+  await greeting.callback();
+  assert.equal(h.stage().sceneId,'arrival');
+  assert.equal(h.nodes.get('dialogue-stage').children.find(item=>item.className==='cathy-basket-hotspot').hidden,true);
 });
 
 test('name entry still initializes when an older chat page lacks basket markup', async () => {
