@@ -235,3 +235,18 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .entry-ad-dialog p { flex-basis: 100%; margin: 0; text-align: center; font: 14px/1.5 "Malgun Gothic",sans-serif; }
 .entry-ad-dialog p:empty { display: none; }
 .entry-ad-dialog button { padding: 6px 16px; box-shadow: none; }
+.dialogue-stage .entry-tv-hotspot {
+  position: absolute; z-index: 1; min-height: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent url('../images/pre-move-house.png') center / 100% 100% no-repeat;
+  box-shadow: none; transform: none; cursor: pointer;
+  clip-path: polygon(44.2% 41.9%, 48.5% 41.9%, 48.5% 41.4%, 48.1% 39.4%, 48.3% 39.2%, 48.9% 41.4%, 49.7% 41.4%, 50.3% 38.5%, 50.5% 38.7%, 49.9% 41.9%, 54.9% 41.9%, 55.7% 56.8%, 54.8% 57.7%, 43.3% 57.7%);
+  filter: brightness(1.2);
+}
+.dialogue-stage .entry-tv-hotspot:hover, .dialogue-stage .entry-tv-hotspot:focus-visible { animation: none; filter: brightness(1.65) saturate(1.2); transform: none; }
+.entry-tv-hotspot::after { content: ''; position: absolute; left: 45%; top: 43.4%; width: 8.4%; height: 12.6%; border: 2px solid #ffe8ac; border-radius: 18%; opacity: 0; }
+.entry-tv-hotspot:focus-visible::after { opacity: 1; }
+.dialogue-stage[data-background-ready="false"] .entry-tv-hotspot { visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .entry-tv-hotspot { animation: entry-tv-glow 1.6s ease-in-out infinite; }
+  @keyframes entry-tv-glow { 0%,100% { filter: brightness(1.05); } 50% { filter: brightness(1.65) saturate(1.2); } }
+}

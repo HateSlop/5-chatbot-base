@@ -6,7 +6,18 @@ const entryForm = document.getElementById('entry-chat');
 const entryUI = new PostMoveUI(entryRoot, entryForm, entryInput, document.getElementById('entry-send'), () => {});
 const entryDialog = document.getElementById('entry-name-dialog');
 const entryAnswer = document.getElementById('entry-answer');
-const entryWatch = document.getElementById('entry-watch');
+const entryTV = document.getElementById('entry-tv-hotspot');
+// Match the original TV cutout to the background's object-fit: cover crop.
+function positionEntryTV() {
+  const width = entryRoot.clientWidth, height = entryRoot.clientHeight;
+  if (!width || !height) return;
+  const scale = Math.max(width / 1456, height / 816);
+  entryTV.style.left = `${(width - 1456 * scale) / 2}px`;
+  entryTV.style.top = `${(height - 816 * scale) / 2}px`;
+  entryTV.style.width = `${1456 * scale}px`;
+  entryTV.style.height = `${816 * scale}px`;
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(positionEntryTV).observe(entryRoot);
 const prologueRoot = document.getElementById('entry-prologue');
 const prologue = prologueRoot && window.Prologue ? new window.Prologue(prologueRoot) : null;
 const adDialog = document.getElementById('entry-ad-dialog');
@@ -33,11 +44,11 @@ async function finishAd() {
   entryStage.layoutPages?.();
   entryDepart.focus();
 }
-entryWatch.addEventListener('click', () => {
+entryTV.addEventListener('click', () => {
   if (introStep !== 'before') return;
   introStep = 'playing';
   entryStage.finishTyping?.();
-  entryWatch.hidden = true;
+  entryTV.hidden = true;
   adContinue.hidden = true;
   adDialog.showModal();
   playAd();
@@ -76,7 +87,7 @@ async function showEntry() {
 }
 entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getElementById('username').focus();});
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
-window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';adVideo.pause();adDialog.close();});
+window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';entryTV.hidden=true;adVideo.pause();adDialog.close();});
 entryDepart.addEventListener('click', async () => {
   if (departed || introStep !== 'after') return;
   departed = true;
@@ -87,7 +98,7 @@ async function showIntro() {
   entryUI.setSplit(false);
   entryAnswer.hidden = true;
   entryDepart.hidden = true;
-  entryWatch.hidden = true;
+  entryTV.hidden = true;
   entryStage.render({background:'/assets/images/pre-move-house.png', dialogue:false});
   if (entryStage.ready) await entryStage.ready;
   if (introStep !== 'before') return;
@@ -101,6 +112,11 @@ async function showIntro() {
   }
   entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'티비나 볼까?'});
   if (entryStage.ready) await entryStage.ready;
-  if (!departed && introStep === 'before') { entryWatch.hidden = false; entryStage.layoutPages?.(); if (prologue) entryWatch.focus(); }
+  if (!departed && introStep === 'before') {
+    positionEntryTV();
+    entryTV.hidden = false;
+    entryStage.layoutPages?.();
+    if (prologue) entryTV.focus();
+  }
 }
 showIntro();
