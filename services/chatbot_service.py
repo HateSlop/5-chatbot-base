@@ -100,7 +100,7 @@ class ChatbotService:
                         scored.append(f"{score_key}:hostile:{count + 1}")
         started = perf_counter()
         try:
-            turn = self.generator.generate(
+            turn = {"reply": "...", "visual_cue": "worried"} if state["scene_id"] == "butcher_search" else self.generator.generate(
                 message, state["player_name"], config["characters"][character_id], knowledge, history,
                 LOCATIONS[state["location_id"]], next_state["affinity"], scene_events,
                 scene_context(next_state, just_told_destination),

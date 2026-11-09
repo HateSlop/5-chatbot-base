@@ -177,6 +177,19 @@ class StoryTest(unittest.TestCase):
         self.assertTrue(state["job_offered"])
         self.assertIn("accept_job", [item["id"] for item in available_actions(state)])
 
+    def test_frightened_jimmy_only_answers_ellipsis_then_leaves_in_a_hurry(self):
+        for action in TO_CHECKPOINT[:TO_CHECKPOINT.index("approach_jimmy")]:
+            data = self.action(action)
+        self.assertEqual(data["events"][0]["text"], "...")
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate") as generate:
+            answer = self.client.post("/api/chat", json={"state_token":self.token,"character_id":"jimmy","message":"무슨 일이야?"}).get_json()
+        generate.assert_not_called()
+        self.assertEqual(answer["events"][0]["text"], "...")
+        self.token = answer["state_token"]
+        left = self.action("approach_jimmy")
+        self.assertEqual(left["events"][0]["text"], "(지미가 급하게 나갔다.)")
+        self.assertEqual(left["view"]["available_characters"], [])
+
     def test_continued_hostility_path_has_no_job_offer(self):
         self.chat("jimmy", "적대 arrival", "hostile")
         for action_id in TO_CHECKPOINT:
@@ -557,7 +570,7 @@ class StoryTest(unittest.TestCase):
         food = self.action("inspect_food")
         self.assertEqual(len(food["events"]), 3)
         self.assertTrue(food["events"][0]["text"].startswith("와… 이게 다 뭐야?"))
-        self.assertTrue(food["events"][0]["text"].endswith("잠깐, 이건 뭐지?"))
+        self.assertTrue(food["events"][0]["text"].endswith("어…? 이게 뭐지?"))
         self.assertEqual(food["events"][1]["text"], "밥은 머리카락이 없는데?")
         thoughts = " ".join(item["text"] for item in food["events"])
         for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
@@ -607,6 +620,10 @@ class StoryTest(unittest.TestCase):
                     response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": character, "message": "무슨 일이에요?"})
                     self.assertEqual(response.status_code, 200)
                     self.token = response.get_json()["state_token"]
+                if action_id == "go_butcher":
+                    generate.assert_not_called()
+                    self.assertEqual(response.get_json()["events"][0]["text"], "...")
+                    continue
                 context = generate.call_args.args[-1]
                 self.assertIn(expected, " ".join(context), action_id)
                 if character != "jimmy" or expected == "고기를 사러 정육점에 다녀오겠다고":
