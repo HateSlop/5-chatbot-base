@@ -13,7 +13,7 @@ from services.story import event, new_state  # noqa: E402
 
 @app.get('/preview/festival')
 def preview_festival():
-    state = new_state('축제 체험')
+    state = new_state('축제 체험', 'male')
     state.update(scene_id='festival', location_id='square', story_day=2,
                  affinity=70, job='driver', has_car_key=True,
                  clues=['brazier', 'jimmy_photo', 'photo_back_date'])
@@ -26,7 +26,7 @@ def preview_festival():
 
 @app.get('/preview/basement')
 def preview_basement():
-    state = new_state('지하실 체험')
+    state = new_state('지하실 체험', 'male')
     state.update(scene_id='empty_butcher', location_id='butcher_shop', affinity=70)
     data = chatbot._response(state, [event('thought', '(지미가 급하게 나갔다)')])
     response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
