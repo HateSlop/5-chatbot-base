@@ -14,22 +14,31 @@ function setup() {
     setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id;},clearTimeout:key=>timers.delete(key)});
   return {bell:new window.Doorbell(),sounds,timers,events,document,window};
 }
-test('ordinary visit plays once and waits for the chime to finish',async()=>{
+test('ordinary visit opens 450ms after playback starts while the sound tail continues',async()=>{
   const h=setup();let finished=false;
   const ready=h.bell.ring();ready.then(()=>finished=true);
   assert.equal(h.bell.ring(),ready);assert.equal(h.sounds.length,1);
   assert.equal(h.sounds[0].path,'/assets/audio/doorbell.wav');
   await Promise.resolve();assert.equal(finished,false);
-  h.sounds[0].onended();await ready;
-  assert.equal(finished,true);assert.equal(h.timers.size,0);
+  [...h.timers.values()].find(timer=>timer.ms===450).fn();await ready;
+  assert.equal(finished,true);assert.notEqual(h.sounds[0].paused,true);
+  h.sounds[0].onended();assert.equal(h.timers.size,0);
 });
-test('urgent visit rings three times at 300ms intervals and waits for the last ring',async()=>{
+test('urgent visit rings three times, then opens before the last sound tail ends',async()=>{
   const h=setup();const ready=h.bell.ring(3);
   assert.deepEqual(h.sounds.map(sound=>sound.plays),[1,0,0]);
   for(const ms of [300,600]) [...h.timers.values()].find(timer=>timer.ms===ms).fn();
   assert.deepEqual(h.sounds.map(sound=>sound.plays),[1,1,1]);
-  h.sounds[2].onended();await ready;
+  await Promise.resolve();
+  [...h.timers.values()].find(timer=>timer.ms===450).fn();await ready;
+  assert.notEqual(h.sounds[2].paused,true);
+  h.sounds[2].onended();
   assert.ok(h.sounds.every(sound=>sound.paused));assert.equal(h.timers.size,0);
+});
+
+test('cancelling before playback resolves cannot leave a delayed door-opening timer',async()=>{
+  const h=setup();const ready=h.bell.ring();h.bell.stop();await ready;await Promise.resolve();
+  assert.equal(h.timers.size,0);
 });
 test('mute, hidden tab, failed playback and stalled audio cannot block the visit',async()=>{
   const h=setup();h.window.locationMusic.enabled=false;await h.bell.ring();assert.equal(h.sounds.length,0);
