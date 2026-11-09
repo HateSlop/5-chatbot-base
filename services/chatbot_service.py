@@ -28,9 +28,12 @@ class ChatbotService:
 
     def start(self, player_name: str, gender: str) -> dict:
         state = new_state(player_name, gender)
-        greeting = "난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게. 궁금한 게 있으면 물어봐! 내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어!"
+        greeting = "난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게. 궁금한 게 있으면 물어봐!"
         events = [event("jimmy", f"안녕, {player_name}! {greeting}")]
-        state["scene_events"] = [{"speaker_id": "jimmy", "text": greeting}]
+        state["scene_events"] = [
+            {"speaker_id": "jimmy", "text": "내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어!"},
+            {"speaker_id": "jimmy", "text": greeting},
+        ]
         return self._response(state, events)
 
     def resume(self, token: str) -> dict:

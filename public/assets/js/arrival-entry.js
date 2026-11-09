@@ -86,7 +86,7 @@ async function showEntry() {
   entryTimer = setTimeout(async () => {
     if (document.getElementById('name-screen').hidden) return;
     entryStage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.svg',speaker:'지미',selectCharacter:true,
-      text:'더뉴빌리지에 온 걸 환영해. 여기 진짜 끝내주는 곳이거든! 아 참, 너의 이름은 뭐야?'});
+      text:'더뉴빌리지에 온 걸 환영해. 내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어! 여기 진짜 끝내주는 곳이거든! 아 참, 너의 이름은 뭐야?'});
     if (entryStage.ready) await entryStage.ready;
     if (run !== entryRun || document.getElementById('name-screen').hidden) return;
     window.entryVisitReady = true;
