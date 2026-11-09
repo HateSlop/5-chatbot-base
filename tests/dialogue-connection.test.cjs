@@ -37,7 +37,7 @@ function setup({missingBasket = false} = {}) {
     },
     window: {
       addEventListener: (name, callback) => { listeners[name] = callback; },
-      location: {reload() { this.reloaded = true; }},
+      location: {reload() { this.reloaded = true; }, assign(path) { this.assigned = path; }},
     },
     localStorage: new Proxy({}, {get() { throw Error('persistent storage forbidden'); }}),
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
@@ -442,62 +442,155 @@ test('each first greeting requires two successful replies and resets on a new ga
   assert.equal(h.nodes.get('action-list').children.length,0);
 });
 
-test('secret discovery asks the server to recognize Jimmy before Karen reacts and affinity drops', async () => {
+test('photo back succeeds before closing recognizes Jimmy and shows Karen once', async () => {
   const h=setup();
   const data=response('photo_found','karen_house',null,[]);
-  data.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  data.view.photo_back_date=null;
+  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
   h.context.window.startStory(data,'테스트');
-  assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
+  assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
   assert.equal(h.stage().text,'저기 뭔가 익숙한 얼굴이..?');
   assert.equal(h.stage().image,null);
   assert.equal(h.move().actions.length,0);
-  h.nodes.get('action-list').children[0].listeners.click();
-  assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
-  assert.equal(h.stage().text,'지미??????');
-  assert.equal(h.stage().image,null);
-  assert.equal(h.nodes.get('affinity-value').textContent,'50 / 100');
-  let requested;
-  h.context.fetch=async (_,options)=>{
-    requested=JSON.parse(options.body).action_id;
-    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}],45);
-    found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
-    return {ok:true,json:async()=>found};
-  };
-  await h.nodes.get('action-list').children[0].listeners.click();
-  assert.equal(requested,'recognize_photo');
-  assert.equal(h.stage().image,'/assets/images/karen_angry.png');
-  assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
-  assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
-  assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
-  h.context.window.startStory(data,'다시');
-  assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
-});
-
-test('Jimmy frame opens only on angle2, flips, closes and resets without changing the story', () => {
-  const h=setup();
-  const data=response('photo_found','karen_house','karen',[]);
-  h.context.window.startStory(data,'테스트');
+  assert.equal(h.nodes.get('action-list').children.length,0);
   const hotspot=h.nodes.get('dialogue-stage').children[1];
   const dialog=h.nodes.get('photo-dialog'), flip=h.nodes.get('photo-flip');
-  assert.equal(hotspot.hidden,true);
-  hotspot.listeners.click();
-  assert.notEqual(dialog.open,true);
-  h.nodes.get('action-list').children[0].listeners.click();
   assert.equal(hotspot.hidden,false);
   hotspot.listeners.click();
   assert.equal(dialog.open,true);
-  assert.equal(flip.attrs['data-back'],'false');
-  flip.listeners.click();
-  assert.equal(flip.attrs['data-back'],'true');
-  assert.match(h.nodes.get('photo-hint').textContent,/Jimmy/);
   h.nodes.get('photo-close').listeners.click();
   assert.equal(dialog.open,false);
   assert.equal(h.stage().text,'지미??????');
   hotspot.listeners.click();
+  assert.equal(h.nodes.get('affinity-value').textContent,'50 / 100');
+  const requested=[];
+  h.context.fetch=async (_,options)=>{
+    const action=JSON.parse(options.body).action_id;
+    requested.push(action);
+    if (action === 'inspect_photo_back') {
+      const back=response('photo_found','karen_house',null,[],50);
+      back.view.photo_back_date='11월 8일';
+      back.view.journal=['액자 뒷면에서 날짜를 보았다.'];
+      back.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+      return {ok:true,json:async()=>back};
+    }
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}],45);
+    found.view.photo_back_date='11월 8일';
+    found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+    return {ok:true,json:async()=>found};
+  };
+  await flip.listeners.click();
+  assert.deepEqual(requested,['inspect_photo_back']);
+  assert.equal(flip.attrs['data-back'],'true');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'11월 8일');
+  await h.nodes.get('photo-close').listeners.click();
+  assert.deepEqual(requested,['inspect_photo_back','recognize_photo']);
+  assert.equal(h.stage().image,'/assets/images/karen_angry.png');
+  assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
+  assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
+  await h.nodes.get('photo-close').listeners.click();
+  assert.equal(requested.length,2);
+  h.context.window.startStory(data,'다시');
+  assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'');
+});
+
+test('photo back failure stays on front, retries, and Escape follows the same close rule', async () => {
+  const h=setup();
+  const data=response('photo_found','karen_house',null,[]);
+  data.view.photo_back_date=null;
+  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  h.context.window.startStory(data,'테스트');
+  const hotspot=h.nodes.get('dialogue-stage').children[1];
+  const dialog=h.nodes.get('photo-dialog'), flip=h.nodes.get('photo-flip');
+  assert.equal(hotspot.hidden,false);
+  hotspot.listeners.click();
+  let calls=0;
+  h.context.fetch=async (_,options)=>{
+    calls++;
+    assert.equal(JSON.parse(options.body).action_id,'inspect_photo_back');
+    return {ok:false,json:async()=>({error:{message:'다시 시도해 주세요'}})};
+  };
+  await flip.listeners.click();
   assert.equal(flip.attrs['data-back'],'false');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'');
+  assert.equal(h.nodes.get('photo-hint').textContent,'다시 시도해 주세요');
+  const cancel={preventDefault() { this.prevented=true; }};
+  await dialog.listeners.cancel(cancel);
+  assert.equal(cancel.prevented,true);
+  assert.equal(dialog.open,false);
+  assert.equal(calls,1);
+  hotspot.listeners.click();
+  assert.equal(flip.attrs['data-back'],'false');
+  h.context.fetch=async (_,options)=>{
+    calls++;
+    const action=JSON.parse(options.body).action_id;
+    if (action === 'inspect_photo_back') {
+      const back=response('photo_found','karen_house',null,[]);
+      back.view.photo_back_date='11월 8일';
+      back.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+      return {ok:true,json:async()=>back};
+    }
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'방에서 나가 주세요.',image:null}],45);
+    found.view.photo_back_date='11월 8일';
+    found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
+    return {ok:true,json:async()=>found};
+  };
+  await flip.listeners.click();
+  assert.equal(flip.attrs['data-back'],'true');
+  await dialog.listeners.cancel({preventDefault(){}});
+  assert.equal(calls,3);
+  assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
   h.context.window.startStory(response('arrival','player_house','jimmy',[]),'다시');
   assert.equal(dialog.open,false);
   assert.equal(hotspot.hidden,true);
+});
+
+test('both festival endings expose a title return and a new play drops old state', () => {
+  const html=fs.readFileSync(path.join(__dirname,'../templates/chat.html'),'utf8');
+  assert.match(html, /<button id="ending-restart"[^>]*>첫 화면으로 돌아가기<\/button>/);
+  for (const ending of ['escape','assimilation']) {
+    const h=setup();
+    const old=response('hair_found','square','bob',[]);
+    old.view.journal=['이전 단서'];
+    h.context.window.startStory(old,'옛 이름');
+    const result=response(`ending_${ending}`,'square',null,[{speaker_id:'narrator',text:'결말',image:null}]);
+    result.view.ending=ending;
+    result.view.journal=['이전 단서'];
+    h.context.applyResponse(result,'scene');
+    assert.equal(h.nodes.get('ending-restart').hidden,false);
+    h.nodes.get('ending-restart').listeners.click();
+    assert.equal(h.context.window.location.assigned,'/');
+    h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 이름');
+    assert.equal(h.transcript().length,0);
+    assert.equal(h.nodes.get('journal-list').children.length,0);
+    assert.equal(vm.runInContext('stateToken',h.context),'token-arrival-player_house');
+    assert.equal(h.nodes.get('ending-restart').hidden,true);
+  }
+  const death=setup();
+  death.context.window.startStory(response('arrival','player_house','jimmy',[]),'이름');
+  const result=response('ending_death','square',null,[]);
+  result.view.ending='death';
+  death.context.applyResponse(result,'scene');
+  assert.equal(death.nodes.get('ending-restart').hidden,true);
+  const elements=new Map();
+  const deathWindow={location:{reload(){this.reloaded=true;}},addEventListener(){}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/scene-effects.js'),'utf8'), {
+    window:deathWindow, document:{getElementById(id){if(!elements.has(id)) elements.set(id,node()); return elements.get(id);}},
+  });
+  elements.get('death-restart').listeners.click();
+  assert.equal(deathWindow.location.reloaded,true);
+});
+
+test('photo scene has no next button while festival discovery keeps its next button', () => {
+  const h=setup();
+  const photo=response('photo_found','karen_house',null,[]);
+  photo.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  h.context.window.startStory(photo,'이름');
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  h.context.applyResponse(response('hair_found','square','bob',[]),'scene');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'다음 장면 ›');
 });
 
 test('Cathy asks for help and leaves before the illustrated basket and tool request appear', async () => {

@@ -324,10 +324,27 @@ class StoryTest(unittest.TestCase):
         self.assertIn("아직 지하실의 비밀을 모른다", generate.call_args.args[-1][1])
         self.assertNotIn("식인", " ".join(generate.call_args.args[-1]))
         self.action("see_jimmy_off")
-        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "알려주셔서 고마워요. 정육점 쪽에서 찾아봐 주시겠어요?", "visual_cue": "smile"}) as generate:
-            self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "지미가 정육점에 간다고 했어요."})
-        self.assertIn("알려줘서 고맙다", generate.call_args.args[-1][1])
-        self.assertIn("도착 시각을 캐묻지 않는다", generate.call_args.args[-1][2])
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "지미에게 전할 말이 있어요.", "visual_cue": "neutral"}) as generate:
+            unseen = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "무슨 용건이세요?"})
+        self.assertEqual(unseen.status_code, 200)
+        self.token = unseen.get_json()["state_token"]
+        self.assertFalse(decode_state(self.token)["jimmy_destination_told"])
+        self.assertNotIn("정육점", generate.call_args.args[-1][0])
+        self.assertIn("행선지를 아직 모른다", generate.call_args.args[-1][1])
+        self.assertEqual(generate.call_args.args[-2][0]["speaker_id"], "karen")
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "알려주셔서 고마워요. 그쪽에서 찾아봐 주시겠어요?", "visual_cue": "smile"}) as generate:
+            informed = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "지미가 정육점에 간다고 했어요."})
+        self.assertEqual(informed.status_code, 200)
+        self.token = informed.get_json()["state_token"]
+        self.assertTrue(decode_state(self.token)["jimmy_destination_told"])
+        self.assertIn("처음 들었다", generate.call_args.args[-1][1])
+        self.assertIn("정육점 쪽에서 찾아봐 달라고", generate.call_args.args[-1][1])
+        self.assertIn("캐런도 모른다", generate.call_args.args[-1][2])
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "함께 찾아봐 주세요.", "visual_cue": "neutral"}) as generate:
+            later = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "제가 찾아볼게요."})
+        self.assertEqual(later.status_code, 200)
+        self.assertIn("말을 들었다", generate.call_args.args[-1][1])
+        self.assertNotIn("처음 들었다", generate.call_args.args[-1][1])
 
     def test_brazier_caught_and_photo_exit_are_fixed_events(self):
         for action_id in TO_CHECKPOINT[:14]:
