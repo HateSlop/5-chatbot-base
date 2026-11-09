@@ -478,3 +478,14 @@ test('home door stays closed until its bell finishes and repeated renders do not
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house_open.png');
   stage.render(visit);await stage.ready;assert.deepEqual(calls,[3]);
 });
+
+test('a new background is ready before home arrival pauses, bell and character dialogue', async () => {
+  const {stage,nodes}=setup();let finishArrival;
+  stage.pause=ms=>ms===1500 ? new Promise(resolve=>finishArrival=resolve) : Promise.resolve();
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.png'});
+  assert.equal(await stage.backgroundReady,true);
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house.svg');
+  let finished=false;stage.ready.then(()=>finished=true);
+  await Promise.resolve();assert.equal(finished,false);
+  finishArrival();await stage.ready;assert.equal(finished,true);
+});

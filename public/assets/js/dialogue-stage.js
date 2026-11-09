@@ -296,11 +296,14 @@ window.DialogueStage = class {
     if (this.fullText !== text) this.pageIndex = 0;
     this.fullText = text;
     this.box.scrollTop = 0;
+    let revealBackground;
+    this.backgroundReady = new Promise(resolve => { revealBackground = resolve; });
     this.ready = (async () => {
       if (backgroundReady) await backgroundReady;
       if (background && this.background.decode) await this.background.decode().catch(() => {});
       if (version !== this.version) return false;
       this.root.dataset.backgroundReady = 'true';
+      revealBackground(true);
       if (arriving) {
         if (this.arrivalWait) await this.pause(1500);
         if (version !== this.version) return false;
@@ -358,7 +361,7 @@ window.DialogueStage = class {
       this.layoutPages();
       if (!this.box.hidden) this.typeCurrentPage();
       return true;
-    })();
+    })().finally(() => revealBackground(false));
     if (!selectionKey) this.opened = this.ready;
   }
 };

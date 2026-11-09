@@ -335,7 +335,13 @@ function renderView(view) {
       else ++festivalFrame;
       if (window.sceneEffects) {
         busy = true;
-        try { await window.sceneEffects.transition(async () => { renderView(currentView); await dialogueStage.ready; }); }
+        try {
+          await window.sceneEffects.transition(async () => {
+            renderView(currentView);
+            await (dialogueStage.backgroundReady || dialogueStage.ready);
+          });
+          await dialogueStage.ready;
+        }
         finally { busy = false; renderView(currentView); }
       } else renderView(currentView);
     });
@@ -481,11 +487,12 @@ async function request(path, payload) {
   }
   const show = async () => {
     applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
-    await dialogueStage.ready;
+    await (dialogueStage.backgroundReady || dialogueStage.ready);
   };
   const moving = currentView && (currentView.location_id !== data.view.location_id || currentView.background !== data.view.background || data.view.ending && !currentView.ending);
   if (moving && window.sceneEffects) await window.sceneEffects.transition(show);
   else await show();
+  await dialogueStage.ready;
 }
 
 async function performAction(actionId) {

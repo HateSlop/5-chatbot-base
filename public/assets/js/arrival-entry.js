@@ -73,7 +73,8 @@ async function showEntry() {
   entryStage.render({background:'/assets/images/player_house.svg', dialogue:false});
   window.locationMusic?.enter('player_house');
   entryUI.render({locationId:'player_house',locationName:'새집',busy:true});
-  await entryRoot.querySelector('.dialogue-background').decode().catch(() => {});
+  if (entryStage.backgroundReady) await entryStage.backgroundReady;
+  else await entryRoot.querySelector('.dialogue-background').decode().catch(() => {});
   if (run !== entryRun) return;
   entryTimer = setTimeout(async () => {
     if (document.getElementById('name-screen').hidden) return;

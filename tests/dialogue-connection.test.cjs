@@ -599,3 +599,19 @@ test('urgent Karen bell uses the server summons action, not a client affinity ch
   data.view.affinity=20;data.view.available_actions=[{id:'accept_job',kind:'choice',label:'수락'}];
   h.context.renderView(data.view);assert.equal(h.stage().doorbellCount,1);
 });
+
+test('the salon return uncovers its new background before the remaining arrival animation finishes',async()=>{
+  const h=setup();let finishArrival;
+  h.context.finishSteps=[];
+  h.context.backgroundDone=Promise.resolve(true);
+  h.context.arrivalDone=new Promise(resolve=>finishArrival=resolve);
+  h.context.window.sceneEffects={ending(){},transition:async show=>{await show();h.context.finishSteps.push('visible');}};
+  h.context.window.startStory(response('cathy_result','salon',null,[]),'테스트');
+  vm.runInContext('dialogueStage.backgroundReady=backgroundDone; dialogueStage.ready=arrivalDone',h.context);
+  h.context.fetch=async()=>({ok:true,json:async()=>response('jimmy_butcher','player_house','jimmy',[])});
+  const returning=vm.runInContext("request('/api/action', {action_id:'return_home'})",h.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(h.context.finishSteps,['visible']);
+  let complete=false;returning.then(()=>complete=true);await Promise.resolve();assert.equal(complete,false);
+  finishArrival();await returning;assert.equal(complete,true);
+});
