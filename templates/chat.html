@@ -73,7 +73,7 @@
         <form id="name-form" novalidate>
           <label for="username">이름:</label>
           <input id="username" type="text" placeholder="이름을 입력하세요" autocomplete="off" enterkeyhint="done" aria-describedby="name-status" autofocus required>
-          <button id="name-submit" class="visually-hidden" type="submit" tabindex="-1">이름 확인</button>
+          <button id="name-submit" type="submit">이야기 시작</button>
           <p id="name-status" role="status" aria-live="polite"></p>
         </form>
       </dialog>
@@ -128,7 +128,7 @@
     </div>
     <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden></div>
     <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
-      <video id="death-video" playsinline preload="none" aria-label="사망 엔딩 영상" src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
+      <video id="death-video" playsinline preload="none" aria-label="사망 엔딩 영상" data-male-src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
       <div id="death-controls" class="death-controls" hidden>
         <p id="death-description"></p>
         <p id="death-status" role="status"></p>

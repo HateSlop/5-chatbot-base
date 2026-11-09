@@ -17,7 +17,7 @@ class SmokeTest(unittest.TestCase):
         self.client = app.test_client()
 
     def start(self):
-        response = self.client.post("/api/session", json={"player_name": "알렉스"})
+        response = self.client.post("/api/session", json={"player_name": "알렉스", "gender": "male"})
         self.assertEqual(response.status_code, 201)
         return response.get_json()["state_token"]
 
@@ -40,6 +40,33 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["view"]["scene_id"], "arrival")
         self.assertEqual(decode_state(response.get_json()["state_token"])["player_name"], "알렉스")
+        self.assertEqual(response.get_json()["view"]["gender"], "male")
+        self.assertIsNone(response.get_json()["view"]["job"])
+
+    def test_new_play_requires_name_and_gender_and_resets_both(self):
+        for payload in ({"player_name": "알렉스"}, {"gender": "female"},
+                        {"player_name": "알렉스", "gender": "other"},
+                        {"player_name": "알렉스", "gender": 1},
+                        {"player_name": " ", "gender": "male"}):
+            with self.subTest(payload=payload):
+                response = self.client.post("/api/session", json=payload)
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.get_json()["error"]["code"], "invalid_request")
+        first = self.start()
+        second = self.client.post("/api/session", json={"player_name": "새 이름", "gender": "female"})
+        self.assertEqual(second.status_code, 201)
+        state = decode_state(second.get_json()["state_token"])
+        self.assertNotEqual(first, second.get_json()["state_token"])
+        self.assertEqual((state["player_name"], state["gender"], state["job"], state["affinity"]),
+                         ("새 이름", "female", None, 50))
+        self.assertEqual(second.get_json()["view"]["gender"], "female")
+
+    def test_older_token_without_gender_remains_readable(self):
+        state = decode_state(self.start())
+        del state["gender"]
+        response = self.client.post("/api/session/resume", json={"state_token": encode_state(state)})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.get_json()["view"]["gender"])
 
     def test_new_session_with_same_name_has_no_previous_play(self):
         token = self.start()
@@ -53,7 +80,7 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(fresh["scored_chat"], [])
 
     def test_invalid_inputs_and_tampered_token(self):
-        self.assertEqual(self.client.post("/api/session", json={"player_name": " "}).status_code, 400)
+        self.assertEqual(self.client.post("/api/session", json={"player_name": " ", "gender": "male"}).status_code, 400)
         self.assertEqual(self.client.post("/api/session", data="broken", content_type="application/json").status_code, 400)
         token = self.start()
         bad_token = token[:-2] + ("AA" if token[-2:] != "AA" else "BB")

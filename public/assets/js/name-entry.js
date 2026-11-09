@@ -2,6 +2,14 @@ const nameForm = document.getElementById("name-form");
 const nameInput = document.getElementById("username");
 const nameSubmit = document.getElementById("name-submit");
 const nameStatus = document.getElementById("name-status");
+const playerGender = new URLSearchParams(window.location.search).get("gender");
+if (playerGender === "male" || playerGender === "female") {
+  window.protagonistGenderReady = true;
+  window.history.replaceState(null, "", window.location.pathname);
+} else {
+  window.protagonistGenderReady = false;
+  window.location.replace("/");
+}
 let submittingName = false;
 
 nameInput.addEventListener("input", () => {
@@ -19,6 +27,7 @@ nameForm.addEventListener("submit", async (event) => {
     nameInput.focus();
     return;
   }
+  if (playerGender !== "male" && playerGender !== "female") return;
   submittingName = true;
   nameSubmit.disabled = true;
   nameInput.readOnly = true;
@@ -27,7 +36,7 @@ nameForm.addEventListener("submit", async (event) => {
   try {
     const response = await fetch("/api/session", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_name: playerName }),
+      body: JSON.stringify({ player_name: playerName, gender: playerGender }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message || "새 이야기를 시작하지 못했습니다.");

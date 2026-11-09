@@ -36,7 +36,7 @@ window.sceneEffects = new class {
     try { await this.video.play(); }
     catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
-  ending(type, text = '') {
+  ending(type, text = '', gender = null) {
     const death = type === 'death';
     if (!death) {
       if (this.active) { this.video.pause(); this.video.currentTime = 0; }
@@ -51,6 +51,19 @@ window.sceneEffects = new class {
     this.screen.hidden = false;
     this.game.inert = true;
     this.screen.focus();
+    const source = gender === 'male' ? this.video.dataset.maleSrc : this.video.dataset.femaleSrc;
+    if (!source) {
+      this.video.pause();
+      this.video.removeAttribute('src');
+      this.video.hidden = true;
+      this.replay.hidden = true;
+      this.controls.hidden = false;
+      this.status.textContent = '선택한 주인공의 엔딩 영상은 준비 중입니다.';
+      return;
+    }
+    this.video.src = source;
+    this.video.hidden = false;
+    this.replay.hidden = false;
     this.play();
   }
 }();

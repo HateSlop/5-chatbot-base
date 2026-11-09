@@ -149,16 +149,26 @@ test('successful movement clears progress status while failures remain visible',
 
 test('start uses response in memory and renders the current scene', () => {
   const h = setup();
-  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', [
+  const start=response('arrival', 'player_house', 'jimmy', [
     {speaker_id: 'jimmy', text: '<script>첫 인사</script>', image: '/jimmy-smile.svg'},
-  ]), '알렉스');
+  ]);
+  Object.assign(start.view,{gender:'female',today:'11월 9일',job:null});
+  h.context.window.startStory(start, '알렉스');
   assert.equal(h.nodes.get('name-screen').hidden, true);
   assert.equal(h.nodes.get('game-screen').hidden, false);
   assert.equal(h.stage().text, '<script>첫 인사</script>');
   assert.equal(h.nodes.get('chat-log').children[0].children[1].textContent, '<script>첫 인사</script>');
   assert.equal(h.move().affinity, 50);
+  assert.equal(h.move().gender, 'female');
+  assert.equal(h.move().today, '11월 9일');
+  assert.equal(h.move().job, null);
   assert.equal(h.transcript()[0].scene_id, 'arrival');
   assert.equal(h.transcript()[0].location_id, 'player_house');
+  const hired=response('job_result','player_house',null,[]);
+  Object.assign(hired.view,{gender:'female',today:'11월 10일',job:'driver'});
+  h.context.applyResponse(hired,'scene');
+  assert.equal(h.move().today,'11월 10일');
+  assert.equal(h.move().job,'driver');
 });
 
 test('the left guide receives the server scene and only offers questions when chat is available', () => {

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
     <script src="{{ asset_url('assets/js/start-music.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/start-gender.js') }}" defer></script>
   </head>
   <body class="village-start">
     <main class="start-scene game-screen" aria-label="더뉴빌리지 시작 화면">
@@ -22,9 +23,21 @@
       <div class="cover-slot" aria-hidden="true"></div>
       <div class="start-panel">
       <nav class="start-actions" aria-label="이야기 시작">
-        <a class="image-action" href="{{ url_for('chat') }}" aria-label="START">START</a>
+        <button id="start-action" class="image-action" type="button" aria-haspopup="dialog">시작하기</button>
       </nav>
       </div>
     </main>
+    <dialog id="gender-dialog" class="gender-dialog" aria-labelledby="gender-heading">
+      <h2 id="gender-heading">주인공을 선택하세요</h2>
+      <div class="gender-options">
+        <a class="gender-option" data-gender="male" href="{{ url_for('chat') }}?gender=male" aria-label="남성 주인공 선택">
+          <span class="gender-art" role="img" aria-label="남성 주인공 그림 준비 중">그림 준비 중</span><strong>남</strong>
+        </a>
+        <a class="gender-option" data-gender="female" href="{{ url_for('chat') }}?gender=female" aria-label="여성 주인공 선택">
+          <span class="gender-art" role="img" aria-label="여성 주인공 그림 준비 중">그림 준비 중</span><strong>여</strong>
+        </a>
+      </div>
+      <button id="gender-back" type="button">뒤로</button>
+    </dialog>
   </body>
 </html>

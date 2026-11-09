@@ -30,7 +30,7 @@ LOCATIONS = {
 
 # Each entry contains only facts available to the current conversation partner at this point.
 SCENE_CONTEXT = {
-    "arrival": ("플레이어가 새집에 이사 왔고 지미가 마을을 소개했다.", "지미는 한 달 먼저 이사 온 주민이다.", "이후 사건을 미리 말하지 않는다."),
+    "arrival": ("플레이어가 새집에 이사 왔고 지미가 마을을 소개하며 친구 찰스가 지난주 마을을 떠났다고 말했다.", "지미는 한 달 먼저 이사 온 주민이다. 찰스는 지미의 친구이며, 지미는 그가 지난주 마을을 떠난 것으로 안다.", "찰스가 떠난 이유나 행선지는 모르므로 지어내지 않는다. 이후 사건을 미리 말하지 않는다."),
     "cathy_task": ("지미가 캐시의 일손이 부족해 보인다고 말하며 도움을 권했다.", "지미는 캐시가 왜 바쁜지나 구체적으로 무슨 일을 하는지 모른다.", "모르는 업무 내용을 지어내지 않는다."),
     "cathy_help": ("캐시가 샴푸, 가위, 빗을 바구니에서 가져다 달라고 부탁했다.", "캐시는 도구를 기다린다.", "이후 사건을 미리 말하지 않는다."),
     "jimmy_butcher": ("캐시를 돕고 집에 돌아오자 지미가 고기를 사러 정육점에 다녀오겠다고 말했다.", "지미는 고기를 사러 간다. 아직 지하실의 비밀을 모른다.", "미래 사건을 암시하거나 이유를 물은 플레이어에게 걱정하지 말라고 하지 않는다."),
@@ -77,10 +77,11 @@ def display_date(day: date) -> str:
     return f"{day.month}월 {day.day}일"
 
 
-def new_state(player_name: str) -> dict:
+def new_state(player_name: str, gender: str) -> dict:
     return {
         "version": 1,
         "player_name": player_name,
+        "gender": gender,
         "scene_id": "arrival",
         "location_id": "player_house",
         "visited": [],
@@ -238,6 +239,8 @@ def view(state: dict) -> dict:
         ],
         "available_actions": available_actions(state),
         "affinity": state["affinity"],
+        "gender": state.get("gender"),
+        "job": state.get("job"),
         "journal": state["journal"],
         "today": display_date(story_date(state)),
         "photo_back_date": (display_date(story_date(state) - timedelta(days=1))
