@@ -222,21 +222,25 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  const line = conversation.findLast(item => item.speaker !== "user");
+  const festivalScene = ['festival', 'hair_found'].includes(currentView.scene_id);
+  const festivalEvents = conversation.filter(item => item.kind === 'scene');
+  const line = festivalScene && currentView.scene_id === 'hair_found'
+    ? (festivalFrame === 0 ? null : festivalEvents[Math.min(festivalFrame - 1, festivalEvents.length - 1)])
+    : conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
+    background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : ['meat','hair','stares'][Math.min(festivalFrame, 2)]}.png` : currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
+    image: festivalScene ? null : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
-    text: cathyBasketScene ? (basketGreetingDone ? '' : conversation.find(item => item.speaker === 'cathy' && item.kind === 'scene')?.text || line?.text || '') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
+    text: festivalScene ? line?.text || '' : cathyBasketScene ? (basketGreetingDone ? '' : conversation.find(item => item.speaker === 'cathy' && item.kind === 'scene')?.text || line?.text || '') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
     dialogue: !cathyBasketScene || !basketGreetingDone,
-    selectCharacter: !cathyBasketScene,
+    selectCharacter: !cathyBasketScene && !festivalScene,
   });
   if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
     basketGreetingPending = true;
@@ -384,7 +388,7 @@ function renderView(view) {
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
   postMoveUI.render({sceneId: view.scene_id, locationId: view.location_id, locationName: place,
     characterId: character?.id, canChat, registeredName: playerName,
-    affinity: view.affinity, actions: greetingLocked(view) || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
+    affinity: view.affinity, actions: greetingLocked(view) || showingDiscovery || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
   window.sceneEffects?.ending(view.ending, endingText);

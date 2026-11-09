@@ -118,8 +118,8 @@ test('festival fills the canvas in order and reveals server choices only after t
   assert.equal(h.split(), false);
   assert.equal(h.stage().image, null);
   const discovery = response('hair_found', 'square', 'bob', [
-    {speaker_id:'thought', text:'금발 머리카락을 발견했다. 밥은 대머리다.', image:null},
-    {speaker_id:'thought', text:'지미의 실종과 수첩을 연결해 음식의 정체를 추리했다.', image:null},
+    {speaker_id:'thought', text:'음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다.', image:null},
+    {speaker_id:'thought', text:'그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다.', image:null},
   ]);
   discovery.view.available_actions = ['escape','stay'].map(id => ({id, label:id, kind:'choice'}));
   h.context.fetch = async () => ({ok:true, json:async () => discovery});
