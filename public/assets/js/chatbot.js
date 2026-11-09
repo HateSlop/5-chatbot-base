@@ -271,7 +271,7 @@ function renderMessages() {
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
     dialogue: !cathyBasketScene || !basketGreetingDone,
-    selectCharacter: !cathyBasketScene && !festivalScene,
+    selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
   if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
     basketGreetingPending = true;

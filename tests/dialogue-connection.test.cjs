@@ -68,6 +68,23 @@ function response(sceneId, locationId, characterId, events, affinity = 50) {
   };
 }
 
+test('job explanation and reward keep Karen visible without asking for another character click', () => {
+  const h = setup();
+  h.context.window.startStory(response('checkpoint', 'player_house', 'karen', []), '테스트');
+  h.context.applyResponse(response('job_choice', 'player_house', 'karen', [
+    {speaker_id:'karen', text:'어떤 일이 더 자신 있으세요?', image:'/assets/images/karen_smile.svg'},
+  ]), 'scene');
+  assert.equal(h.stage().selectCharacter, false);
+  assert.match(h.stage().text, /어떤 일/);
+  h.context.applyResponse(response('job_result', 'player_house', null, [
+    {speaker_id:'karen', text:'여기, 트럭 차 키예요.', image:'/assets/images/karen_smile.svg'},
+  ]), 'scene');
+  assert.equal(h.stage().selectCharacter, false);
+  assert.equal(h.stage().image, '/assets/images/karen_smile.svg');
+  assert.match(h.stage().text, /차 키/);
+  assert.equal(h.nodes.get('user-message').disabled, true);
+});
+
 test('successful movement clears progress status while failures remain visible', async () => {
   const h = setup();
   h.context.window.startStory(response('festival_invite', 'player_house', 'bob', []), '알렉스');

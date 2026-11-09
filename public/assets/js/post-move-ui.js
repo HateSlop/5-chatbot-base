@@ -22,6 +22,7 @@ const sceneQuestions = {
   'butcher_search:butcher_shop:jimmy': ['지미, 괜찮아?', '무슨 일 있었어?'],
   'dinner_invite:player_house:jimmy': ['내일 몇 시에 데리러 올 거야?', '우리 집으로 와서 함께 가는 거지?'],
   'checkpoint:player_house:karen': ['무슨 일로 찾아오셨어요?', '제가 어떻게 하면 될까요?'],
+  'job_choice:player_house:karen': ['정원사는 어떤 일을 하나요?', '트럭 운전수는 어떤 일을 하나요?'],
   'festival_invite:player_house:bob': ['내일 축제는 몇 시에 시작하나요?', '축제는 어디에서 열리나요?'],
 };
 const sceneGuide = {
