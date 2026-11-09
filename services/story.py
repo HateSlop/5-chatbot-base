@@ -325,6 +325,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("thought", "(지미가 급하게 나갔다)"))
     elif scene == "empty_butcher":
         next_state.update(scene_id="basement_entry", location_id="basement")
+        events.append(event("thought", "뭐가 엄청 어질러져 있네.. 내려가 볼까?"))
     elif scene == "basement_entry":
         next_state["scene_id"] = "basement"
         if "brazier" not in next_state["clues"]:

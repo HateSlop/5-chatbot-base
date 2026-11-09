@@ -446,7 +446,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual([a["id"] for a in entry["view"]["available_actions"]], ["descend_stairs"])
         basement = self.action("descend_stairs")
         self.assertEqual(basement["view"]["affinity"], before)
-        self.assertEqual(entry["events"], [])
+        self.assertEqual(entry["events"][0]["text"], "뭐가 엄청 어질러져 있네.. 내려가 볼까?")
         self.assertIn("brazier", decode_state(self.token)["clues"])
         self.assertEqual(basement["events"], [])
         self.assertEqual([item["id"] for item in basement["view"]["available_actions"]], ["inspect_wallet"])
