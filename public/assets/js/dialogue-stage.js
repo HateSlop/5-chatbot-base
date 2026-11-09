@@ -70,7 +70,7 @@ window.DialogueStage = class {
   positionTalkCue() {
     if (!this.talkCue || !this.figure.getBoundingClientRect) return;
     const figure = this.figure.getBoundingClientRect(), root = this.root.getBoundingClientRect();
-    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2 + 32))}px`;
+    this.talkCue.style.left = `${Math.max(38, Math.min(root.width - 38, figure.left - root.left + figure.width * .68))}px`;
     this.talkCue.style.top = `${Math.max(20, Math.min(root.height - 70, figure.top - root.top + 8))}px`;
   }
   openDialogue() {
@@ -135,6 +135,11 @@ window.DialogueStage = class {
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
+    const background = this.backgroundForPage?.(this.text.textContent, this.pageIndex, this.pages);
+    if (background && this.paths.get(this.background) !== background) {
+      this.lastBackground = background;
+      this.image(this.background, background, '현재 장소 배경');
+    }
     if (animate) this.typeCurrentPage();
   }
   layoutPages() {
@@ -234,7 +239,8 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1 }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1, backgroundForPage = null }) {
+    this.backgroundForPage = backgroundForPage;
     if (this.dialogueKey !== dialogueKey) {
       this.finishTyping();
       this.lastTypedText = null;
@@ -264,7 +270,7 @@ window.DialogueStage = class {
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
-    if (sceneId === 'arrival' && isJimmy) image = '/assets/images/jimmy_smile.png';
+    if (sceneId === 'arrival' && isJimmy && !/\/jimmy_angry\.png$/.test(image || '')) image = '/assets/images/jimmy_smile.png';
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
@@ -290,8 +296,9 @@ window.DialogueStage = class {
     const changedScene = this.lastBackground !== background;
     if (changedScene) this.appearancePending = !!image;
     const continuous = !arriving && this.lastBackground === background && !this.box.hidden;
+    const figureVisible = !arriving && this.lastBackground === background && !this.figure.hidden;
     this.lastBackground = background;
-    this.root.dataset.loading = continuous ? 'false' : 'true';
+    this.root.dataset.loading = continuous || figureVisible ? 'false' : 'true';
     this.root.dataset.simultaneous = String(sceneId === 'butcher_search');
     const composer = this.root.querySelector('.move-composer');
     if (!continuous || !dialogue) this.box.hidden = true;
@@ -347,9 +354,8 @@ window.DialogueStage = class {
       this.root.dataset.loading = 'false';
       if (this.displayedFigure !== image) {
         this.angerAnimation?.cancel();
-        const previous = /\/(jimmy|karen|bob|cathy)_(basic|neutral|smile)\.(png|svg)$/.exec(this.displayedFigure || '');
         this.displayedFigure = image;
-        if (previous && image === `/assets/images/${previous[1]}_angry.png` &&
+        if (/\/(jimmy|karen|bob|cathy)_angry\.png$/.test(image || '') &&
             !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
           this.angerAnimation = this.figure.animate?.([
             {transform:'translateX(0)'}, {transform:'translateX(-8px)'},
