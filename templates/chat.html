@@ -22,9 +22,14 @@
     <script src="{{ asset_url('assets/js/interaction-sound.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/festival-choice.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
+    {% if festival_preview %}
+    <script id="festival-preview-data" type="application/json">{{ festival_preview|tojson }}</script>
+    <script src="{{ asset_url('assets/js/festival-preview.js') }}" defer></script>
+    {% else %}
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/prologue.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
+    {% endif %}
   </head>
   <body class="chat-page">
     <audio id="location-music" loop preload="none"></audio>
