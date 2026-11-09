@@ -203,9 +203,12 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .dialogue-stage .character-talk-cue:focus-visible { outline: 2px solid #ffe4ad; outline-offset: 4px; }
 .dialogue-stage[data-awaiting-talk="true"] .dialogue-figure { cursor: pointer; }
 .dialogue-stage[data-loading="true"] .character-talk-cue { visibility: hidden; }
+.dialogue-stage[data-awaiting-talk="true"][data-loading="true"] .dialogue-figure { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
-  .character-talk-cue::after { animation: talk-sparkle 2.2s ease-in-out infinite; }
-  @keyframes talk-sparkle { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.08); } }
+  .character-talk-cue { animation: talk-glow 1.5s ease-in-out infinite; }
+  .character-talk-cue::after { animation: talk-sparkle 1.5s ease-in-out infinite; }
+  @keyframes talk-glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.45) drop-shadow(0 0 7px #ffd58a99); } }
+  @keyframes talk-sparkle { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.35); } }
 }
 
 .scene-curtain { position: fixed; inset: 0; z-index: 100; background: #000; pointer-events: auto; }
@@ -216,7 +219,7 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .death-controls p:empty { display: none; }
 .death-controls button { padding: 8px 16px; margin: 0 5px; box-shadow: none; }
 
-body .location-music-toggle { position: fixed; top: 12px; right: 12px; z-index: 40; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 8px; border: 1px solid #c49a6455; border-radius: 50%; color: #fff0d2; background: #231d2bcc; box-shadow: none; opacity: .7; }
+body button.location-music-toggle { position: fixed; top: 12px; right: 12px; z-index: 40; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 8px; border: 0; border-radius: 4px; color: #fff5df; background: rgb(20 18 22 / 25%); box-shadow: none; opacity: .6; }
 .location-music-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .location-music-toggle[aria-pressed="true"] .music-muted, .location-music-toggle[aria-pressed="false"] .music-waves { display: none; }
 body .location-music-toggle:hover, body .location-music-toggle:focus-visible { opacity: 1; }

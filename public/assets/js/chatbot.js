@@ -223,6 +223,7 @@ function renderMessages() {
     text: currentView.scene_id === 'photo_found' && secretFrame < 2 ? (secretFrame === 0 ? '저기 뭔가 익숙한 얼굴이..?' : '지미??????') : currentView.scene_id === "karen_dinner" && karenDinnerDismissed ? (doorExamined ? "이 방은 뭘까?" : "") : currentView.scene_id === "empty_butcher" ? (doorExamined ? "어? 왜 문이 열려있지?" : "") : line?.text || "",
     visitorId: selectedCharacter,
     sceneId: currentView.scene_id,
+    dialogueKey: line,
     dialogue: !cathyBasketScene,
     selectCharacter: true,
   });
