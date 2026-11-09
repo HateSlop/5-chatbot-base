@@ -21,6 +21,7 @@
     <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/interaction-sound.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/festival-choice.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/wallet-inspection.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     {% if festival_preview %}
     <script id="festival-preview-data" type="application/json">{{ festival_preview|tojson }}</script>
@@ -182,6 +183,15 @@
         <button type="button" data-choice-action="stay">모른척 참고 먹는다</button>
       </div>
       <p data-choice-status role="status"></p>
+    </dialog>
+    <dialog id="wallet-dialog" class="wallet-dialog" aria-label="지갑 살펴보기">
+      <button type="button" class="photo-close" data-wallet-close aria-label="지갑 닫기">닫기 ×</button>
+      <div class="wallet-display">
+        <button type="button" data-wallet-object aria-label="지갑 열기"><img data-wallet-image alt="낡은 가죽 지갑"></button>
+        <button type="button" data-wallet-photo aria-label="지갑 속 사진 살펴보기" hidden></button>
+      </div>
+      <p data-wallet-hint></p>
+      <p data-wallet-caption aria-live="polite"></p>
     </dialog>
   </body>
 </html>

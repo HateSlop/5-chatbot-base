@@ -24,5 +24,15 @@ def preview_festival():
     return response
 
 
+@app.get('/preview/basement')
+def preview_basement():
+    state = new_state('지하실 체험')
+    state.update(scene_id='empty_butcher', location_id='butcher_shop', affinity=70)
+    data = chatbot._response(state, [event('thought', '(지미가 급하게 나갔다)')])
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
+    response.cache_control.no_store = True
+    return response
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', '5050')), debug=False)

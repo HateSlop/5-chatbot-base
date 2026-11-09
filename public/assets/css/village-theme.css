@@ -158,17 +158,8 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .post-move-stage[data-empty-shop="true"] .dialogue-box { visibility: hidden; }
 .post-move-stage .door-hotspot { position: absolute; z-index: 2; padding: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; background-repeat: no-repeat; background-size: 100% 100%; opacity: 0; transition: opacity 180ms, filter 180ms; }
 .post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { opacity: 1; filter: brightness(1.32) saturate(1.1); outline: none; transform: none; }
-.post-move-stage .brazier-hotspot { background-image: url('../images/basement.svg'); clip-path: polygon(38% 15%, 86% 17%, 87% 65%, 73% 70%, 39% 59%); cursor: pointer; }
+.post-move-stage .wallet-hotspot { background-image: url('../images/basement_wallet.png'); clip-path: polygon(18.1% 69%, 18.8% 68.4%, 21.5% 68.7%, 21.8% 71.8%, 18.1% 71.5%); cursor: pointer; }
 .dialogue-stage[data-scene="butcher_search"] .dialogue-figure { left: var(--jimmy-left); top: var(--jimmy-top); width: var(--jimmy-width); height: var(--jimmy-height); filter: brightness(.7) saturate(.7); }
-@media (prefers-reduced-motion: no-preference) {
-  .dialogue-stage[data-scene="basement"][data-background-ready="true"] .dialogue-background { animation: basement-light-flicker 6.8s linear infinite; }
-  @keyframes basement-light-flicker {
-    0%,8%,13%,36%,42%,73%,79%,100% { filter: brightness(1); }
-    10% { filter: brightness(.5); }
-    39% { filter: brightness(.7); }
-    76% { filter: brightness(.45); }
-  }
-}
 .village-start .start-title { transform: translateY(clamp(28px, 5vh, 50px)); }
 .post-move-stage .send-button { font: 500 14px/1.4 "Malgun Gothic", sans-serif; letter-spacing: .02em; }
 
@@ -187,7 +178,7 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .photo-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 24px; border: 0; background: #000; color: #fff0d2; }
 .photo-dialog::backdrop { background: #000; }
 .photo-dialog[open] { display: grid; place-items: center; grid-template-rows: minmax(0, 1fr) auto; }
-.photo-dialog .photo-close { position: absolute; z-index: 2; top: 16px; right: 16px; padding: 8px 14px; box-shadow: none; background: #18151a; }
+.photo-dialog .photo-close, .wallet-dialog .photo-close { position: absolute; z-index: 2; top: 16px; right: 16px; padding: 8px 14px; box-shadow: none; background: #18151a; }
 .photo-dialog .photo-flip { width: min(82vw, 72dvh); height: min(82dvh, 104vw); padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; perspective: 1400px; }
 .photo-dialog .photo-flip:hover, .photo-dialog .photo-flip:active { filter: none; transform: none; }
 .photo-card { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 650ms ease-in-out; }
@@ -365,3 +356,31 @@ body, body.chat-page { background-color: #140e0b; }
 .festival-choice-dialog { width: min(820px, calc(100vw - 48px)); }
 .festival-choice-timer { margin-bottom: clamp(64px, 12vh, 120px); }
 .festival-choice-dialog::backdrop { background: #000c; }
+
+/* Object silhouettes stay aligned with the original illustration. */
+.wallet-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 56px 24px 20px; box-sizing: border-box; border: 0; background: transparent; color: #f6e5cb; text-align: center; }
+.wallet-dialog[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.wallet-dialog::backdrop { background: #080604dc; }
+.wallet-display { position: relative; flex-shrink: 0; width: min(920px, 90vw, 110dvh); aspect-ratio: 3 / 2; }
+.wallet-dialog [data-wallet-object] { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; opacity: 1; cursor: pointer; }
+.wallet-dialog [data-wallet-object]:disabled { cursor: default; opacity: 1; filter: none; }
+.wallet-dialog [data-wallet-image] { display: block; width: 100%; height: 100%; object-fit: contain; }
+.wallet-dialog[data-side="closed"] [data-wallet-object] { clip-path: polygon(15% 43%,16% 36%,21% 29%,31% 24%,52% 16%,66% 10%,72% 10%,77% 14%,80% 21%,84% 53%,85% 61%,83% 69%,74% 73%,48% 83%,34% 90%,29% 89%,26% 86%,23% 79%,18% 59%); }
+.wallet-dialog[data-side="open"] .wallet-display { aspect-ratio: 1774 / 887; }
+.wallet-dialog[data-side="photo"] [data-wallet-image] { clip-path: polygon(3% 3%,97% 3%,98% 97%,3% 98%,2% 90%,2% 10%); }
+.wallet-dialog [data-wallet-photo] { position: absolute; left: 55%; top: 19%; width: 37%; height: 19%; padding: 0; border: 0; border-radius: 0; background: url('../images/wallet_open.png') no-repeat; background-size: 270.27% 526.32%; background-position: 87.3% 23.46%; clip-path: polygon(3% 0,100% 36%,98% 100%,0 75%); cursor: pointer; box-shadow: none; }
+.wallet-dialog [data-wallet-hint] { font: 14px/1.5 'Malgun Gothic', sans-serif; color: #c9b494; }
+.wallet-dialog [data-wallet-caption] { min-height: 1.6em; margin: 10px 0 0; font: 21px/1.6 'Malgun Gothic', sans-serif; text-shadow: 0 2px 8px #000; }
+@media (prefers-reduced-motion: no-preference) {
+  .wallet-dialog [data-wallet-photo] { animation: wallet-photo-glimmer 1.7s ease-in-out infinite; }
+  @keyframes wallet-photo-glimmer { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.45) sepia(.15); } }
+}
+
+.basement-firelight { position: absolute; z-index: 1; pointer-events: none; background: radial-gradient(ellipse 72% 85% at 60% 58%, #ffc777aa, #d58a4355 42%, #11070399 88%); mix-blend-mode: soft-light; opacity: .45; }
+.basement-firelight::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, #13090477 4%, transparent 36%, transparent 62%, #13090466 88%); }
+@media (prefers-reduced-motion: no-preference) {
+  .basement-firelight { animation: hearth-glow 4.6s ease-in-out infinite; }
+  .basement-firelight::after { animation: hearth-shadow 6.7s ease-in-out infinite alternate; }
+  @keyframes hearth-glow { 0%,100% { opacity: .28; } 19% { opacity: .62; } 37% { opacity: .38; } 58% { opacity: .72; } 77% { opacity: .43; } }
+  @keyframes hearth-shadow { from { transform: skewX(-1deg); opacity: .45; } to { transform: skewX(1deg); opacity: .8; } }
+}

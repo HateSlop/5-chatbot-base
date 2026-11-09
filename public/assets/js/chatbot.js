@@ -10,6 +10,7 @@ const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 �
 const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
 const postMoveUI = new PostMoveUI(document.getElementById("dialogue-stage"), form, input, document.getElementById("send-btn"), performAction);
 const festivalChoice = window.FestivalChoice ? new window.FestivalChoice(document.getElementById('festival-choice-dialog'), performAction) : null;
+const walletInspection = window.WalletInspection ? new window.WalletInspection(document.getElementById('wallet-dialog'), performAction) : null;
 actionList.className = 'action-list scene-actions';
 document.querySelector('#dialogue-stage .dialogue-box').append(statusMessage);
 document.querySelector('#dialogue-stage .dialogue-controls').append(actionList);
@@ -33,12 +34,6 @@ photoHotspot.className = 'door-hotspot photo-hotspot';
 photoHotspot.setAttribute('aria-label', '지미 액자 살펴보기');
 photoHotspot.hidden = true;
 document.getElementById('dialogue-stage').append(photoHotspot);
-const brazierHotspot = document.createElement('button');
-brazierHotspot.type = 'button';
-brazierHotspot.className = 'door-hotspot brazier-hotspot';
-brazierHotspot.setAttribute('aria-label', '지하실 화로 조사하기');
-brazierHotspot.hidden = true;
-document.getElementById('dialogue-stage').append(brazierHotspot);
 const photoDialog = document.getElementById('photo-dialog');
 const photoFlip = document.getElementById('photo-flip');
 const basketDialog = document.getElementById('cathy-basket-dialog');
@@ -170,6 +165,20 @@ meatHotspot.className = 'door-hotspot festival-meat-hotspot';
 meatHotspot.setAttribute('aria-label', '접시의 고기 살펴보기');
 meatHotspot.hidden = true;
 shopStage.append(meatHotspot);
+const walletHotspot = document.createElement('button');
+walletHotspot.type = 'button';
+walletHotspot.className = 'door-hotspot wallet-hotspot';
+walletHotspot.setAttribute('aria-label', '옷 주머니의 지갑 살펴보기');
+walletHotspot.hidden = true;
+shopStage.append(walletHotspot);
+const firelight = document.createElement('div');
+firelight.className = 'basement-firelight';
+firelight.setAttribute('aria-hidden', 'true');
+firelight.hidden = true;
+shopStage.append(firelight);
+walletHotspot.addEventListener('click', () => {
+  if (!busy && currentView?.scene_id === 'basement') walletInspection?.open();
+});
 meatHotspot.addEventListener('click', async () => {
   if (busy || currentView?.scene_id !== 'hair_found' || festivalFrame !== 0 || shopStage.dataset.dialogueComplete === 'false') return;
   const scene = currentView;
@@ -202,11 +211,13 @@ function positionDoor() {
     node.style.height = `${1086 * foodScale}px`;
   }
   const photoScale = Math.max(width / 1232, height / 928);
-  const brazierScale = Math.max(width / 1450, height / 1085);
-  brazierHotspot.style.left = `${(width - 1450 * brazierScale) / 2}px`;
-  brazierHotspot.style.top = `${(height - 1085 * brazierScale) / 2}px`;
-  brazierHotspot.style.width = `${1450 * brazierScale}px`;
-  brazierHotspot.style.height = `${1085 * brazierScale}px`;
+  const brazierScale = Math.max(width / 1448, height / 1086);
+  for (const node of [walletHotspot, firelight]) {
+    node.style.left = `${(width - 1448 * brazierScale) / 2}px`;
+    node.style.top = `${(height - 1086 * brazierScale) / 2}px`;
+    node.style.width = `${1448 * brazierScale}px`;
+    node.style.height = `${1086 * brazierScale}px`;
+  }
   photoHotspot.style.left = `${(width - 1232 * photoScale) / 2}px`;
   photoHotspot.style.top = `${(height - 928 * photoScale) / 2}px`;
   photoHotspot.style.width = `${1232 * photoScale}px`;
@@ -237,11 +248,6 @@ doorHotspot.addEventListener('click', () => {
 });
 let festivalFrame = 0;
 let festivalStares = false;
-brazierHotspot.addEventListener('click', () => {
-  if (!busy && currentView?.scene_id === 'basement' && currentView.available_actions.some(a => a.id === 'inspect_brazier')) {
-    return performAction('inspect_brazier');
-  }
-});
 let secretFrame = -1;
 let karenDinnerDismissed = false;
 let karenDepartureTimer;
@@ -319,7 +325,7 @@ function renderMessages() {
     sceneId: currentView.scene_id,
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
-    dialogue: currentView.scene_id !== 'final_choice' && (!cathyBasketScene || !basketGreetingDone),
+    dialogue: currentView.scene_id !== 'final_choice' && !(currentView.scene_id === 'basement' && !line?.text) && (!cathyBasketScene || !basketGreetingDone),
     selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
   if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
@@ -408,15 +414,17 @@ function renderView(view) {
   photoHotspot.disabled = busy;
   photoFlip.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
-  brazierHotspot.hidden = view.scene_id !== 'basement' || !view.available_actions.some(a => a.id === 'inspect_brazier');
-  brazierHotspot.disabled = busy;
+  walletHotspot.hidden = !walletInspection || view.scene_id !== 'basement' || !view.available_actions.some(a => a.id === 'inspect_wallet');
+  walletHotspot.disabled = busy;
+  firelight.hidden = view.scene_id !== 'basement';
+  if (view.scene_id !== 'basement') walletInspection?.close();
   const emptyShop = view.scene_id === 'empty_butcher' || view.scene_id === 'karen_dinner' && karenDinnerDismissed;
   shopStage.setAttribute('data-scene', view.scene_id);
   document.getElementById('dialogue-stage').setAttribute('data-empty-shop', String(emptyShop && !doorExamined && view.scene_id !== 'empty_butcher'));
   doorHotspot.hidden = !emptyShop || doorExamined || !view.available_actions.some(a => ['inspect_basement', 'inspect_room'].includes(a.id));
   doorHotspot.disabled = busy;
   doorHotspot.setAttribute('aria-label', view.scene_id === 'karen_dinner' ? '방 문 살펴보기' : '열린 문 살펴보기');
-  if (emptyShop || view.scene_id === 'butcher_search' || !photoHotspot.hidden || !brazierHotspot.hidden) positionDoor();
+  if (emptyShop || view.scene_id === 'butcher_search' || !photoHotspot.hidden || !walletHotspot.hidden) positionDoor();
   const place = view.location_name || view.location_id;
   document.getElementById("location-title").textContent = place;
   const background = document.getElementById("scene-background");
@@ -433,7 +441,8 @@ function renderView(view) {
   meatHotspot.hidden = view.scene_id !== 'hair_found' || festivalFrame !== 0;
   meatHotspot.disabled = busy;
   if (!meatHotspot.hidden) positionDoor();
-  exploreHint.textContent = !meatHotspot.hidden ? '음식을 살펴보자. 고기를 눌러 확인해 보세요.' : !basketHotspot.hidden ? '바구니를 눌러보자.' : !doorHotspot.hidden ? '주변을 둘러보자. 열린 문을 살펴볼까?' : !photoHotspot.hidden ? '익숙한 사진을 눌러보자.' : !brazierHotspot.hidden ? '주변을 둘러보자. 화로 안을 살펴볼까?' : '';
+  exploreHint.textContent = !meatHotspot.hidden ? '음식을 살펴보자. 고기를 눌러 확인해 보세요.' : !basketHotspot.hidden ? '바구니를 눌러보자.' : !doorHotspot.hidden ? '주변을 둘러보자. 열린 문을 살펴볼까?' : !photoHotspot.hidden ? '익숙한 사진을 눌러보자.' : '';
+  if (view.scene_id === 'basement') exploreHint.textContent = '옷 주머니의 지갑을 눌러 살펴보자.';
   exploreHint.hidden = !exploreHint.textContent;
   postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');
   if (enteringRoom) {
@@ -466,7 +475,7 @@ function renderView(view) {
   for (const action of view.available_actions) {
     if (view.scene_id === 'job_result' && action.id === 'see_karen_off' && !jobDepartureFailed) continue;
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
-    if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id === 'inspect_brazier') continue;
+    if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id.includes('wallet')) continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
@@ -577,6 +586,7 @@ window.startStory = (data, name) => {
   karenDinnerDismissed = false;
   clearReaction();
   transcript = [];
+  walletInspection?.close();
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
@@ -675,6 +685,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  walletInspection?.close();
   clearTimeout(jobDepartureTimer);
   jobDeparturePending = true;
   dialogueStage.resetSelection?.();

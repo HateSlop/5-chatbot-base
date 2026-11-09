@@ -51,7 +51,9 @@
 
 미용실 `cathy_help` 장면에서는 먼저 캐시가 “지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?”라고 부탁하고 퇴장하는 화면 연출을 보여준다. 인사 뒤 대기는 1.4초이며, 퇴장 뒤 배경 중앙에 투명 배경의 바구니를 표시한다. 바구니를 누르면 서버 `events`의 구체적인 요청을 한 줄로 표시하고 `3→2→1` 카운트를 약 1초씩, 총 3초 진행한다. 이후 요청·숫자를 함께 숨기고 도구 선택을 시작한다. 아래의 작은 기억 도움말은 계속 유지한다. 이 장면 동안에는 사용자 제공 미니게임 음악을 사용하고 결과 장면에서는 원래 장소 음악으로 돌아간다. 2026-11-09 사용자가 첨부 그림에 맞춘 선택지 변경을 선택함에 따라, 도구는 `view.available_actions`의 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_spray`, `choose_serum`, `choose_brush`, `choose_mirror`, `choose_towel`, `choose_roller`를 사용한다. 그림에 없는 `choose_dryer`는 더 이상 제공하지 않는다. 기존 요청인 샴푸·가위·빗은 그림에 모두 있으므로 정답으로 유지한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
 
-정육점의 `inspect_basement`는 기존처럼 지하실 **입장** 행동이다. `basement` 장면에서는 그림의 화로를 클릭할 때만 `view.available_actions`의 `inspect_brazier`를 `/api/action`에 보낸다. 성공 응답의 단서 사건을 표시한 뒤 서버가 제공하는 `go_upstairs`(“지하실에서 나온다”)를 보여준다. 입장만으로 단서를 표시하거나 조사 전 퇴장을 제공하지 않는다. 같은 행동을 반복 요청하면 기존 `invalid_action` 오류가 난다. 공개 API 필드와 토큰 전달 방식은 그대로다.
+정육점의 `inspect_basement`는 `basement_entry` 계단 입구로 이동합니다. 여기서는 `descend_stairs`(계단을 내려간다)만 제공하며, 성공 뒤 `basement`와 새 `view.background`를 보냅니다. 두 이동 모두 화면의 기존 짧은 페이드를 사용합니다. `basement` 입장 때 기존 화로 소지품 단서는 내부 기록으로 유지하지만 관련 대사·화로 클릭 행동은 제공하지 않습니다. 화면은 지갑 도움말만 표시합니다. 지갑 사진 조사 뒤 `go_upstairs`를 제공합니다.
+
+지하실 주머니의 지갑은 `inspect_wallet` → `open_wallet` → `inspect_wallet_photo` 순서로 조사합니다. 발견 뒤 열기, 열기 뒤 사진 행동만 허용합니다. 각 단계는 성공 응답 뒤 확대 화면에 표시하며 사진 조사 응답은 “지미…랑 옆에는 누구지…?” 독백을 보냅니다. 지갑 사진까지 확인해야 퇴장할 수 있으며, 조사는 호감도를 바꾸지 않습니다. 다시 열어도 단서·기록은 중복되지 않습니다. 닫기·Esc는 확대 화면만 닫으며 서버 행동을 보내지 않습니다. 공개 필드와 토큰 형식은 유지합니다.
 
 사색 지미가 있는 `butcher_search`에서는 대화 응답을 “...”로 고정하며, `approach_jimmy` 뒤에는 `empty_butcher`에서 퇴장 서술을 표시합니다. 사건과 점수 판정은 기존 서버 규칙을 유지합니다.
 
