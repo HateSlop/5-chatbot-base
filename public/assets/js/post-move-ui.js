@@ -56,9 +56,12 @@ window.PostMoveUI = class {
           <span class="affinity-caption">호감도</span>
           <div class="affinity-heart">
             <svg viewBox="0 0 100 92" aria-hidden="true">
-              <defs><clipPath id="${heartId}"><path d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/></clipPath></defs>
+              <defs>
+                <clipPath id="${heartId}"><path d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/></clipPath>
+                <radialGradient id="${heartId}-shine" cx="30%" cy="20%" r="85%"><stop stop-color="#fff4ce" stop-opacity=".48"/><stop offset=".42" stop-color="#fff4ce" stop-opacity="0"/><stop offset="1" stop-color="#100813" stop-opacity=".7"/></radialGradient>
+              </defs>
               <path class="affinity-empty" d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/>
-              <g clip-path="url(#${heartId})"><rect class="affinity-fill" x="0" y="92" width="100" height="0"/></g>
+              <g clip-path="url(#${heartId})"><rect class="affinity-fill" x="0" y="92" width="100" height="0"/><rect width="100" height="92" fill="url(#${heartId}-shine)"/><path d="M15 30C14 16 30 11 38 18" fill="none" stroke="#fff0cc" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/></g>
               <path class="affinity-outline" d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/>
             </svg>
             <strong>— / 100</strong>

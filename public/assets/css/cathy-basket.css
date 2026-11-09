@@ -57,3 +57,8 @@ body:has(#cathy-basket-dialog[open]) .cathy-basket-hotspot { visibility: hidden;
 .cathy-basket-dialog button:focus-visible, .cathy-basket-hotspot:focus-visible { outline: 3px solid #ffe09b; outline-offset: 3px; }
 @media (max-width: 520px) { .dialogue-stage .cathy-basket-hotspot { width: 88vw; } .basket-request { left: 1%; right: 1%; top: 22%; padding: 10px 4px; } .basket-countdown { width: 64px; height: 64px; font-size: 40px; } }
 @media (prefers-reduced-motion: reduce) { .cathy-basket-dialog .cathy-tool-list button { transition: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .dialogue-stage .cathy-basket-hotspot { animation: basket-beacon 1.8s ease-in-out infinite; }
+  @keyframes basket-beacon { 50% { filter: brightness(1.2) drop-shadow(0 0 18px #ffe198bb); } }
+}
+.dialogue-stage .cathy-basket-hotspot:is(:hover, :focus-visible) { animation: none; }
