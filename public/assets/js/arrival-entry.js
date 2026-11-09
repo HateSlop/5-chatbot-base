@@ -7,6 +7,8 @@ const entryUI = new PostMoveUI(entryRoot, entryForm, entryInput, document.getEle
 const entryDialog = document.getElementById('entry-name-dialog');
 const entryAnswer = document.getElementById('entry-answer');
 const entryWatch = document.getElementById('entry-watch');
+const prologueRoot = document.getElementById('entry-prologue');
+const prologue = prologueRoot && window.Prologue ? new window.Prologue(prologueRoot) : null;
 const adDialog = document.getElementById('entry-ad-dialog');
 const adVideo = document.getElementById('entry-ad-video');
 const adStatus = document.getElementById('entry-ad-status');
@@ -86,8 +88,19 @@ async function showIntro() {
   entryAnswer.hidden = true;
   entryDepart.hidden = true;
   entryWatch.hidden = true;
+  entryStage.render({background:'/assets/images/pre-move-house.png', dialogue:false});
+  if (entryStage.ready) await entryStage.ready;
+  if (introStep !== 'before') return;
+  if (prologue) {
+    introStep = 'prologue';
+    entryRoot.inert = true;
+    const finished = await prologue.play();
+    entryRoot.inert = false;
+    if (!finished || introStep === 'left') return;
+    introStep = 'before';
+  }
   entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'티비나 볼까?'});
   if (entryStage.ready) await entryStage.ready;
-  if (!departed && introStep === 'before') { entryWatch.hidden = false; entryStage.layoutPages?.(); }
+  if (!departed && introStep === 'before') { entryWatch.hidden = false; entryStage.layoutPages?.(); if (prologue) entryWatch.focus(); }
 }
 showIntro();

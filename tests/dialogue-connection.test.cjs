@@ -101,7 +101,7 @@ test('the left guide receives the server scene and only offers questions when ch
   assert.equal(h.move().canChat, false);
   h.context.applyResponse(response('festival', 'square', 'bob', []), 'scene');
   assert.equal(h.move().canChat, false);
-  assert.equal(h.split(), false);
+  assert.equal(h.split(), true);
   const ending = response('ending', 'square', null, []);
   ending.view.ending = 'assimilation';
   h.context.applyResponse(ending, 'scene');
@@ -109,17 +109,17 @@ test('the left guide receives the server scene and only offers questions when ch
   assert.equal(h.split(), false);
 });
 
-test('festival fills the canvas in order and reveals server choices only after the stares', async () => {
+test('festival keeps the sidebar, uses the four scene photos and reveals choices after the stares', async () => {
   const h = setup();
   const meal = response('festival', 'square', 'bob', [{speaker_id:'narrator', text:'축제 식사', image:null}]);
   meal.view.available_actions = [{id:'inspect_food', label:'음식을 살핀다', kind:'inspect'}];
   h.context.window.startStory(meal, '알렉스');
   assert.equal(h.stage().background, '/assets/images/festival_meal.png');
-  assert.equal(h.split(), false);
+  assert.equal(h.split(), true);
   assert.equal(h.stage().image, null);
   const discovery = response('hair_found', 'square', 'bob', [
-    {speaker_id:'thought', text:'금발 머리카락을 발견했다. 밥은 대머리다.', image:null},
-    {speaker_id:'thought', text:'지미의 실종과 수첩을 연결해 음식의 정체를 추리했다.', image:null},
+    {speaker_id:'thought', text:'음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다.', image:null},
+    {speaker_id:'thought', text:'그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다.', image:null},
   ]);
   discovery.view.available_actions = ['escape','stay'].map(id => ({id, label:id, kind:'choice'}));
   h.context.fetch = async () => ({ok:true, json:async () => discovery});
@@ -137,6 +137,7 @@ test('festival fills the canvas in order and reveals server choices only after t
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
   buttons()[0].listeners.click();
   assert.equal(h.stage().background, '/assets/images/festival_stares.png');
+  assert.equal(h.split(), true);
   assert.equal(h.stage().text, discovery.events[1].text);
   assert.equal(h.stage().image, null);
   assert.deepEqual(buttons().map(button => button.textContent), ['escape','stay']);
@@ -682,4 +683,12 @@ test('Karen departure countdown waits until the character is selected', async ()
   assert.equal([...h.timers.values()].some(t=>t.ms===4500),false);
   select(true);await new Promise(resolve=>setImmediate(resolve));
   assert.equal([...h.timers.values()].some(t=>t.ms===4500),true);
+});
+
+test('urgent Karen bell uses the server summons action, not a client affinity check',()=>{
+  const h=setup();const data=response('checkpoint','player_house','karen',[],90);
+  data.view.available_actions=[{id:'go_butcher',kind:'move',label:'정육점으로 간다'}];
+  h.context.window.startStory(data,'테스트');assert.equal(h.stage().doorbellCount,3);
+  data.view.affinity=20;data.view.available_actions=[{id:'accept_job',kind:'choice',label:'수락'}];
+  h.context.renderView(data.view);assert.equal(h.stage().doorbellCount,1);
 });
