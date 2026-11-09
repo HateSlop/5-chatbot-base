@@ -243,11 +243,11 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
   position: absolute; z-index: 1; min-height: 0; padding: 0; border: 0; border-radius: 0;
   background: transparent url('../images/pre-move-house.png') center / 100% 100% no-repeat;
   box-shadow: none; transform: none; cursor: pointer;
-  clip-path: polygon(44.2% 41.9%, 48.5% 41.9%, 48.5% 41.4%, 48.1% 39.4%, 48.3% 39.2%, 48.9% 41.4%, 49.7% 41.4%, 50.3% 38.5%, 50.5% 38.7%, 49.9% 41.9%, 54.9% 41.9%, 55.7% 56.8%, 54.8% 57.7%, 43.3% 57.7%);
+  clip-path: polygon(44.1% 42%, 49.2% 42%, 48.2% 39%, 48.3% 38.8%, 49.5% 41.8%, 49.9% 41.8%, 50.8% 39.8%, 51% 40%, 50.4% 42%, 55% 42%, 55.7% 57%, 55% 57.7%, 43.4% 57.3%);
   filter: brightness(1.2);
 }
 .dialogue-stage .entry-tv-hotspot:hover, .dialogue-stage .entry-tv-hotspot:focus-visible { animation: none; filter: brightness(1.65) saturate(1.2); transform: none; }
-.entry-tv-hotspot::after { content: ''; position: absolute; left: 45%; top: 43.4%; width: 8.4%; height: 12.6%; border: 2px solid #ffe8ac; border-radius: 18%; opacity: 0; }
+.entry-tv-hotspot::after { content: ''; position: absolute; left: 45.4%; top: 43.7%; width: 8%; height: 12.3%; border: 2px solid #ffe8ac; border-radius: 18%; opacity: 0; }
 .entry-tv-hotspot:focus-visible::after { opacity: 1; }
 .dialogue-stage[data-background-ready="false"] .entry-tv-hotspot { visibility: hidden; }
 .entry-tv-tutorial { position: absolute; z-index: 6; width: 22px; height: 30px; pointer-events: none; animation: entry-tv-demo 3.2s ease-in-out infinite; filter: drop-shadow(0 2px 3px #120b12aa); }

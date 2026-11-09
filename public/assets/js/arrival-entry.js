@@ -13,14 +13,14 @@ function hideTVTutorial() { if (entryTVTutorial) entryTVTutorial.hidden = true; 
 function positionEntryTV() {
   const width = entryRoot.clientWidth, height = entryRoot.clientHeight;
   if (!width || !height) return;
-  const scale = Math.max(width / 1456, height / 816);
-  entryTV.style.left = `${(width - 1456 * scale) / 2}px`;
-  entryTV.style.top = `${(height - 816 * scale) / 2}px`;
-  entryTV.style.width = `${1456 * scale}px`;
-  entryTV.style.height = `${816 * scale}px`;
+  const scale = Math.max(width / 1675, height / 939);
+  entryTV.style.left = `${(width - 1675 * scale) / 2}px`;
+  entryTV.style.top = `${(height - 939 * scale) / 2}px`;
+  entryTV.style.width = `${1675 * scale}px`;
+  entryTV.style.height = `${939 * scale}px`;
   if (entryTVTutorial) {
-    entryTVTutorial.style.left = `${(width - 1456 * scale) / 2 + 720 * scale}px`;
-    entryTVTutorial.style.top = `${(height - 816 * scale) / 2 + 404 * scale}px`;
+    entryTVTutorial.style.left = `${(width - 1675 * scale) / 2 + 833 * scale}px`;
+    entryTVTutorial.style.top = `${(height - 939 * scale) / 2 + 465 * scale}px`;
   }
 }
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(positionEntryTV).observe(entryRoot);
