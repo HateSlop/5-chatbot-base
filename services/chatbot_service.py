@@ -59,6 +59,12 @@ class ChatbotService:
         finally:
             getLogger(__name__).info("chat classification %.1f ms", (perf_counter() - started) * 1000)
         next_state = deepcopy(state)
+        just_told_destination = (
+            state["scene_id"] == "karen_search" and not state.get("jimmy_destination_told")
+            and "정육점" in message and any(word in message for word in ("지미", "갔", "간다", "간다고", "가겠", "간대"))
+        )
+        if just_told_destination:
+            next_state["jimmy_destination_told"] = True
         score_key = f"{state['scene_id']}:{character_id}"
         message_key = " ".join(message.casefold().split())
         message_hash = sha256(message_key.encode("utf-8")).hexdigest()
@@ -97,7 +103,7 @@ class ChatbotService:
             turn = self.generator.generate(
                 message, state["player_name"], config["characters"][character_id], knowledge, history,
                 LOCATIONS[state["location_id"]], next_state["affinity"], scene_events,
-                scene_context(state),
+                scene_context(next_state, just_told_destination),
             )
         finally:
             getLogger(__name__).info("chat generation %.1f ms", (perf_counter() - started) * 1000)
