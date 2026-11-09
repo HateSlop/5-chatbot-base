@@ -26,8 +26,8 @@ class ChatbotService:
                 )
         return {"state_token": encode_state(state), "events": events, "view": view(state)}
 
-    def start(self, player_name: str) -> dict:
-        state = new_state(player_name)
+    def start(self, player_name: str, gender: str) -> dict:
+        state = new_state(player_name, gender)
         events = [event("jimmy", f"안녕, {player_name}! 난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게. 궁금한 게 있으면 물어봐!")]
         state["scene_events"] = [{"speaker_id": "jimmy", "text": "난 지미야. 한 달 전에 이사 왔어. 마을을 소개해 줄게. 궁금한 게 있으면 물어봐!"}]
         return self._response(state, events)

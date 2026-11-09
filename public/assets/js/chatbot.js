@@ -512,13 +512,14 @@ function renderView(view) {
   input.placeholder = view.ending ? "이야기가 끝났습니다" : character ? `${character.name}에게 말을 걸어 보세요` : "먼저 장소를 선택하세요";
   postMoveUI.render({sceneId: view.scene_id, locationId: view.location_id, locationName: place,
     characterId: character?.id, canChat, registeredName: playerName,
+    gender: view.gender, today: view.today, job: view.job,
     affinity: view.affinity, actions: greetingLocked(view) || showingDiscovery || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
   festivalChoice?.update({reading: view.scene_id === 'hair_found' && festivalFrame === 1,
     ready: () => !busy && shopStage.dataset.dialogueComplete === 'true',
     deadline: view.scene_id === 'final_choice' ? view.choice_deadline : null, busy});
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
-  window.sceneEffects?.ending(view.ending, endingText);
+  window.sceneEffects?.ending(view.ending, endingText, view.gender);
 }
 
 function applyResponse(data, kind, characterId = null) {

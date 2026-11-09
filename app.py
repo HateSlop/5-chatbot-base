@@ -123,7 +123,10 @@ def api_session():
     name = payload.get("player_name")
     if not isinstance(name, str) or not name.strip() or len(name.strip()) > 50:
         return error_response("invalid_request", "이름을 1~50자로 입력해 주세요.", 400)
-    response = service_response(chatbot.start, name.strip())
+    gender = payload.get("gender")
+    if gender not in ("male", "female"):
+        return error_response("invalid_request", "성별을 남 또는 여로 선택해 주세요.", 400)
+    response = service_response(chatbot.start, name.strip(), gender)
     if isinstance(response, tuple):
         return response
     response.status_code = 201

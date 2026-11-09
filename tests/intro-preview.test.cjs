@@ -29,7 +29,10 @@ test('start links to the real name form while the intro preview stays separate',
   const index=fs.readFileSync(path.join(__dirname,'../templates/index.html'),'utf8');
   const intro=fs.readFileSync(path.join(__dirname,'../templates/detail.html'),'utf8');
   const chat=fs.readFileSync(path.join(__dirname,'../templates/chat.html'),'utf8');
-  assert.match(index,/url_for\('chat'\) }}" aria-label="START">START/);
+  assert.match(index,/id="start-action"[^>]*>시작하기<\/button>/);
+  assert.match(index,/url_for\('chat'\) }}\?gender=male/);
+  assert.match(index,/url_for\('chat'\) }}\?gender=female/);
+  assert.doesNotMatch(chat,/id="gender-choice"/);
   assert.doesNotMatch(index,/continue-story|start\.js|이어하기/);
   assert.doesNotMatch(intro,/<form|<script|name-entry/);
   assert.match(intro,/class="dialogue-speaker"><\/span><span class="dialogue-text"><\/span>/);
