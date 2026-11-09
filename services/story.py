@@ -33,7 +33,7 @@ SCENE_CONTEXT = {
     "cathy_task": ("지미가 캐시의 일손이 부족해 보인다고 말하며 도움을 권했다.", "지미는 캐시가 왜 바쁜지나 구체적으로 무슨 일을 하는지 모른다.", "모르는 업무 내용을 지어내지 않는다."),
     "cathy_help": ("캐시가 샴푸, 가위, 빗을 바구니에서 가져다 달라고 부탁했다.", "캐시는 도구를 기다린다.", "이후 사건을 미리 말하지 않는다."),
     "jimmy_butcher": ("캐시를 돕고 집에 돌아오자 지미가 고기를 사러 정육점에 다녀오겠다고 말했다.", "지미는 고기를 사러 간다. 아직 지하실의 비밀을 모른다.", "미래 사건을 암시하거나 이유를 물은 플레이어에게 걱정하지 말라고 하지 않는다."),
-    "karen_search": ("고기를 사러 정육점에 가겠다는 지미가 떠난 뒤 캐런이 전할 말이 있어 그를 찾아달라고 부탁했다.", "캐런은 플레이어에게 지미의 행선지를 물을 수 있다. 정육점에 간다고 들었다면 알려줘서 고맙다고 하고 그쪽에서 찾아봐 달라고 한다.", "도착 여부를 되풀이해 확인하거나 도착 시각을 캐묻지 않는다. 지미에게 일어날 일도 밝히지 않는다."),
+    "karen_search": ("지미가 집을 떠난 뒤 캐런이 전할 말이 있어 그를 찾아달라고 부탁했다.", "캐런은 지미의 행선지를 아직 모른다. 플레이어가 알려주기 전에는 정육점을 먼저 언급하지 않는다.", "지미가 어디에 도착했는지, 그곳에서 무슨 일을 겪었는지 캐런도 모른다. 미래 사건을 밝히지 않는다."),
     "butcher_search": ("정육점에서 지미의 사색이 된 얼굴을 보았다. 플레이어는 이유를 모른다.", "지미는 정육점 지하실에서 무언가를 발견해 마을의 사이비 의식과 식인의 비밀을 모두 알게 됐다. 두려워서 지금은 털어놓지 못한다.", "비밀의 내용이나 지미가 본 구체적인 물건을 플레이어에게 밝히지 않는다."),
     "bob_caught": ("플레이어는 지하실 화로에서 타다 남은 여러 사람의 생활 소품을 보고 올라왔다. 밥이 지하실에 들어온 플레이어를 발견했다.", "밥은 플레이어가 지하실에 들어간 것을 안다. 무엇을 봤는지는 모른다.", "소지품 주인의 신원이나 음식의 정체를 밝히지 않는다."),
     "dinner_invite": ("지미가 캐런의 다음 날 저녁 식사 초대를 전하며 함께 가자고 했다. 다음 날 오후 6시에 플레이어의 집으로 데리러 오겠다고 약속했다. 플레이어는 지하실의 불탄 소지품만 보았고 주인을 모른다.", "지미는 앞서 정육점 지하실에서 마을의 사이비 의식과 식인의 비밀을 알게 됐다. 두려워서 아직 직접 밝히지 못한다.", "비밀 전체나 이후 사건을 미리 밝히지 않는다."),
@@ -46,7 +46,14 @@ SCENE_CONTEXT = {
 }
 
 
-def scene_context(state: dict) -> tuple[str, str, str]:
+def scene_context(state: dict, just_told_destination: bool = False) -> tuple[str, str, str]:
+    if state["scene_id"] == "karen_search" and state.get("jimmy_destination_told"):
+        known = ("캐런은 방금 플레이어에게 지미가 정육점에 간다고 했다는 말을 처음 들었다. "
+                 "알려줘서 고맙다고 하고 정육점 쪽에서 찾아봐 달라고 부탁한다."
+                 if just_told_destination else
+                 "캐런은 플레이어에게 지미가 정육점에 간다는 말을 들었다. 그쪽에서 찾아봐 달라고 부탁했다.")
+        observed, _, withheld = SCENE_CONTEXT["karen_search"]
+        return observed, known, withheld
     if state["scene_id"] == "checkpoint" and state.get("job_offered") is False:
         return ("플레이어가 사진을 본 뒤 집에 돌아왔고 캐런이 정육점으로 오라고 불렀다.",
                 "캐런은 이미 정육점으로 부르기로 정했다.", "정육점에서 일어날 일이나 축제의 비밀을 미리 밝히지 않는다.")
@@ -89,6 +96,7 @@ def new_state(player_name: str) -> dict:
         "scene_events": [],
         "cathy_tools": [],
         "photo_recognized": False,
+        "jimmy_destination_told": False,
         "start_date": datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat(),
         "story_day": 0,
     }

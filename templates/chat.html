@@ -74,6 +74,7 @@
       <img class="dialogue-figure" alt="" hidden>
       <div class="dialogue-tv" role="img" aria-label="TV" hidden></div>
       <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
+      <button id="ending-restart" type="button" hidden>첫 화면으로 돌아가기</button>
     </section>
     <header class="story-header">
       <a class="wordmark" href="{{ url_for('index') }}">THE NEW VILLAGE <span>더뉴빌리지로 오세요</span></a>
@@ -109,7 +110,6 @@
         <p class="journal-intro">대화와 조사를 통해 알게 된 사실이 여기에 기록됩니다.</p>
         <ul id="journal-list"></ul>
         <div id="ending-card" class="ending-card" hidden></div>
-        <button id="ending-restart" type="button" hidden>새 이름으로 다시 시작</button>
       </details>
       <nav class="story-actions" aria-label="할 수 있는 일">
         <div id="action-list" class="action-list"></div>
@@ -138,6 +138,7 @@
         <span class="photo-card">
           <img class="photo-front" src="{{ asset_url('assets/images/props_photo_front.png') }}" alt="안경을 쓴 지미의 사진 액자" draggable="false">
           <img class="photo-back" src="{{ asset_url('assets/images/props_photo_back.png') }}" alt="Jimmy라는 이름이 적힌 액자 뒷면" aria-hidden="true" draggable="false">
+          <span id="photo-back-date" class="photo-back-date"></span>
         </span>
       </button>
       <p id="photo-hint" class="photo-hint" aria-live="polite">사진을 누르면 뒷면을 볼 수 있습니다.</p>
