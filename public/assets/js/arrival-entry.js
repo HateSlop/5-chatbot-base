@@ -46,7 +46,7 @@ async function finishAd() {
   introStep = 'after';
   adVideo.pause();
   adDialog.close();
-  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'저기로 갈까?'});
+  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'오…? 이런 곳도 있었네?\n\n마을도 평화로워 보이고, 사람들도 다들 좋아 보이는데…\n\n여기라면 나도 새롭게 시작할 수 있지 않을까?\n\n좋아, 한번 가보자!'});
   if (entryStage.ready) await entryStage.ready;
   if (introStep !== 'after') return;
   entryDepart.hidden = false;
@@ -122,7 +122,7 @@ async function showIntro() {
     if (!finished || introStep === 'left') return;
     introStep = 'before';
   }
-  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'티비나 볼까?'});
+  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'하아… 생각만 한다고 달라지는 건 없겠지.\n\n일단 TV나 볼까…? 뭐라도 보고 있으면 좀 나아지려나.'});
   if (entryStage.ready) await entryStage.ready;
   if (!departed && introStep === 'before') {
     positionEntryTV();

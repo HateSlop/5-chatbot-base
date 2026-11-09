@@ -20,12 +20,12 @@ async function setup({prologue=false}={}){
 }
 test('live entry begins at the pre-move house, then waits for Jimmy after departure',async()=>{
   const h=await setup();assert.equal(h.renders[0].background,'/assets/images/pre-move-house.png');
-  assert.equal(h.renders[0].dialogue,false);assert.equal(h.renders.at(-1).text,'티비나 볼까?');
+  assert.equal(h.renders[0].dialogue,false);assert.equal(h.renders.at(-1).text,'하아… 생각만 한다고 달라지는 건 없겠지.\n\n일단 TV나 볼까…? 뭐라도 보고 있으면 좀 나아지려나.');
   assert.equal(h.get('entry-depart').hidden,true);
   h.get('entry-tv-hotspot').listeners.click();
   assert.equal(h.get('entry-ad-dialog').open,true);
   await h.get('entry-ad-video').listeners.ended();
-  assert.equal(h.renders.at(-1).text,'저기로 갈까?');
+  assert.equal(h.renders.at(-1).text,'오…? 이런 곳도 있었네?\n\n마을도 평화로워 보이고, 사람들도 다들 좋아 보이는데…\n\n여기라면 나도 새롭게 시작할 수 있지 않을까?\n\n좋아, 한번 가보자!');
   assert.equal(h.get('entry-depart').hidden,false);
   assert.equal(h.timers.size,0);
   h.get('entry-depart').listeners.click();await new Promise(r=>setImmediate(r));
@@ -47,7 +47,7 @@ test('ad must finish before departure; playback failure offers retry and recover
   assert.equal(h.get('entry-depart').hidden,true);
   h.get('entry-ad-video').listeners.error();assert.equal(h.get('entry-ad-continue').hidden,false);
   await h.get('entry-ad-continue').listeners.click();
-  assert.equal(h.renders.at(-1).text,'저기로 갈까?');
+  assert.equal(h.renders.at(-1).text,'오…? 이런 곳도 있었네?\n\n마을도 평화로워 보이고, 사람들도 다들 좋아 보이는데…\n\n여기라면 나도 새롭게 시작할 수 있지 않을까?\n\n좋아, 한번 가보자!');
   assert.equal(h.get('entry-ad-dialog').open,false);
 });
 
@@ -58,7 +58,7 @@ test('the old house waits for the notebook before the TV line and clickable TV a
   assert.equal(h.get('entry-stage').inert,true);
   h.get('entry-tv-hotspot').listeners.click();assert.equal(h.get('entry-ad-dialog').open,undefined);
   h.finishPrologue(true);await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(h.renders.at(-1).text,'티비나 볼까?');
+  assert.equal(h.renders.at(-1).text,'하아… 생각만 한다고 달라지는 건 없겠지.\n\n일단 TV나 볼까…? 뭐라도 보고 있으면 좀 나아지려나.');
   assert.equal(h.get('entry-stage').inert,false);
   assert.equal(h.get('entry-tv-hotspot').hidden,false);
   assert.equal(h.get('entry-tv-hotspot').focused,true);
