@@ -1,0 +1,8 @@
+Tool: built-in image_gen (new background material, transparent_background=false)
+Project asset: public/assets/images/diary-paper.png
+Font: public/assets/fonts/NanumBrushScript-Regular.ttf
+Font source: https://github.com/google/fonts/tree/main/ofl/nanumbrushscript
+Font license: public/assets/fonts/NanumBrushScript-OFL.txt (SIL Open Font License 1.1, original unmodified font)
+
+Final prompt:
+Photorealistic material asset for a 1960s personal diary interface. A single blank page of an old intimate handwritten journal seen exactly from above, filling the entire landscape 4:3 frame. Cream ivory paper with visible natural fine fibers, faint irregular pale blue-gray horizontal ruling, gently yellowed edges, subtle authentic handling marks and a few very restrained pale age stains near the edges. At the far left edge show a narrow dark brown worn cloth/leather notebook spine and realistic stitched binding/gutter with a soft shadow; most of the frame is clear clean writable paper. Subtle page waviness and tiny curled corner, realistic warm indoor light, tactile and quiet, emotionally intimate. Keep center highly legible, light and low contrast so dark Korean handwriting can be rendered on top. No writing, no letters, no page numbers, no printed labels, no pen, no clip, no rings, no flowers, no other props, no desk surrounding it, no white outer border. This is an empty diary page texture, not a UI screenshot.
