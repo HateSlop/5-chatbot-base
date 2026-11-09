@@ -160,6 +160,15 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { opacity: 1; filter: brightness(1.32) saturate(1.1); outline: none; transform: none; }
 .post-move-stage .brazier-hotspot { background-image: url('../images/basement.svg'); clip-path: polygon(38% 15%, 86% 17%, 87% 65%, 73% 70%, 39% 59%); cursor: pointer; }
 .dialogue-stage[data-scene="butcher_search"] .dialogue-figure { left: var(--jimmy-left); top: var(--jimmy-top); width: var(--jimmy-width); height: var(--jimmy-height); }
+@media (prefers-reduced-motion: no-preference) {
+  .dialogue-stage[data-scene="basement"][data-background-ready="true"] .dialogue-background { animation: basement-light-flicker 6.8s linear infinite; }
+  @keyframes basement-light-flicker {
+    0%,8%,13%,36%,42%,73%,79%,100% { filter: brightness(1); }
+    10% { filter: brightness(.5); }
+    39% { filter: brightness(.7); }
+    76% { filter: brightness(.45); }
+  }
+}
 .village-start .start-title { transform: translateY(clamp(28px, 5vh, 50px)); }
 .post-move-stage .send-button { font: 500 14px/1.4 "Malgun Gothic", sans-serif; letter-spacing: .02em; }
 

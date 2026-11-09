@@ -393,6 +393,17 @@ test('open butcher doorway reveals thought before submitting the existing baseme
   assert.equal(door.hidden, true);
 });
 
+test('frightened Jimmy, the empty shop and caught Bob all keep the incident shop background',()=>{
+  const h=setup();
+  for (const [scene,character] of [['butcher_search','jimmy'],['empty_butcher',null],['bob_caught','bob']]) {
+    const data=response(scene,'butcher_shop',character,[{speaker_id:character||'thought',text:'현재 사건',image:character?`/assets/images/${character}_worried.svg`:null}]);
+    h.context.window.startStory(data,'테스트');
+    assert.equal(h.stage().background,'/assets/images/butcher_shop_open.png');
+  }
+  h.context.window.startStory(response('neighbors','butcher_shop','bob',[]),'다시 시작');
+  assert.equal(h.stage().background,'/assets/images/butcher_shop.svg');
+});
+
 test('basement brazier click alone requests its clue and then reveals the exit', async () => {
   const h = setup();
   const basement = response('basement', 'basement', null, []);
