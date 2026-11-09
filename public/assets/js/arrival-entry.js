@@ -7,6 +7,11 @@ const entryUI = new PostMoveUI(entryRoot, entryForm, entryInput, document.getEle
 const entryDialog = document.getElementById('entry-name-dialog');
 const entryAnswer = document.getElementById('entry-answer');
 const entryTV = document.getElementById('entry-tv-hotspot');
+const entryTVTutorial = document.getElementById('entry-tv-tutorial');
+function hideTVTutorial() { if (entryTVTutorial) entryTVTutorial.hidden = true; }
+entryTVTutorial?.addEventListener('animationend', event => {
+  if (event.animationName === 'entry-tv-demo') hideTVTutorial();
+});
 // Match the original TV cutout to the background's object-fit: cover crop.
 function positionEntryTV() {
   const width = entryRoot.clientWidth, height = entryRoot.clientHeight;
@@ -16,6 +21,10 @@ function positionEntryTV() {
   entryTV.style.top = `${(height - 816 * scale) / 2}px`;
   entryTV.style.width = `${1456 * scale}px`;
   entryTV.style.height = `${816 * scale}px`;
+  if (entryTVTutorial) {
+    entryTVTutorial.style.left = `${(width - 1456 * scale) / 2 + 720 * scale}px`;
+    entryTVTutorial.style.top = `${(height - 816 * scale) / 2 + 404 * scale}px`;
+  }
 }
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(positionEntryTV).observe(entryRoot);
 const prologueRoot = document.getElementById('entry-prologue');
@@ -49,6 +58,7 @@ entryTV.addEventListener('click', () => {
   introStep = 'playing';
   entryStage.finishTyping?.();
   entryTV.hidden = true;
+  hideTVTutorial();
   adContinue.hidden = true;
   adDialog.showModal();
   playAd();
@@ -88,7 +98,7 @@ async function showEntry() {
 }
 entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getElementById('username').focus();});
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
-window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';entryTV.hidden=true;adVideo.pause();adDialog.close();});
+window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';entryTV.hidden=true;hideTVTutorial();adVideo.pause();adDialog.close();});
 entryDepart.addEventListener('click', async () => {
   if (departed || introStep !== 'after') return;
   departed = true;
@@ -100,6 +110,7 @@ async function showIntro() {
   entryAnswer.hidden = true;
   entryDepart.hidden = true;
   entryTV.hidden = true;
+  hideTVTutorial();
   entryStage.render({background:'/assets/images/pre-move-house.png', dialogue:false});
   if (entryStage.ready) await entryStage.ready;
   if (introStep !== 'before') return;
@@ -116,6 +127,7 @@ async function showIntro() {
   if (!departed && introStep === 'before') {
     positionEntryTV();
     entryTV.hidden = false;
+    if (entryTVTutorial) entryTVTutorial.hidden = false;
     entryStage.layoutPages?.();
     if (prologue) entryTV.focus();
   }

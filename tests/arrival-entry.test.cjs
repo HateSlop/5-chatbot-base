@@ -74,10 +74,29 @@ test('the TV cutout stays aligned with the background cover crop when the screen
   const h=await setup();const root=h.get('entry-stage'),tv=h.get('entry-tv-hotspot');
   root.clientWidth=728;root.clientHeight=408;h.resizeTV();
   assert.equal(tv.style.width,'728px');assert.equal(tv.style.left,'0px');assert.equal(tv.style.top,'0px');
+  assert.equal(h.get('entry-tv-tutorial').style.left,'360px');
+  assert.equal(h.get('entry-tv-tutorial').style.top,'202px');
   root.clientWidth=400;root.clientHeight=816;h.resizeTV();
   assert.equal(tv.style.width,'1456px');assert.equal(tv.style.left,'-528px');assert.equal(tv.style.top,'0px');
   root.clientWidth=1456;root.clientHeight=400;h.resizeTV();
   assert.equal(tv.style.height,'816px');assert.equal(tv.style.top,'-208px');
+});
+
+test('the first TV demonstrates a click once without opening the ad automatically',async()=>{
+  const h=await setup();const tutorial=h.get('entry-tv-tutorial');
+  assert.equal(tutorial.hidden,false);
+  tutorial.listeners.animationend({animationName:'entry-tv-click'});assert.equal(tutorial.hidden,false);
+  tutorial.listeners.animationend({animationName:'entry-tv-demo'});assert.equal(tutorial.hidden,true);
+  assert.equal(h.get('entry-ad-dialog').open,undefined);
+  assert.equal(h.get('entry-ad-video').plays,undefined);
+  h.get('entry-tv-hotspot').listeners.click();assert.equal(h.get('entry-ad-video').plays,1);
+  await h.get('entry-ad-video').listeners.ended();assert.equal(tutorial.hidden,true);
+});
+
+test('an early TV click or leaving hides the demonstration immediately',async()=>{
+  const h=await setup();h.get('entry-tv-hotspot').listeners.click();
+  assert.equal(h.get('entry-tv-tutorial').hidden,true);
+  const leaving=await setup();leaving.events.pagehide();assert.equal(leaving.get('entry-tv-tutorial').hidden,true);
 });
 
 test('clicking the TV opens the ad only once and the old text button is absent',async()=>{

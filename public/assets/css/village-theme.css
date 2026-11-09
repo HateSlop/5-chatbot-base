@@ -258,6 +258,22 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .entry-tv-hotspot::after { content: ''; position: absolute; left: 45%; top: 43.4%; width: 8.4%; height: 12.6%; border: 2px solid #ffe8ac; border-radius: 18%; opacity: 0; }
 .entry-tv-hotspot:focus-visible::after { opacity: 1; }
 .dialogue-stage[data-background-ready="false"] .entry-tv-hotspot { visibility: hidden; }
+.entry-tv-tutorial { position: absolute; z-index: 6; width: 22px; height: 30px; pointer-events: none; animation: entry-tv-demo 3.2s ease-in-out both; filter: drop-shadow(0 2px 3px #120b12aa); }
+.entry-tv-tutorial svg { display: block; width: 100%; height: 100%; }
+.entry-tv-tutorial::after { content: ''; position: absolute; top: -15px; left: -15px; width: 30px; height: 30px; border: 2px solid #ffe5a1; border-radius: 50%; opacity: 0; animation: entry-tv-click 3.2s ease-out both; }
+@keyframes entry-tv-demo {
+  0% { opacity: 0; transform: translate(-120px, 90px); }
+  10% { opacity: 1; transform: translate(-120px, 90px); }
+  55%,65% { opacity: 1; transform: translate(0, 0) scale(1); }
+  71% { opacity: 1; transform: translate(0, 0) scale(.82); }
+  78%,88% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes entry-tv-click { 0%,66% { opacity: 0; transform: scale(.25); } 72% { opacity: 1; transform: scale(.4); } 90%,100% { opacity: 0; transform: scale(1.5); } }
+@media (prefers-reduced-motion: reduce) {
+  .entry-tv-tutorial { animation: none; }
+  .entry-tv-tutorial::after { animation: none; opacity: .65; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .entry-tv-hotspot { animation: entry-tv-glow 1.6s ease-in-out infinite; }
   @keyframes entry-tv-glow { 0%,100% { filter: brightness(1.05); } 50% { filter: brightness(1.65) saturate(1.2); } }
