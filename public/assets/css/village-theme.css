@@ -305,6 +305,31 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 @media (prefers-reduced-motion: reduce) { .affinity-liquid { transition: none; } }
 .scene-explore-hint { position: absolute; z-index: 4; left: 6%; bottom: calc(clamp(108px, 15vh, 148px) + 124px); margin: 0; color: #fff0d2; text-shadow: 0 1px 4px #130a10, 0 0 6px #130a10; font: 12px/1.5 "Malgun Gothic", sans-serif; pointer-events: none; }
 .dialogue-stage[data-background-ready="false"] .scene-explore-hint { visibility: hidden; }
-.post-move-stage .festival-meat-hotspot { background-image: url('../images/festival_meat.png'); background-color: transparent; clip-path: polygon(41% 45%,55% 41%,65% 43%,74% 49%,76% 57%,72% 66%,65% 75%,55% 81%,44% 79%,41% 70%,39% 58%); }
-.festival-hand-motion { position: absolute; z-index: 2; max-width: none; pointer-events: none; transform-origin: 100% 80%; clip-path: polygon(100% 32%,95% 31%,88% 29%,83% 27%,80% 26.7%,76% 28%,73% 30%,71% 33%,69.4% 35.5%,68.8% 38%,69.8% 42%,72.5% 45%,75.5% 48%,78% 51%,78% 53%,79% 54%,82% 55%,87% 60%,91% 66%,100% 76%); }
+.post-move-stage .festival-meat-hotspot { background-image: url('../images/festival_meat.png'); background-color: transparent; clip-path: polygon(56.7% 40.9%,59.2% 40.2%,62.2% 40.8%,64.5% 41.8%,67.4% 43.6%,70.4% 44.8%,72.3% 45.9%,73.8% 49.9%,75% 52.9%,74.7% 55.8%,72.8% 59.7%,70.7% 62.7%,68.2% 66.9%,64.6% 72.1%,61.7% 75.1%,58.4% 77%,55.2% 77.7%,52.6% 76.7%,51.3% 75.4%,50.2% 72.2%,48.7% 69.5%,46.4% 66%,43.6% 64%,42.2% 61.7%,41.1% 58%,40.8% 54.4%,41% 51%,42.3% 48.1%,43.9% 45%,46.6% 43.5%,48.3% 42.5%,51.8% 41.5%,54.3% 41.1%); }
 .dialogue-stage[data-scene="hair_found"][data-dialogue-complete="false"] :is(.festival-meat-hotspot, .scene-explore-hint) { visibility: hidden; }
+.festival-choice-dialog { width: min(660px, calc(100vw - 40px)); box-sizing: border-box; padding: clamp(24px, 4vw, 48px); border: 3px double #d4ac70; border-radius: 20px; color: #fff0d2; background: linear-gradient(#3f284cdd, #211329ee), url('../images/ui-village-wallpaper.svg') center / 96px 128px, #432326; text-align: center; box-shadow: 0 18px 80px #000c, inset 0 0 0 5px #21151c88; }
+.festival-choice-dialog::backdrop { background: #09060ce0; }
+.festival-choice-dialog h2 { margin: 8px 0; font: 700 clamp(24px, 4vw, 36px)/1.4 'Batang', serif; color: #fff0d2; }
+.festival-choice-eyebrow { margin: 0; color: #dbb883; font: 13px/1.5 'Malgun Gothic', sans-serif; letter-spacing: .2em; }
+.festival-choice-timer { margin: 12px 0 24px; color: #ecb681; }
+.festival-choice-timer strong { font: 700 46px/1 Georgia, serif; font-variant-numeric: tabular-nums; }
+.festival-choice-timer span { margin-left: 6px; font-size: 14px; }
+.festival-choice-actions { display: grid; gap: 14px; }
+.festival-choice-dialog .festival-choice-actions button { min-height: 64px; padding: 14px 18px; font: 700 clamp(17px, 2.5vw, 23px)/1.4 'Batang', serif; border-radius: 10px; background: linear-gradient(#674373, #382442); box-shadow: inset 0 0 0 3px #2c1722, 0 4px 8px #140d17; }
+.festival-choice-dialog [data-choice-status] { min-height: 1.5em; margin: 14px 0 0; font: 12px/1.5 'Malgun Gothic', sans-serif; }
+.post-move-stage[data-scene="final_choice"] .move-composer { display: none; }
+/* Shared plum panels and unobstructed game indicators. */
+.move-sidebar { background-color: #25152f; background-image: linear-gradient(90deg, #0d071755, transparent 18%, transparent 82%, #0d071777), url('../images/ui-village-wallpaper.svg'), radial-gradient(ellipse at 50% 0, #59315e77, transparent 65%); background-size: auto, 96px 128px, auto; }
+.move-sidebar .move-affinity { border-radius: 12px; background: radial-gradient(ellipse at 50% 25%, #68406a44, #21132a99 80%); }
+.move-sidebar .move-help { border-radius: 12px; background: linear-gradient(#26152edd, #26152eaa); }
+.post-move-screen .move-hints button { border-radius: 10px; background: linear-gradient(125deg, #4d3055, #2e1e3a); }
+.post-move-stage .move-location { border-radius: 12px; background: linear-gradient(#4b2e5277, #24142fbb), url('../images/ui-village-wallpaper.svg') center / 72px 96px repeat, #301d3d; }
+.move-affinity .affinity-heart strong { position: static; display: block; width: fit-content; min-width: 88px; margin: 6px auto 0; padding: 4px 14px; transform: none; border: 1px solid #ba965e88; border-radius: 10px; background: linear-gradient(#4c2c42, #29192f); box-shadow: inset 0 1px #f5d5a322, 0 3px 6px #100b1444; }
+.dialogue-speaker:empty { display: none; }
+.dialogue-copy, .dialogue-text, .prologue-copy p { text-indent: 0; text-align: left; }
+.dialogue-stage .character-talk-cue { border-radius: 14px; }
+.character-talk-cue::before { left: 9px; bottom: -11px; width: 15px; height: 12px; border: 0; transform: none; background: #2b1e2c; clip-path: polygon(0 0, 100% 0, 0 100%); filter: drop-shadow(1px 1px 0 #dcb67a); }
+.entry-ad-dialog #entry-ad-continue { position: absolute; z-index: 2; right: 24px; bottom: 24px; min-height: 44px; padding: 10px 18px; border: 1px solid #e5c28b88; border-radius: 10px; background: #25172dcc; color: #fff0d2; }
+
+.post-move-stage .festival-meat-hotspot { z-index: 1; }
+.post-move-stage .festival-meat-hotspot:is(:hover, :focus-visible) { filter: brightness(1.12) saturate(1.03); }

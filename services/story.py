@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
+import time
 
 
 START_SCORE = 50
@@ -201,9 +202,12 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "festival":
         return [_action("inspect_food", "축제 음식을 살펴본다", "inspect")]
     if scene == "hair_found":
+        return [_action("begin_final_choice", "결정의 순간", "choice")]
+    if scene == "final_choice":
         return [
-            _action("escape", "마을에서 도망친다", "choice"),
-            _action("stay", "마을에 남는다", "choice"),
+            _action("escape", "도망친다", "choice"),
+            _action("stay", "남은 고기를 맛있게 먹는다", "choice"),
+            _action("choice_timeout", "선택 시간 종료", "choice"),
         ]
     return []
 
@@ -230,6 +234,7 @@ def view(state: dict) -> dict:
         "photo_back_date": (display_date(story_date(state) - timedelta(days=1))
                             if state["scene_id"] == "photo_found" and "photo_back_date" in state["clues"] else None),
         "ending": state["ending"],
+        "choice_deadline": state.get("choice_deadline") if state["scene_id"] == "final_choice" else None,
     }
 
 
@@ -308,7 +313,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("jimmy", "...", "/assets/images/jimmy_scared.png"))
     elif scene == "butcher_search":
         next_state["scene_id"] = "empty_butcher"
-        events.append(event("thought", "(지미가 급하게 나갔다.)"))
+        events.append(event("thought", "(지미가 급하게 나갔다)"))
     elif scene == "empty_butcher":
         next_state.update(scene_id="basement", location_id="basement")
     elif scene == "basement":
@@ -392,18 +397,23 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["journal"].append("축제 음식에서 주황빛 적갈색 머리카락을 발견했다.")
         events += [
             event("thought", "와… 이게 다 뭐야? 진짜 맛있어 보이는데?\n\n밥이 요리를 이렇게 잘하는 사람이었어? 솜씨가 대단한걸?\n\n뭐부터 먹어볼까…?\n\n…응?\n\n어…? 이게 뭐지?"),
-            event("thought", "밥은 머리카락이 없는데?"),
-            event("thought", "음식에서 발견한 주황빛 적갈색 머리카락… 음식을 만든 밥은 대머리다. 그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다."),
+            event("thought", "…뭐야, 이게? 머리카락…?\n잠깐만. 밥은 머리카락이 없잖아…?\n근데 이 색깔… 어디서 많이 봤는데… 지미?\n분명 지미 머리색이랑 똑같아…\n설마… 아니겠지?\n그럼 지금까지 내가 먹었던 게…"),
         ]
     elif scene == "hair_found":
-        ending = "assimilation" if action_id == "stay" else "escape" if state["has_car_key"] else "death"
+        next_state.update(scene_id="final_choice", choice_deadline=int(time.time() * 1000) + 10000)
+    elif scene == "final_choice":
+        expired = time.time() * 1000 >= state["choice_deadline"]
+        if action_id == "choice_timeout" and not expired:
+            raise ValueError("invalid_action")
+        ending = "death" if expired else "assimilation" if action_id == "stay" else "escape" if state["has_car_key"] else "death"
         next_state.update(scene_id="ending", ending=ending)
         endings = {
             "escape": "차 키를 움켜쥐고 마을 경계를 빠져나왔다. 더뉴빌리지는 뒤로 멀어졌다.",
             "death": "차가 없었다. 이웃들이 길을 막았고, 곧 지미의 사진 옆에 내 사진이 걸렸다.",
             "assimilation": "새 이웃이 도착했다. 나는 캐런처럼 웃으며 말했다. ‘더뉴빌리지에 오신 걸 환영해요.’",
         }
-        next_state["journal"].append(endings[ending])
-        events.append(event("narrator", endings[ending], f"/assets/images/ending_{ending}.svg"))
+        text = "망설이는 사이 이웃들이 다가와 출구를 막았다. 더는 도망칠 수 없었다." if expired else endings[ending]
+        next_state["journal"].append(text)
+        events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
 
     return next_state, events

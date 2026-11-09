@@ -9,6 +9,7 @@ const speakerNames = { jimmy: "지미", karen: "캐런", bob: "밥", cathy: "캐
 const endingNames = { escape: "더뉴빌리지 탈출", death: "벽에 걸린 사진", assimilation: "새로운 이웃" };
 const dialogueStage = new DialogueStage(document.getElementById("dialogue-stage"));
 const postMoveUI = new PostMoveUI(document.getElementById("dialogue-stage"), form, input, document.getElementById("send-btn"), performAction);
+const festivalChoice = window.FestivalChoice ? new window.FestivalChoice(document.getElementById('festival-choice-dialog'), performAction) : null;
 actionList.className = 'action-list scene-actions';
 document.querySelector('#dialogue-stage .dialogue-box').append(statusMessage);
 document.querySelector('#dialogue-stage .dialogue-controls').append(actionList);
@@ -91,7 +92,7 @@ basketHotspot.addEventListener('click', () => {
     Promise.resolve(basketImage.decode?.().catch(() => {})).then(() => {
       if (currentView?.scene_id !== 'cathy_help') return;
       const started = Date.now();
-      const step = 2000 / 3;
+      const step = 3000 / 3;
       const tick = () => {
         if (currentView?.scene_id !== 'cathy_help') return;
         if (--basketCountdown === 0) basketReady = true;
@@ -164,44 +165,32 @@ meatHotspot.className = 'door-hotspot festival-meat-hotspot';
 meatHotspot.setAttribute('aria-label', '접시의 고기 살펴보기');
 meatHotspot.hidden = true;
 shopStage.append(meatHotspot);
-const festivalHand = document.createElement('img');
-festivalHand.className = 'festival-hand-motion';
-festivalHand.src = '/assets/images/festival_hair.png';
-festivalHand.alt = '';
-festivalHand.hidden = true;
-shopStage.append(festivalHand);
-let handAnimation;
 meatHotspot.addEventListener('click', async () => {
   if (busy || currentView?.scene_id !== 'hair_found' || festivalFrame !== 0 || shopStage.dataset.dialogueComplete === 'false') return;
   const scene = currentView;
   busy = true;
   meatHotspot.disabled = true;
   try {
-    await festivalHand.decode?.().catch(() => {});
-    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      festivalHand.hidden = false;
-      handAnimation = festivalHand.animate?.([
-        {transform:'translate(32%, 35%) rotate(10deg)',opacity:0},
-        {transform:'translate(-2%, 5%) rotate(-3deg)',opacity:1,offset:.65},
-        {transform:'translate(0, 0) rotate(0)',opacity:1},
-      ], {duration:1400,easing:'ease-in-out',fill:'forwards'});
-      await handAnimation?.finished.catch(() => {});
-    }
     if (currentView !== scene || !stateToken) return;
     festivalFrame = 1;
     renderView(currentView);
     await (dialogueStage.backgroundReady || dialogueStage.ready);
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      shopStage.animate?.([
+        {transform:'translate(0, 0)'}, {transform:'translate(-9px, 4px)'},
+        {transform:'translate(8px, -4px)'}, {transform:'translate(-7px, 3px)'},
+        {transform:'translate(5px, -2px)'}, {transform:'translate(-3px, 1px)'},
+        {transform:'translate(0, 0)'},
+      ], {duration:620,easing:'ease-out'});
+    }
   } finally {
-    handAnimation?.cancel();
-    handAnimation = null;
-    festivalHand.hidden = true;
     if (currentView === scene && stateToken) { busy = false; renderView(currentView); }
   }
 });
 function positionDoor() {
   const width = shopStage.clientWidth, height = shopStage.clientHeight;
   const foodScale = Math.max(width / 1448, height / 1086);
-  for (const node of [meatHotspot, festivalHand]) {
+  for (const node of [meatHotspot]) {
     node.style.left = `${(width - 1448 * foodScale) / 2}px`;
     node.style.top = `${(height - 1086 * foodScale) / 2}px`;
     node.style.width = `${1448 * foodScale}px`;
@@ -242,6 +231,7 @@ doorHotspot.addEventListener('click', () => {
   renderView(currentView);
 });
 let festivalFrame = 0;
+let festivalStares = false;
 brazierHotspot.addEventListener('click', () => {
   if (!busy && currentView?.scene_id === 'basement' && currentView.available_actions.some(a => a.id === 'inspect_brazier')) {
     return performAction('inspect_brazier');
@@ -307,15 +297,15 @@ function renderMessages() {
     empty.textContent = selectedCharacter ? "말을 걸어 보세요." : "지금은 대화할 사람이 없습니다.";
     log.append(empty);
   }
-  const festivalScene = ['festival', 'hair_found'].includes(currentView.scene_id);
+  const festivalScene = ['festival', 'hair_found', 'final_choice'].includes(currentView.scene_id);
   const festivalEvents = conversation.filter(item => item.kind === 'scene');
   const line = festivalScene && currentView.scene_id === 'hair_found'
     ? festivalEvents[Math.min(festivalFrame, festivalEvents.length - 1)]
     : conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : ['meat','hair','stares'][Math.min(festivalFrame, 2)]}.png` : currentView.scene_id === 'photo_found' ? (secretFrame < 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
+    background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : currentView.scene_id === 'final_choice' ? 'stares' : festivalFrame === 0 ? 'meat' : festivalStares ? 'stares' : 'hair'}.png` : currentView.scene_id === 'photo_found' ? (secretFrame < 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: festivalScene ? null : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
+    image: festivalScene ? null : angryReaction === selectedCharacter && selectedCharacter ? `/assets/images/${selectedCharacter}_angry.png` : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
@@ -324,7 +314,11 @@ function renderMessages() {
     sceneId: currentView.scene_id,
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
-    dialogue: !cathyBasketScene || !basketGreetingDone,
+    backgroundForPage: currentView.scene_id === 'hair_found' && festivalFrame === 1 ? (_text, page, pages) => {
+      festivalStares = pages.slice(0, page + 1).join('').includes('설마');
+      return `/assets/images/festival_${festivalStares ? 'stares' : 'hair'}.png`;
+    } : null,
+    dialogue: currentView.scene_id !== 'final_choice' && (!cathyBasketScene || !basketGreetingDone),
     selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
   if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
@@ -428,8 +422,8 @@ function renderView(view) {
   document.getElementById("affinity-value").textContent = `${view.affinity} / 100`;
 
   actionList.replaceChildren();
-  const festival = ['festival', 'hair_found'].includes(view.scene_id);
-  const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
+  const festival = ['festival', 'hair_found', 'final_choice'].includes(view.scene_id);
+  const showingDiscovery = ['hair_found', 'final_choice'].includes(view.scene_id);
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
   const enteringRoom = view.scene_id === 'photo_found' && secretFrame < 0;
@@ -439,7 +433,7 @@ function renderView(view) {
   exploreHint.textContent = !meatHotspot.hidden ? '음식을 살펴보자. 고기를 눌러 확인해 보세요.' : !basketHotspot.hidden ? '바구니를 눌러보자.' : !doorHotspot.hidden ? '주변을 둘러보자. 열린 문을 살펴볼까?' : !photoHotspot.hidden ? '익숙한 사진을 눌러보자.' : !brazierHotspot.hidden ? '주변을 둘러보자. 화로 안을 살펴볼까?' : '';
   exploreHint.hidden = !exploreHint.textContent;
   postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');
-  if (showingDiscovery && festivalFrame > 0 || enteringRoom) {
+  if (enteringRoom) {
     const next = document.createElement('button');
     next.type = 'button';
     next.className = 'action-button';
@@ -513,6 +507,9 @@ function renderView(view) {
     characterId: character?.id, canChat, registeredName: playerName,
     affinity: view.affinity, actions: greetingLocked(view) || showingDiscovery || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
+  festivalChoice?.update({reading: view.scene_id === 'hair_found' && festivalFrame === 1,
+    ready: () => !busy && shopStage.dataset.dialogueComplete === 'true',
+    deadline: view.scene_id === 'final_choice' ? view.choice_deadline : null, busy});
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
   window.sceneEffects?.ending(view.ending, endingText);
 }
@@ -531,6 +528,7 @@ function applyResponse(data, kind, characterId = null) {
     jobDeparturePending = false;
     jobDepartureFailed = false;
     festivalFrame = 0;
+    festivalStares = false;
     secretFrame = -1;
     karenDinnerDismissed = false;
     clearTimeout(basketTimer);
@@ -554,6 +552,7 @@ function applyResponse(data, kind, characterId = null) {
 }
 
 window.startStory = (data, name) => {
+  festivalChoice?.reset();
   dialogueStage.resetSelection?.();
   const continuingVisit = window.entryVisitReady && data.view.location_id === 'player_house' &&
     data.view.available_characters.some(character => character.id === 'jimmy');
@@ -566,6 +565,7 @@ window.startStory = (data, name) => {
   window.entryVisitReady = false;
   playerName = name;
   festivalFrame = 0;
+  festivalStares = false;
   secretFrame = -1;
   karenDinnerDismissed = false;
   clearReaction();
@@ -625,7 +625,7 @@ async function performAction(actionId) {
   if (currentView.scene_id === 'photo_found' && secretFrame < 2 &&
       !(['inspect_photo_back', 'recognize_photo'].includes(actionId) &&
         (actionId !== 'recognize_photo' || currentView.photo_back_date))) return;
-  if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
+  if (currentView.scene_id === 'hair_found' && (festivalFrame !== 1 || actionId !== 'begin_final_choice')) return;
   busy = true;
   renderView(currentView);
   statusMessage.textContent = "이야기가 이어지는 중…";
@@ -668,8 +668,6 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
-  handAnimation?.cancel();
-  festivalHand.hidden = true;
   clearTimeout(jobDepartureTimer);
   jobDeparturePending = true;
   dialogueStage.resetSelection?.();

@@ -56,7 +56,7 @@ entryTV.addEventListener('click', () => {
   entryStage.finishTyping?.();
   entryTV.hidden = true;
   hideTVTutorial();
-  adContinue.hidden = true;
+  adContinue.hidden = false;
   adDialog.showModal();
   playAd();
 });

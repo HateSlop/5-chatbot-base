@@ -194,12 +194,15 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   assert.equal(h.stage().text, discovery.events[1].text);
   h.context.renderView(discovery.view);
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
-  buttons()[0].listeners.click();
+  assert.equal(buttons().length,0);
+  const decision=response('final_choice','square',null,[]);
+  decision.view.choice_deadline=10000;
+  decision.view.available_actions=[{id:'escape',label:'도망친다',kind:'choice'},{id:'stay',label:'남은 고기를 맛있게 먹는다',kind:'choice'},{id:'choice_timeout',label:'선택 시간 종료',kind:'choice'}];
+  h.context.applyResponse(decision,'scene');
   assert.equal(h.stage().background, '/assets/images/festival_stares.png');
   assert.equal(h.split(), true);
-  assert.equal(h.stage().text, discovery.events[2].text);
-  assert.equal(h.stage().image, null);
-  assert.deepEqual(buttons().map(button => button.textContent), ['escape','stay']);
+  assert.equal(h.stage().dialogue, false);
+  assert.equal(buttons().length,0);
   h.context.applyResponse(response('ending_escape', 'square', null, []), 'scene');
   assert.equal(h.stage().background, '/assets/images/square.svg');
   assert.equal(h.split(), true);
@@ -208,30 +211,29 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   assert.equal(h.stage().background, '/assets/images/festival_meat.png');
 });
 
-test('meat click waits for the hand motion, blocks repeat clicks and skips motion when reduced', async () => {
+test('meat goes directly to the hair photo, shakes once and changes to stares for the last thoughts', async () => {
   const h=setup();
+  const lines=['…뭐야, 이게? 머리카락…?','잠깐만. 밥은 머리카락이 없잖아…?','근데 이 색깔… 지미?','분명 지미 머리색이랑 똑같아…','설마… 아니겠지?','그럼 지금까지 내가 먹었던 게…'];
   const data=response('hair_found','square','bob',[
     {speaker_id:'thought',text:'어…? 이게 뭐지?',image:null},
-    {speaker_id:'thought',text:'밥은 머리카락이 없는데?',image:null},
-    {speaker_id:'thought',text:'지미가 떠오른다.',image:null},
+    {speaker_id:'thought',text:lines.join('\n'),image:null},
   ]);
   h.context.window.startStory(data,'테스트');
-  const nodes=h.nodes.get('dialogue-stage').children;
-  const meat=nodes.find(n=>n.className==='door-hotspot festival-meat-hotspot');
-  const hand=nodes.find(n=>n.className==='festival-hand-motion');
-  let finish,cancelled=0,animations=0;
-  hand.animate=()=>{animations++;return {finished:new Promise(resolve=>finish=resolve),cancel(){cancelled++;}};};
-  const pending=meat.listeners.click();await Promise.resolve();
-  assert.equal(h.stage().background,'/assets/images/festival_meat.png');
-  await meat.listeners.click();assert.equal(animations,1);
-  finish();await pending;
+  const root=h.nodes.get('dialogue-stage');
+  const meat=root.children.find(n=>n.className==='door-hotspot festival-meat-hotspot');
+  let shakes=0;
+  root.animate=(frames,options)=>{assert.equal(frames.length,7);assert.equal(options.duration,620);shakes++;};
+  root.dataset.dialogueComplete='false';
+  await meat.listeners.click();assert.equal(h.stage().background,'/assets/images/festival_meat.png');
+  root.dataset.dialogueComplete='true';
+  await meat.listeners.click();await meat.listeners.click();
   assert.equal(h.stage().background,'/assets/images/festival_hair.png');
-  assert.equal(hand.hidden,true);assert.equal(cancelled,1);
-  h.context.window.startStory(data,'새 플레이');
-  h.context.window.matchMedia=()=>({matches:true});
-  await meat.listeners.click();
-  assert.equal(animations,1);
-  assert.equal(h.stage().background,'/assets/images/festival_hair.png');
+  assert.equal(shakes,1);
+  assert.equal(root.children.some(n=>n.className==='festival-hand-motion'),false);
+  assert.equal(h.stage().backgroundForPage(lines.slice(4).join('\n'),2,[lines.slice(0,2).join('\n'),lines.slice(2,4).join('\n'),lines.slice(4).join('\n')]),'/assets/images/festival_stares.png');
+  h.context.renderView(data.view);assert.equal(h.stage().background,'/assets/images/festival_stares.png');
+  h.context.window.startStory(data,'다시');h.context.window.matchMedia=()=>({matches:true});
+  await meat.listeners.click();assert.equal(shakes,1);
 });
 
 test('naming continues an already visible Jimmy visit without replaying his entrance',()=>{
@@ -276,14 +278,14 @@ test('current scene events and current character chat never mix other scenes or 
   assert.equal(h.transcript().length, 5);
 });
 
-test('all residents smile unless a chat lowers server affinity, then anger lasts 1.5 seconds', async () => {
+test('residents keep server-selected expressions and show anger for 1.5 seconds after a score decrease', async () => {
   for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
     const h = setup();
     h.context.window.startStory(response('neighbors', 'salon', id, []), '알렉스');
-    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    assert.equal(h.stage().image, `/${id}.svg`);
     h.context.applyResponse(response('neighbors', 'salon', id,
       [{speaker_id:id, text:'중립 답변', image:`/assets/images/${id}_worried.svg`}]), 'chat', id);
-    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
     h.context.applyResponse(response('neighbors', 'salon', id,
       [{speaker_id:id, text:'불쾌한 답변', image:null}], 48), 'chat', id);
     h.context.renderView(vm.runInContext('currentView', h.context));
@@ -293,9 +295,9 @@ test('all residents smile unless a chat lowers server affinity, then anger lasts
     const timer = [...h.timers.values()][0];
     assert.equal(timer.ms, 1500);
     timer.callback();
-    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
     h.context.applyResponse(response('neighbors', 'salon', id, [], 55), 'chat', id);
-    assert.equal(h.stage().image, `/assets/images/${id}_smile.png`);
+    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
   }
 });
 
@@ -314,7 +316,7 @@ test('angry reaction waits for the displayed answer and is cancelled on movement
   assert.equal(h.timers.size, 1);
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 48), 'scene');
   assert.equal(h.timers.size, 0);
-  assert.equal(h.stage().image, '/assets/images/bob_smile.png');
+  assert.equal(h.stage().image, '/bob.svg');
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 46), 'chat', 'bob');
   await Promise.resolve();
   h.listeners.pagehide();
@@ -453,11 +455,11 @@ test('failed chat keeps the draft and token so the same message can be retried',
 
 test('open butcher doorway reveals thought before submitting the existing basement action', async () => {
   const h = setup();
-  const data = response('empty_butcher', 'butcher_shop', null, [{speaker_id:'thought',text:'(지미가 급하게 나갔다.)',image:null}]);
+  const data = response('empty_butcher', 'butcher_shop', null, [{speaker_id:'thought',text:'(지미가 급하게 나갔다)',image:null}]);
   data.view.available_actions = [{id:'inspect_basement',label:'지하실을 살핀다',kind:'inspect'}];
   h.context.window.startStory(data, '테스트');
   assert.equal(h.stage().background, '/assets/images/butcher_shop_open.png');
-  assert.equal(h.stage().text, '(지미가 급하게 나갔다.)');
+  assert.equal(h.stage().text, '(지미가 급하게 나갔다)');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   const door = h.nodes.get('dialogue-stage').children[0];
   assert.equal(door.hidden, false);
@@ -697,7 +699,7 @@ test('the room starts front-on and reveals its photo only after looking around',
   assert.equal(h.nodes.get('dialogue-stage').children.find(item=>item.className==='door-hotspot festival-meat-hotspot').hidden,false);
 });
 
-test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a memory hint', async () => {
+test('Cathy leaves sooner, then the request counts 3-2-1 over three seconds with a memory hint', async () => {
   const h = setup();
   const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
   const task = response('cathy_help', 'salon', null, [
@@ -726,7 +728,7 @@ test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a
   assert.equal(hotspot.attrs['aria-label'], '미용실 바구니 열기');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   assert.equal(h.move().actions.length, 0);
-  assert.equal([...h.timers.values()].some(item => Math.abs(item.ms - 2000 / 3) < .01), false);
+  assert.equal([...h.timers.values()].some(item => Math.abs(item.ms - 3000 / 3) < .01), false);
   hotspot.listeners.click();
   assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
   assert.equal(h.nodes.get('cathy-basket-request').textContent, request);
@@ -736,7 +738,7 @@ test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a
   assert.equal(counter.textContent,'3');assert.equal(counter.hidden,false);
   assert.equal(h.nodes.get('cathy-basket-hint').hidden,false);
   assert.match(h.nodes.get('cathy-basket-hint').textContent,/캐시가 말한 도구를 기억하고 찾아보세요/);
-  for (const [remaining,elapsed,delay] of [['2',730,2000/3],['1',4000/3,4000/3-730]]) {
+  for (const [remaining,elapsed,delay] of [['2',1100,1000],['1',2000,2000-1100]]) {
     const [id,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-delay)<.01);
     h.setClock(elapsed);
     h.timers.delete(id);timer.callback();
@@ -744,7 +746,7 @@ test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a
     assert.equal(h.nodes.get('cathy-basket-request').hidden,false);
     assert.equal(h.nodes.get('cathy-tool-list').hidden,true);
   }
-  const [,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-2000/3)<.01);h.setClock(2000);timer.callback();
+  const [,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-1000)<.01);h.setClock(3000);timer.callback();
   assert.equal(counter.hidden,true);
   assert.equal(h.nodes.get('cathy-basket-request').hidden, true);
   assert.equal(h.nodes.get('cathy-tool-list').hidden, false);
