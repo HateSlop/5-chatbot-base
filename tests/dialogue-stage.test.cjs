@@ -462,3 +462,19 @@ test('Jimmy smiles throughout the first conversation and keeps later scene expre
   stage.render({sceneId:'dinner_invite',background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_basic.png'});await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_anxiety.png');
 });
+
+test('home door stays closed until its bell finishes and repeated renders do not ring again', async () => {
+  let finish;const calls=[];
+  const {stage,nodes}=setup({window:{Doorbell:class {
+    ring(count){calls.push(count);return new Promise(resolve=>finish=resolve);}
+    stop(){}
+  }}});
+  const visit={background:'/assets/images/player_house.svg',image:'/assets/images/karen_smile.png',visitorId:'karen',doorbellCount:3};
+  stage.render(visit);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house.svg');
+  stage.render(visit);await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(calls,[3]);
+  finish();await stage.ready;
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house_open.png');
+  stage.render(visit);await stage.ready;assert.deepEqual(calls,[3]);
+});

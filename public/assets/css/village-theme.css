@@ -147,6 +147,8 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .story-screen { position: relative; overflow: hidden; }
 .story-screen > .post-move-screen, #name-screen > .post-move-screen { width: 100%; height: 100%; aspect-ratio: auto; }
 .post-move-screen .post-move-stage, .is-intro .post-move-stage { height: 100%; min-height: 0; aspect-ratio: auto; }
+.post-move-screen .post-move-stage:is([data-scene="festival"], [data-scene="hair_found"]) { width: min(100%, 133.3333dvh); height: auto; aspect-ratio: 4 / 3; place-self: center; }
+.post-move-stage:is([data-scene="festival"], [data-scene="hair_found"]) .move-composer { display: none; }
 .story-screen > .story-header, .story-screen > .story-layout { display: none; }
 .dialogue-stage .dialogue-box { height: 112px; padding: 10px 14px; }
 .post-move-stage .dialogue-box { bottom: clamp(108px, 15vh, 148px); }

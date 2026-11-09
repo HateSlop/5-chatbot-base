@@ -12,12 +12,17 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/arrival-preview.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/cathy-basket.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/prologue.css') }}">
+    <link rel="preload" href="{{ asset_url('assets/fonts/NanumBrushScript-Regular.ttf') }}" as="font" type="font/ttf" crossorigin>
+    <script src="{{ asset_url('assets/js/doorbell.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/interaction-sound.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/name-entry.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/prologue.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/arrival-entry.js') }}" defer></script>
   </head>
   <body class="chat-page">
@@ -26,6 +31,25 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
     </button>
     <div id="name-screen">
+      <section id="entry-prologue" class="prologue" aria-label="주인공의 독백" tabindex="-1" hidden>
+        <div class="prologue-paper">
+          <div class="prologue-copy" aria-hidden="true">
+            <p hidden>부모님이 갑작스러운 사고로 돌아가신 지도 벌써 몇 달이 지났다.</p>
+            <p hidden>처음엔 믿을 수 없었다. 아니, 믿고 싶지 않았다는 게 맞겠지.</p>
+            <p hidden>아침이면 나를 깨우던 엄마의 목소리도, 늦은 밤 거실에서 들려오던 아빠의 웃음소리도 이제는 들리지 않는다.</p>
+            <p hidden>익숙했던 집이 이렇게 낯설고 조용하게 느껴질 줄은 몰랐다.</p>
+            <p hidden>가끔은 현관문이 열리고 부모님이 돌아오실 것만 같아 나도 모르게 문 쪽을 바라보곤 한다.</p>
+            <p hidden>하지만 아무리 기다려도 돌아오는 사람은 없다.</p>
+            <p hidden>이 집에는 너무 많은 추억이 남아 있다. 행복했던 기억들인데, 이제는 그 기억들이 나를 더 외롭게 만든다.</p>
+            <p hidden>더 이상 이곳에서 혼자 지내고 싶지 않아.</p>
+            <p hidden>새로운 곳에서 새로운 사람들을 만나고 싶다.</p>
+            <p hidden>누군가 나를 반겨주고, 함께 웃고, 서로 의지하며 살아갈 수 있는 그런 곳.</p>
+            <p hidden>어디 그런 곳 없을까…?</p>
+          </div>
+          <p class="prologue-spoken visually-hidden" aria-live="polite" aria-atomic="true"></p>
+          <button class="prologue-skip" type="button" aria-label="독백을 마치고 TV 보기로 이동">독백 건너뛰기 ›</button>
+        </div>
+      </section>
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
         <div class="dialogue-tv" hidden></div>
