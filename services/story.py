@@ -167,9 +167,17 @@ def available_actions(state: dict) -> list[dict]:
         return [_action("approach_jimmy", "사색이 된 지미에게 다가간다", "inspect")]
     if scene == "empty_butcher":
         return [_action("inspect_basement", "지하실을 살핀다", "inspect")]
+    if scene == "basement_entry":
+        return [_action("descend_stairs", "계단을 내려간다", "move")]
     if scene == "basement":
-        return ([_action("go_upstairs", "지하실에서 나온다", "move")] if "brazier" in state["clues"]
-                else [_action("inspect_brazier", "화로를 조사한다", "inspect")])
+        actions = ([_action("go_upstairs", "지하실에서 나온다", "move")] if "wallet_photo" in state["clues"]
+                   else [])
+        actions.append(_action("inspect_wallet", "지갑을 살핀다", "inspect"))
+        if "wallet_found" in state["clues"]:
+            actions.append(_action("open_wallet", "지갑을 연다", "inspect"))
+        if "wallet_open" in state["clues"]:
+            actions.append(_action("inspect_wallet_photo", "지갑 속 사진을 살핀다", "inspect"))
+        return actions
     if scene == "bob_caught":
         return [_action("return_home", "집으로 돌아간다", "move")]
     if scene == "dinner_invite":
@@ -218,7 +226,8 @@ def view(state: dict) -> dict:
         "scene_id": state["scene_id"],
         "location_id": state["location_id"],
         "location_name": LOCATIONS[state["location_id"]],
-        "background": f"/assets/images/{state['location_id']}.svg",
+        "background": ("/assets/images/basement_wallet.png" if state["scene_id"] == "basement"
+                       else f"/assets/images/{state['location_id']}.svg"),
         "available_characters": [
             {
                 "id": character_id,
@@ -315,13 +324,25 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["scene_id"] = "empty_butcher"
         events.append(event("thought", "(지미가 급하게 나갔다)"))
     elif scene == "empty_butcher":
-        next_state.update(scene_id="basement", location_id="basement")
-    elif scene == "basement":
-        if action_id == "inspect_brazier":
+        next_state.update(scene_id="basement_entry", location_id="basement")
+    elif scene == "basement_entry":
+        next_state["scene_id"] = "basement"
+        if "brazier" not in next_state["clues"]:
             next_state["clues"].append("brazier")
             next_state["journal"].append("지하실 화로에서 여러 사람의 타다 남은 생활 소품을 보았다. 누군가 물건을 없애는 듯하다.")
-            events.append(event("thought", "화로 안에 여러 사람의 타다 남은 생활 소품이 보인다. 누군가 물건을 없애고 있는 걸까?"))
-        else:
+    elif scene == "basement":
+        if action_id == "inspect_wallet":
+            if "wallet_found" not in next_state["clues"]:
+                next_state["clues"].append("wallet_found")
+        elif action_id == "open_wallet":
+            if "wallet_open" not in next_state["clues"]:
+                next_state["clues"].append("wallet_open")
+        elif action_id == "inspect_wallet_photo":
+            if "wallet_photo" not in next_state["clues"]:
+                next_state["clues"].append("wallet_photo")
+                next_state["journal"].append("지하실의 지갑에서 지미와 다른 남자가 함께 찍힌 오래된 사진을 보았다.")
+            events.append(event("thought", "지미…랑 옆에는 누구지…?"))
+        elif action_id == "go_upstairs":
             next_state.update(scene_id="bob_caught", location_id="butcher_shop")
             next_state["affinity"] = max(0, next_state["affinity"] - 5)
             events.append(event("bob", "거기서 뭐 하시오? 여긴 손님이 들어올 곳이 아니야. 당장 나가시오."))
