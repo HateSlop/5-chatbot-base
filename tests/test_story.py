@@ -299,6 +299,22 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(result["view"]["affinity"], min(100, before + 5))
         self.assertIn("고마워요", result["events"][0]["text"])
 
+    def test_cathy_tools_match_illustration_and_old_dryer_is_rejected(self):
+        for action_id in TO_CHECKPOINT[:6]:
+            data = self.action(action_id)
+        tools = {"shampoo", "scissors", "conditioner", "comb", "spray", "serum", "brush", "mirror", "towel", "roller"}
+        self.assertIn("지금 너무 바쁘니까", data["events"][0]["text"])
+        self.assertIn("샴푸, 가위, 빗", data["events"][1]["text"])
+        self.assertEqual({a["id"] for a in data["view"]["available_actions"]}, {f"choose_{tool}" for tool in tools} | {"help_cathy"})
+        rejected = self.client.post("/api/action", json={"state_token": self.token, "action_id": "choose_dryer"})
+        self.assertEqual(rejected.status_code, 409)
+        before = data["view"]["affinity"]
+        for tool in tools:
+            self.action(f"choose_{tool}")
+            self.action(f"choose_{tool}")
+        self.assertEqual(decode_state(self.token)["cathy_tools"], [])
+        self.assertEqual(decode_state(self.token)["affinity"], before)
+
     def test_butcher_visit_reason_and_karen_request_reach_model(self):
         for action_id in TO_CHECKPOINT[:11]:
             self.action(action_id)

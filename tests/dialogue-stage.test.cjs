@@ -413,3 +413,52 @@ test('fast text reveal preserves Unicode and can be completed immediately', () =
   while(timers.size){const [key,fn]=timers.entries().next().value;timers.delete(key);fn();}
   assert.equal(nodes['.dialogue-text'].textContent,stage.fullText);
 });
+
+test('every new line types and repeated renders or layout do not finish it early', async () => {
+  const timers=new Map();let id=0;
+  const {stage,nodes}=setup({setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});
+  stage.pager={hidden:true};stage.previous={};stage.next={};stage.pageLabel={};
+  stage.box.clientHeight=112;stage.box.classList={add(){},remove(){}};stage.box.style={};stage.box.querySelector=()=>null;
+  stage.copy={clientHeight:50};
+  Object.defineProperty(stage.copy,'scrollHeight',{get(){return Array.from(nodes['.dialogue-text'].textContent).length;}});
+  const scene={background:'/assets/images/salon.svg',speaker:'캐시',text:'첫 번째 인사입니다.'};
+  stage.render(scene);await stage.ready;
+  assert.equal(nodes['.dialogue-text'].textContent,'첫');
+  stage.layoutPages();assert.equal(nodes['.dialogue-text'].textContent,'첫');
+  stage.render(scene);await stage.ready;
+  assert.equal(nodes['.dialogue-text'].textContent,'첫');
+  assert.equal(timers.size,1);
+  stage.render({...scene,text:'두 번째 답변입니다.'});await stage.ready;
+  assert.equal(nodes['.dialogue-text'].textContent,'두');
+  assert.equal(timers.size,1);
+  stage.finishTyping();assert.equal(nodes['.dialogue-text'].textContent,'두 번째 답변입니다.');
+  stage.render({...scene,text:'두 번째 답변입니다.',dialogueKey:'new-answer'});await stage.ready;
+  assert.equal(nodes['.dialogue-text'].textContent,'두');
+  stage.finishTyping();
+  stage.pages=['첫 페이지입니다.','다음 페이지입니다.'];stage.pageIndex=1;stage.showPage();
+  assert.equal(nodes['.dialogue-text'].textContent,'다');
+  stage.finishTyping();
+});
+
+test('selection cue is released with the character without an extra dialogue delay', async () => {
+  const {stage,nodes}=setup();const pauses=[];
+  stage.pause=async ms=>pauses.push(ms);
+  stage.talkCue={hidden:true,setAttribute(){},style:{}};
+  stage.render({sceneId:'neighbors',background:'/assets/images/salon.svg',image:'/assets/images/cathy_smile.png',speaker:'캐시',text:'반가워요',selectCharacter:true});
+  await stage.ready;
+  assert.deepEqual(pauses,[]);
+  assert.equal(stage.root.dataset.loading,'false');
+  assert.equal(stage.talkCue.hidden,false);
+  assert.equal(nodes['.dialogue-box'].hidden,true);
+});
+
+test('Jimmy smiles throughout the first conversation and keeps later scene expressions', async () => {
+  const {stage,nodes}=setup();
+  for (const emotion of ['basic','angry','anxiety']) {
+    stage.render({sceneId:'arrival',background:'/assets/images/player_house.svg',image:`/assets/images/jimmy_${emotion}.png`});
+    await stage.ready;
+    assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_smile.png');
+  }
+  stage.render({sceneId:'dinner_invite',background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_basic.png'});await stage.ready;
+  assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_anxiety.png');
+});

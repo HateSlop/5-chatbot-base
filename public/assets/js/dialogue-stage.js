@@ -27,7 +27,7 @@ window.DialogueStage = class {
       this.talkCue = doc.createElement('button');
       this.talkCue.type = 'button';
       this.talkCue.className = 'character-talk-cue';
-      this.talkCue.textContent = '!';
+      this.talkCue.textContent = '...';
       this.talkCue.hidden = true;
       root.append(this.talkCue);
       this.talkCue.addEventListener('click', () => this.openDialogue());
@@ -103,6 +103,7 @@ window.DialogueStage = class {
   }
   typeCurrentPage() {
     const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
+    if (this.typingTimer && this.typingText === text) return;
     this.finishTyping();
     this.text.textContent = text;
     if (this.box.hidden || this.lastTypedText === text) return;
@@ -130,7 +131,15 @@ window.DialogueStage = class {
     if (animate) this.typeCurrentPage();
   }
   layoutPages() {
-    this.finishTyping();
+    const partial = this.typingTimer ? this.text.textContent : null;
+    const typingText = this.typingText;
+    this.measurePages();
+    if (partial !== null) {
+      if ((this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
+      else { this.lastTypedText = null; this.typeCurrentPage(); }
+    }
+  }
+  measurePages() {
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
     this.pager.hidden = true;
@@ -214,8 +223,14 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false }) {
-    this.finishTyping();
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null }) {
+    if (this.dialogueKey !== dialogueKey) {
+      this.finishTyping();
+      this.lastTypedText = null;
+      this.dialogueKey = dialogueKey;
+    }
+    const partial = this.typingTimer && this.fullText === text ? this.text.textContent : null;
+    if (partial === null) this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
@@ -234,6 +249,7 @@ window.DialogueStage = class {
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
+    if (sceneId === 'arrival' && isJimmy) image = '/assets/images/jimmy_smile.png';
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
@@ -271,7 +287,7 @@ window.DialogueStage = class {
     // If a replacement TV asset fails, keep the CSS fallback available.
     this.figure.onerror = () => { this.figure.hidden = true; this.tv.hidden = object !== 'tv'; };
     this.speaker.textContent = speaker ? `${speaker}: ` : '';
-    this.text.textContent = text;
+    this.text.textContent = partial ?? text;
     if (this.fullText !== text) this.pageIndex = 0;
     this.fullText = text;
     this.box.scrollTop = 0;
@@ -298,7 +314,7 @@ window.DialogueStage = class {
       if (figureReady) await figureReady;
       if (image && this.figure.decode) await this.figure.decode().catch(() => {});
       if (version !== this.version) return false;
-      if (!arriving && this.appearancePending && sceneId !== 'butcher_search') {
+      if (!arriving && this.appearancePending && sceneId !== 'butcher_search' && !this.awaitingSelection) {
         await this.pause(1000);
         if (version !== this.version) return false;
       }
@@ -317,7 +333,7 @@ window.DialogueStage = class {
           ], {duration:360, easing:'ease-out'});
         }
       }
-      if (dialogue && !continuous) {
+      if (dialogue && !continuous && !this.awaitingSelection) {
         await this.pause(400);
         if (version !== this.version) return false;
       }
