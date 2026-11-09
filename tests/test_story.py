@@ -20,7 +20,7 @@ TO_CHECKPOINT = [
     "visit_neighbors", "visit_karen", "visit_bob", "visit_cathy", "return_home",
     "go_help_cathy", "choose_shampoo", "choose_scissors", "choose_comb", "help_cathy", "return_home",
     "see_jimmy_off", "go_butcher", "approach_jimmy",
-    "inspect_basement", "inspect_brazier", "go_upstairs", "return_home", "accept_dinner_invite",
+    "inspect_basement", "descend_stairs", "inspect_wallet", "open_wallet", "inspect_wallet_photo", "go_upstairs", "return_home", "accept_dinner_invite",
     "go_karen_dinner", "inspect_room", "recognize_photo", "return_home",
 ]
 
@@ -452,28 +452,43 @@ class StoryTest(unittest.TestCase):
         self.assertIn("말을 들었다", generate.call_args.args[-1][1])
         self.assertNotIn("처음 들었다", generate.call_args.args[-1][1])
 
+    def test_wallet_reveals_are_ordered_and_idempotent(self):
+        for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("inspect_wallet")]:
+            self.action(action_id)
+        self.assertTrue(self.action("inspect_wallet")["view"]["background"].endswith("basement_wallet.png"))
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_wallet_photo"}).status_code, 409)
+        self.action("open_wallet")
+        photo = self.action("inspect_wallet_photo")
+        self.assertEqual(photo["events"][0]["text"], "지미…랑 옆에는 누구지…?")
+        self.action("inspect_wallet")
+        self.action("open_wallet")
+        self.action("inspect_wallet_photo")
+        state = decode_state(self.token)
+        self.assertEqual(state["clues"].count("wallet_photo"), 1)
+        self.assertEqual(len(state["journal"]), 2)
+        self.assertEqual(state["scene_id"], "basement")
+        self.assertEqual(self.action("go_upstairs")["view"]["scene_id"], "bob_caught")
+
     def test_brazier_caught_and_photo_exit_are_fixed_events(self):
         for action_id in TO_CHECKPOINT[:14]:
             self.action(action_id)
         before = decode_state(self.token)["affinity"]
-        basement = self.action("inspect_basement")
+        entry = self.action("inspect_basement")
+        self.assertEqual(entry["view"]["scene_id"], "basement_entry")
+        self.assertEqual([a["id"] for a in entry["view"]["available_actions"]], ["descend_stairs"])
+        basement = self.action("descend_stairs")
         self.assertEqual(basement["view"]["affinity"], before)
-        self.assertEqual(basement["events"], [])
-        self.assertNotIn("brazier", decode_state(self.token)["clues"])
-        self.assertEqual([item["id"] for item in basement["view"]["available_actions"]], ["inspect_brazier"])
-        retriever = StoryRetriever()
-        self.assertFalse(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", [])))
-        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
-        inspected = self.action("inspect_brazier")
-        self.assertEqual(inspected["view"]["affinity"], before)
+        self.assertEqual(entry["events"][0]["text"], "뭐가 엄청 어질러져 있네.. 내려가 볼까?")
         self.assertIn("brazier", decode_state(self.token)["clues"])
-        self.assertIn("타다 남은 생활 소품", inspected["events"][0]["text"])
-        self.assertTrue(any(hit.title == "지하실의 화로" for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
-        self.assertFalse(any("지미의 운명" in hit.content or "음식의 재료가" in hit.content for hit in retriever.search("화로", "bob", "basement", ["brazier"])))
-        self.assertEqual([item["id"] for item in inspected["view"]["available_actions"]], ["go_upstairs"])
-        self.assertEqual(inspected["view"]["available_actions"][0]["label"], "지하실에서 나온다")
+        self.assertEqual(basement["events"], [])
+        self.assertEqual([item["id"] for item in basement["view"]["available_actions"]], ["inspect_wallet"])
+        self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
         self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_brazier"}).status_code, 409)
-        self.assertEqual(len(decode_state(self.token)["journal"]), 1)
+        for action in ["inspect_wallet", "open_wallet", "inspect_wallet_photo"]:
+            inspected = self.action(action)
+        self.assertEqual(inspected["view"]["affinity"], before)
+        self.assertEqual(inspected["view"]["available_actions"][0]["id"], "go_upstairs")
+        self.assertEqual(len(decode_state(self.token)["journal"]), 2)
         caught = self.action("go_upstairs")
         self.assertEqual(caught["view"]["affinity"], before - 5)
         self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_upstairs"}).status_code, 409)
@@ -596,7 +611,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(self.action("decline_job")["view"]["affinity"], 70)
 
     def test_dinner_pickup_promise_and_festival_inference(self):
-        for action_id in TO_CHECKPOINT[:17]:
+        for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("return_home", TO_CHECKPOINT.index("go_upstairs"))]:
             self.action(action_id)
         basement = decode_state(self.token)
         self.assertIn("brazier", basement["clues"])
@@ -663,7 +678,7 @@ class StoryTest(unittest.TestCase):
             ("return_home", "jimmy", "고기를 사러 정육점에 다녀오겠다고"),
             ("see_jimmy_off", "karen", "전할 말이 있어"),
             ("go_butcher", "jimmy", "지미는 정육점 지하실에서"),
-            ("approach_jimmy", None, None), ("inspect_basement", None, None), ("inspect_brazier", None, None),
+            ("approach_jimmy", None, None), ("inspect_basement", None, None), ("descend_stairs", None, None), ("inspect_wallet", None, None), ("open_wallet", None, None), ("inspect_wallet_photo", None, None),
             ("go_upstairs", None, None),
             ("return_home", "jimmy", "오후 6시에"),
             ("accept_dinner_invite", None, None), ("go_karen_dinner", None, None),

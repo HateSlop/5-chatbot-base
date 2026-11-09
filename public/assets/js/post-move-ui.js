@@ -29,7 +29,8 @@ const sceneGuide = {
   neighbors: '방문할 이웃을 선택해 보세요.',
   cathy_help: '바구니를 눌러 필요한 도구를 골라 보세요.',
   empty_butcher: '열린 문을 살펴보세요.',
-  basement: '화로를 눌러 조사해 보세요.',
+  basement_entry: '계단을 내려가 지하실을 살펴보세요.',
+  basement: '옷 주머니의 지갑을 눌러 살펴보세요.',
   bob_caught: '집으로 돌아가 보세요.',
   cathy_result: '집으로 돌아가 보세요.',
   wait_dinner: '혼자 캐런의 집으로 가 보세요.',
@@ -167,7 +168,7 @@ window.PostMoveUI = class {
     }
     const questions = canChat ? sceneQuestions[`${sceneId}:${locationId}:${characterId}`] || [] : [];
     let guide = sceneGuide[sceneId] || '화면의 물건이나 행동을 선택해 보세요.';
-    if (sceneId === 'basement' && actions.some(action => action.id === 'go_upstairs')) guide = '지하실에서 나온다를 선택해 보세요.';
+    if (sceneId === 'basement' && actions.some(action => action.id === 'go_upstairs')) guide = '지갑도 살펴볼 수 있어요. 조사를 마치면 지하실에서 나가세요.';
     if (sceneId === 'photo_found' && actions.some(action => action.id === 'return_home')) guide = '집으로 돌아가 보세요.';
     this.hintCaption.textContent = questions.length ? '대화가 막힐 땐, 이런 질문을 해 보세요.' : guide;
     this.hints.replaceChildren();

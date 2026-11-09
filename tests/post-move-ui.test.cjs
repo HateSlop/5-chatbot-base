@@ -102,7 +102,7 @@ test('scenes without a speaker show guidance instead of clickable questions',()=
     ['neighbors','square','방문할 이웃'],
     ['cathy_help','salon','바구니'],
     ['empty_butcher','butcher_shop','열린 문'],
-    ['basement','basement','화로'],
+    ['basement','basement','지갑'],
     ['photo_found','karen_house','사진'],
     ['wait_dinner','player_house','혼자'],
     ['hair_found','square','화면의 물건이나 행동'],
@@ -112,7 +112,7 @@ test('scenes without a speaker show guidance instead of clickable questions',()=
     assert.ok(h.nodes.get('.move-hint-caption').textContent.includes(guide),sceneId);
   }
   h.ui.render({sceneId:'basement',locationId:'basement',locationName:'지하실',actions:[{id:'go_upstairs',kind:'move'}]});
-  assert.match(h.nodes.get('.move-hint-caption').textContent,/지하실에서 나온다/);
+  assert.match(h.nodes.get('.move-hint-caption').textContent,/지갑.*지하실에서 나가/);
   h.ui.render({sceneId:'photo_found',locationId:'karen_house',locationName:'캐런 집',actions:[{id:'return_home',kind:'move'}]});
   assert.match(h.nodes.get('.move-hint-caption').textContent,/집으로 돌아가/);
   h.input.disabled=true;
