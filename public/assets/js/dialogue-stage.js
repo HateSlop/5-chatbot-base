@@ -108,7 +108,7 @@ window.DialogueStage = class {
     this.root.dataset.dialogueComplete = String(!this.box.hidden && lastPage && !this.typingTimer);
   }
   typeCurrentPage() {
-    const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
+    const text = this.displayText(this.pages?.[this.pageIndex] ?? this.fullText);
     if (this.typingTimer && this.typingText === text) return;
     this.finishTyping();
     this.text.textContent = text;
@@ -131,7 +131,7 @@ window.DialogueStage = class {
   }
   showPage(animate = true) {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex, this.pages.length - 1));
-    this.text.textContent = this.pages[this.pageIndex];
+    this.text.textContent = this.displayText(this.pages[this.pageIndex]);
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
@@ -142,11 +142,12 @@ window.DialogueStage = class {
     const typingText = this.typingText;
     this.measurePages();
     if (partial !== null) {
-      if ((this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
+      if (this.displayText(this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
       else { this.lastTypedText = null; this.typeCurrentPage(); }
     }
     this.syncProgress();
   }
+  displayText(text) { return (text || '').trim().replace(/\n\s*\n/g, '\n'); }
   measurePages() {
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
@@ -159,7 +160,7 @@ window.DialogueStage = class {
       this.box.style.minHeight = `${Math.max(112, (this.controls?.offsetHeight || 0) + (status?.offsetHeight || 0) + 76)}px`;
     };
     reserve();
-    this.text.textContent = this.fullText || '';
+    this.text.textContent = this.displayText(this.fullText);
     if (fit()) { this.pages = [this.fullText || '']; this.pageIndex = 0; this.showPage(false); return; }
     this.box.classList.add('is-paged');
     this.pager.hidden = false;
@@ -171,11 +172,13 @@ window.DialogueStage = class {
       let low = 1, high = characters.length - start, count = 1;
       while (low <= high) {
         const middle = Math.floor((low + high) / 2);
-        this.text.textContent = characters.slice(start, start + middle).join('');
+        this.text.textContent = this.displayText(characters.slice(start, start + middle).join(''));
         if (fit()) { count = middle; low = middle + 1; }
         else high = middle - 1;
       }
-      pages.push(characters.slice(start, start + count).join(''));
+      const page = characters.slice(start, start + count).join('');
+      if (page.trim()) pages.push(page);
+      else if (pages.length) pages[pages.length - 1] += page;
       start += count;
     }
     this.pages = pages.length ? pages : [''];
@@ -240,7 +243,7 @@ window.DialogueStage = class {
     const partial = this.typingTimer && this.fullText === text ? this.text.textContent : null;
     if (partial === null) this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
-    if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
+    if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
     if (legacyKaren) image = legacyKaren[1] === 'smile' ? '/assets/images/karen_smile.png' : '/assets/images/karen_basic.png';
     if (sceneId === 'photo_found' && /\/karen_/.test(image || '')) image = '/assets/images/karen_angry.png';

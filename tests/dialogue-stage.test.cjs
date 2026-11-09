@@ -295,12 +295,34 @@ test('long dialogue pages preserve every character without scroll or HTML interp
   assert.equal(stage.next.disabled,true);assert.equal(stage.previous.disabled,false);
 });
 
+test('paragraph breaks never produce empty dialogue pages at a page boundary', () => {
+  const {stage,nodes}=setup();
+  stage.pager={};stage.previous={};stage.next={};stage.pageLabel={};
+  stage.box.hidden=false;stage.box.clientHeight=100;
+  stage.box.querySelector=()=>null;stage.box.style={};
+  stage.box.classList={add(){},remove(){}};
+  stage.copy={clientHeight:1};
+  Object.defineProperty(stage.copy,'scrollHeight',{get(){return nodes['.dialogue-text'].textContent.split('\n').length;}});
+  stage.fullText='첫 독백입니다.\n\n다음 대사입니다.\n\n마지막 대사입니다.';
+  stage.layoutPages();
+  assert.equal(stage.pages.length,3);
+  assert.equal(stage.pages.join(''),stage.fullText);
+  for(let i=0;i<stage.pages.length;i++) {
+    stage.pageIndex=i;stage.showPage();
+    assert.ok(nodes['.dialogue-text'].textContent.trim());
+  }
+  stage.copy.clientHeight=2;
+  stage.layoutPages();
+  assert.equal(stage.pages.length,2);
+  assert.match(stage.displayText(stage.pages[0]),/첫 독백입니다\.\n다음 대사입니다\./);
+});
+
 test('the secret room is selected only for the disclosed photo_found scene',async()=>{
   const {nodes,stage}=setup();
   stage.render({background:'/assets/images/karen_house.svg',sceneId:'karen_dinner'});await stage.ready;
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_house.svg');
   stage.render({background:'/assets/images/karen_house.svg',sceneId:'photo_found'});await stage.ready;
-  assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_secret_room_angle2.png');
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_secret_room.png');
 });
 
 test('a server response followed by its final render cannot skip a pending home entrance',async()=>{

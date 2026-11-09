@@ -52,7 +52,9 @@
 
 정육점의 `inspect_basement`는 기존처럼 지하실 **입장** 행동이다. `basement` 장면에서는 그림의 화로를 클릭할 때만 `view.available_actions`의 `inspect_brazier`를 `/api/action`에 보낸다. 성공 응답의 단서 사건을 표시한 뒤 서버가 제공하는 `go_upstairs`(“지하실에서 나온다”)를 보여준다. 입장만으로 단서를 표시하거나 조사 전 퇴장을 제공하지 않는다. 같은 행동을 반복 요청하면 기존 `invalid_action` 오류가 난다. 공개 API 필드와 토큰 전달 방식은 그대로다.
 
-캐런의 집에서 `inspect_room`을 실행하면 `photo_found`로 이동하지만, 이때는 사진 단서와 호감도 변화가 없다. 화면이 기존 사진 확대·앞뒷면 확인 흐름을 보여준 뒤 `view.available_actions`의 `recognize_photo`를 `/api/action`에 보내면, 서버가 사진 단서·호감도 −5·캐런의 고정 대사를 한 번 적용한다. 성공 응답에서만 `return_home`이 제공된다. 요청·응답 형식과 장면 ID는 그대로다.
+사색 지미가 있는 `butcher_search`에서는 대화 응답을 “...”로 고정하며, `approach_jimmy` 뒤에는 `empty_butcher`에서 퇴장 서술을 표시합니다. 사건과 점수 판정은 기존 서버 규칙을 유지합니다.
+
+캐런의 집에서 `inspect_room`을 실행하면 `photo_found`로 이동하지만, 이때는 사진 단서와 호감도 변화가 없다. 화면은 정면 방→‘주변을 둘러본다’→사진이 있는 옆면 순서를 보여주며, 정면에서는 사진 선택을 제공하지 않습니다. 사진 확대·앞뒷면 확인 흐름을 보여준 뒤 `view.available_actions`의 `recognize_photo`를 `/api/action`에 보내면, 서버가 사진 단서·호감도 −5·캐런의 고정 대사를 한 번 적용한다. 성공 응답에서만 `return_home`이 제공된다. 요청·응답 형식과 장면 ID는 그대로다.
 
 `photo_found`에서 액자 **뒷면을 열 때** 화면은 `view.available_actions`의 `inspect_photo_back`을 `/api/action`에 보낸다. 성공한 응답의 `view.photo_back_date`를 뒷면에 표시하고 날짜 단서를 기록한다. 요청 전에는 뒷면 날짜를 표시하거나 단서를 기록하지 않는다. 이 조사는 한 번만 가능하며 `recognize_photo`의 사진 인지·감점·캐런 대사는 변경하지 않는다. 뒤집기 요청이 실패하면 이전 토큰과 사진 상태를 유지한다.
 
@@ -86,3 +88,5 @@ select(reply_text: str, character_id: str, scene_id: str, visual_cue: str | None
 ## 변경 절차
 
 필드 이름, 자료형, 엔드포인트 또는 이미지 선택기 시그니처를 바꾸려면 두 개발자가 먼저 합의해 이 문서를 수정한다. 각자 브랜치에서 인터페이스를 추측해 늘리지 않는다.
+
+축제의 `inspect_food` 응답은 음식 독백→머리카락 발견→추리 순서의 사건을 보냅니다. 화면은 음식 독백을 모두 읽은 뒤 고기 그림을 누르면 손이 들어오는 2D 연출과 머리카락 사진으로 넘어갑니다. 사진 사이 이동은 같은 응답 안의 표현이며 새 API 요청이나 점수를 만들지 않습니다.
