@@ -1,4 +1,4 @@
-# 더뉴빌리지로 오세요 — 화면·서버 API 계약 v5
+# 더뉴빌리지로 오세요 — 화면·서버 API 계약 v6
 
 > 분류: 팀 신규 · 독자: 두 개발자와 구현 AI 에이전트 · 실행 중 대화 모델의 입력: 아님. [문서 지도](README.md)
 
@@ -20,6 +20,8 @@
     "available_characters": [{"id": "jimmy", "name": "지미", "portrait": "/assets/images/jimmy_neutral.svg"}],
     "available_actions": [{"id": "visit_neighbors", "label": "이웃들에게 인사하러 간다", "kind": "move"}],
     "affinity": 50,
+    "gender": "female",
+    "job": null,
     "journal": [],
     "today": "11월 9일",
     "photo_back_date": null,
@@ -32,6 +34,7 @@
 - `events`는 이번 요청에서 새로 생긴 메시지다. `speaker_id`는 `jimmy`, `karen`, `bob`, `cathy`, `narrator`, `thought` 중 하나이고 `image`는 공개 URL 또는 `null`이다. 사용자의 입력은 화면이 표시한다.
 - `view`에는 현재 장면·장소 이름과 배경, 공개 가능한 선택지가 들어간다. `available_characters`는 현재 장소에서 대화할 수 있는 인물 최대 한 명이다. 새집에서는 해당 장면의 인물이 먼저 찾아온다. 축제 광장의 대화 상대는 밥이다.
 - `affinity`는 공개되는 마을 호감도 정수(0~100)다. 화면은 이 값을 그대로 표시하고 점수나 일자리 여부를 직접 계산하지 않는다. `available_actions.kind`는 `move`, `inspect`, `choice` 중 하나다. `ending`은 `null`, `escape`, `death`, `assimilation` 중 하나다. 엔딩 후에는 대화 상대와 행동 목록이 비어 있다.
+- `view.gender`는 새 플레이에서 선택한 `male`(남) 또는 `female`(여)다. 이전 버전에서 발급된 진행 토큰에는 `null`일 수 있다. `view.job`은 직업을 실제 선택하기 전과 거절한 뒤에는 `null`, 정원사를 선택하면 `gardener`, 트럭 운전수를 선택하면 `driver`다. 화면은 이 값을 표시용 이름으로만 바꾸며 대사·기록·제안 여부로 직업을 추측하지 않는다. 주인공 사진이 준비되기 전에는 성별과 관계없이 공통 임시 표시를 쓴다.
 - 차 키, 미래 단서, 인물별 비밀은 `view`로 보내지 않는다. 이미 발견한 사실만 `journal`에 나타낸다.
 - `view.today`는 해당 플레이의 이야기 날짜를 `M월 D일`로 표시한다. 내부에는 시작한 해를 보관하지만 응답에는 연도가 없다. 새 플레이 시작 시 한국 시간의 실제 날짜를 고정하고, 지미를 기다리는 장면과 축제로 이동할 때 각각 다음 날로 넘어간다. `view.photo_back_date`는 액자 뒷면 확인 전과 다른 장면에서 `null`이며, 확인에 성공한 `photo_found` 장면에서만 그 장면의 어제 날짜를 같은 형식으로 보낸다.
 - 화면은 장소 이미지를 큰 배경으로 사용하고 현재 인물을 그 위에 표시한다. 현재 장면의 사건 대사와 해당 인물의 자유 대화는 같은 대화창에 시간순으로 보여준다. 다른 인물의 과거 대화는 섞지 않는다. 행동 선택지는 화면 중앙 하단에 놓는다.
@@ -41,7 +44,7 @@
 
 | 엔드포인트 | JSON 요청 | 성공 | 역할 |
 | --- | --- | --- | --- |
-| `POST /api/session` | `{"player_name":"알렉스"}` | `201` | 새 이야기 시작. 이름은 공백을 제외한 1~50자 |
+| `POST /api/session` | `{"player_name":"알렉스","gender":"female"}` | `201` | 새 이야기 시작. 이름은 공백을 제외한 1~50자, 성별은 `male` 또는 `female` 필수 |
 | `POST /api/session/resume` | `{"state_token":"..."}` | `200` | 기존 서버 API 호환용. 현재 화면은 이어하기에 사용하지 않는다 |
 | `POST /api/chat` | `{"state_token":"...","character_id":"jimmy","message":"마을은 어때요?"}` | `200` | 현재 대화 가능한 인물에게 자유 입력. 메시지는 공백을 제외한 1~2000자 |
 | `POST /api/action` | `{"state_token":"...","action_id":"visit_neighbors"}` | `200` | 직전 `view.available_actions`에 있는 ID만 실행 |
@@ -56,7 +59,7 @@
 
 `photo_found`에서 액자 **뒷면을 열 때** 화면은 `view.available_actions`의 `inspect_photo_back`을 `/api/action`에 보낸다. 성공한 응답의 `view.photo_back_date`를 뒷면에 표시하고 날짜 단서를 기록한다. 요청 전에는 뒷면 날짜를 표시하거나 단서를 기록하지 않는다. 이 조사는 한 번만 가능하며 `recognize_photo`의 사진 인지·감점·캐런 대사는 변경하지 않는다. 뒤집기 요청이 실패하면 이전 토큰과 사진 상태를 유지한다.
 
-사진 사건 뒤 귀가 시 65점 이상이면 `checkpoint`에서 `accept_job`(일자리를 알아본다)·`decline_job`(지금은 거절한다)을 제공합니다. `accept_job`은 `job_choice`로 이동하며 `choose_gardener`·`choose_driver` 중 하나를 선택합니다. 직업 확정 시에만 +5(최대 100)를 적용하고 트럭 운전수만 차 키를 받습니다. 직업 선택과 거절 뒤에는 `job_result`에서 캐런의 축하·안내 대사를 표시하며, 마지막 대사까지 읽은 뒤 화면이 캐런을 페이드아웃하고 기존 `see_karen_off`를 자동 요청하면 `festival_invite`로 이동해 밥의 초대를 보여 줍니다. 자동 요청 실패 때만 ‘계속하기’로 같은 행동을 다시 요청합니다. 직업과 이미 받은 키는 `journal`에 기록하며 새 응답 필드는 없습니다. `job_result`는 고정 대사를 읽는 장면으로 자유 대화 상대가 없습니다.
+사진 사건 뒤 귀가 시 65점 이상이면 `checkpoint`에서 `accept_job`(일자리를 알아본다)·`decline_job`(지금은 거절한다)을 제공합니다. `accept_job`은 `job_choice`로 이동하며 `choose_gardener`·`choose_driver` 중 하나를 선택합니다. 직업 확정 시에만 +5(최대 100)를 적용하고 트럭 운전수만 차 키를 받습니다. 직업 선택과 거절 뒤에는 `job_result`에서 캐런의 축하·안내 대사를 표시하며, 마지막 대사까지 읽은 뒤 화면이 캐런을 페이드아웃하고 기존 `see_karen_off`를 자동 요청하면 `festival_invite`로 이동해 밥의 초대를 보여 줍니다. 자동 요청 실패 때만 ‘계속하기’로 같은 행동을 다시 요청합니다. 직업과 이미 받은 키는 `journal`에 기록하고, 현재 직업은 `view.job`으로 보냅니다. `job_result`는 고정 대사를 읽는 장면으로 자유 대화 상대가 없습니다.
 
 마을 호감도는 인물 사이에 공유된다. 한 인물과의 대화로 점수가 바뀌면 이후 다른 인물의 대사 태도에도 반영한다. 인물별 최근 대화는 진행 토큰에 따로 보관해 같은 인물을 다시 만났을 때 이어 쓴다. 사진 사건 뒤 귀가할 때의 일자리 판정은 그 시점에 고정하고 이후 대화로 바꾸지 않는다.
 

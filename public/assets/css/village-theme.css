@@ -296,5 +296,30 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
   @keyframes doorway-beacon { 0%, 35%, 41%, 48%, 100% { opacity: .2; filter: brightness(1.05); } 37%, 44%, 65% { opacity: .95; filter: brightness(1.45) drop-shadow(0 0 8px #ffe1a099); } }
 }
 .post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { animation: none; opacity: 1; filter: brightness(1.5); }
+/* The temporary portrait has no file source until both protagonist portraits are delivered. */
+.entry-name-dialog fieldset { flex-basis: 100%; min-width: 0; display: flex; gap: 18px; border: 1px solid #c49a6488; border-radius: 8px; padding: 8px 12px 12px; }
+.entry-name-dialog fieldset legend { padding: 0 5px; }
+.entry-name-dialog fieldset label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.entry-name-dialog input[type="radio"] { flex: none; width: 20px; min-height: 20px; height: 20px; padding: 0; accent-color: #d7ad70; }
+.entry-name-dialog fieldset[aria-invalid="true"] { border-color: #ffc4aa; }
+.entry-name-dialog #name-submit { min-height: 44px; padding: 8px 16px; }
+.player-profile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px; border: 1px solid #c49a6466; border-radius: 12px; background: #211824bb; }
+.player-photo { flex: none; width: 72px; aspect-ratio: 3 / 4; display: grid; place-items: center; padding: 5px; box-sizing: border-box; border: 2px solid #c49a6488; border-radius: 5px; background: #473943; color: #f0dcb8; text-align: center; font: 12px/1.4 "Malgun Gothic", sans-serif; }
+.player-profile dl { min-width: 0; margin: 0; display: grid; gap: 5px; }
+.player-profile dl div { min-width: 0; }
+.player-profile dt { color: #d8bb8f; font: 12px/1.3 "Malgun Gothic", sans-serif; }
+.player-profile dd { margin: 0; color: #fff0d2; overflow-wrap: anywhere; font: 600 15px/1.4 "Malgun Gothic", sans-serif; }
+@media (max-width: 700px) {
+  .post-move-screen:not(.is-intro) { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .post-move-screen:not(.is-intro) .move-sidebar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; max-height: 34dvh; padding: 8px; border-right: 0; border-bottom: 2px solid #c49a6488; }
+  .post-move-screen:not(.is-intro) .player-profile { padding: 6px; }
+  .post-move-screen:not(.is-intro) .player-photo { width: 46px; font-size: 10px; }
+  .post-move-screen:not(.is-intro) .player-profile dd { font-size: 12px; }
+  .post-move-screen:not(.is-intro) .move-affinity { padding: 4px; }
+  .post-move-screen:not(.is-intro) .move-affinity .affinity-heart { width: 70px; margin-top: 2px; }
+  .post-move-screen:not(.is-intro) .move-help { grid-column: 1 / -1; padding: 6px; }
+  .post-move-screen:not(.is-intro) .move-hints { display: flex; overflow-x: auto; }
+  .post-move-screen:not(.is-intro) .move-hints button { flex: 1 0 140px; min-height: 44px; }
+}
 /* Keep controls in layout while the reader finishes every dialogue page. */
 .dialogue-stage[data-dialogue-complete="false"] :is(.scene-actions, .dialogue-advance) { visibility: hidden; pointer-events: none; }

@@ -52,7 +52,13 @@ window.PostMoveUI = class {
     stage.parentNode.insertBefore(frame, stage);
     const heartId = `affinity-heart-${++affinitySequence}`;
     frame.insertAdjacentHTML('beforeend', `
-      <aside class="move-sidebar" aria-label="호감도와 입력 도움말">
+      <aside class="move-sidebar" aria-label="주인공 정보와 입력 도움말">
+        <section class="player-profile" aria-label="주인공 정보">
+          <div class="player-photo" role="img" aria-label="주인공 사진 준비 중"><span>사진 준비 중</span></div>
+          <dl><div><dt>이름</dt><dd class="player-name"></dd></div>
+            <div><dt>오늘</dt><dd class="player-today"></dd></div>
+            <div><dt>직업</dt><dd class="player-job"></dd></div></dl>
+        </section>
         <div class="move-affinity" role="progressbar" aria-label="호감도" aria-valuemin="0" aria-valuemax="100" aria-valuetext="아직 알 수 없음">
           <span class="affinity-caption">호감도</span>
           <div class="affinity-heart">
@@ -79,6 +85,10 @@ window.PostMoveUI = class {
       <nav class="move-nav" aria-label="장소 이동"></nav>
       <div class="move-composer"></div>`);
     this.title = stage.querySelector('.move-location');
+    this.photo = frame.querySelector('.player-photo');
+    this.playerName = frame.querySelector('.player-name');
+    this.playerToday = frame.querySelector('.player-today');
+    this.playerJob = frame.querySelector('.player-job');
     this.affinity = frame.querySelector('.move-affinity strong');
     this.affinityMeter = frame.querySelector('.move-affinity');
     this.affinityFill = frame.querySelector('.affinity-fill');
@@ -101,9 +111,14 @@ window.PostMoveUI = class {
     this.frame.classList.toggle('is-intro', !enabled);
   }
   render({sceneId, locationId, locationName, characterId = null, canChat = false,
-    registeredName = null, affinity = null, actions = [], busy = false}) {
+    registeredName = null, gender = null, today = null, job = null,
+    affinity = null, actions = [], busy = false}) {
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;
     this.title.title = this.title.textContent;
+    this.photo.setAttribute('data-gender', gender || '');
+    this.playerName.textContent = registeredName || '—';
+    this.playerToday.textContent = today || '—';
+    this.playerJob.textContent = {gardener:'정원사', driver:'트럭 운전수'}[job] || '미정';
     const value = typeof affinity === 'number' && Number.isFinite(affinity) ? Math.max(0, Math.min(100, affinity)) : null;
     if (value !== null && this.previousAffinity !== null && value !== this.previousAffinity &&
         !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {

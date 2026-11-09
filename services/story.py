@@ -76,10 +76,11 @@ def display_date(day: date) -> str:
     return f"{day.month}월 {day.day}일"
 
 
-def new_state(player_name: str) -> dict:
+def new_state(player_name: str, gender: str) -> dict:
     return {
         "version": 1,
         "player_name": player_name,
+        "gender": gender,
         "scene_id": "arrival",
         "location_id": "player_house",
         "visited": [],
@@ -225,6 +226,8 @@ def view(state: dict) -> dict:
         ],
         "available_actions": available_actions(state),
         "affinity": state["affinity"],
+        "gender": state.get("gender"),
+        "job": state.get("job"),
         "journal": state["journal"],
         "today": display_date(story_date(state)),
         "photo_back_date": (display_date(story_date(state) - timedelta(days=1))

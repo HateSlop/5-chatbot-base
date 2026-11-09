@@ -5,11 +5,15 @@ const vm = require('node:vm');
 const source = readFileSync(require('node:path').join(__dirname, '../public/assets/js/name-entry.js'), 'utf8');
 
 function setup(fetchImpl) {
-  const nodes = Object.fromEntries(['name-form', 'username', 'name-submit', 'name-status'].map(id => [id, {
+  const nodes = Object.fromEntries(['name-form', 'username', 'name-submit', 'name-status', 'gender-choice'].map(id => [id, {
     value: '', textContent: '', disabled: false, attrs: {}, listeners: {},
     setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; },
     addEventListener(k, fn) { this.listeners[k] = fn; }, focus() { this.focused = true; },
   }]));
+  const firstGender = {focus() { this.focused = true; }};
+  let selectedGender = null;
+  nodes['name-form'].querySelector = selector => selector.endsWith(':checked') ? selectedGender && {value: selectedGender} : firstGender;
+  nodes['gender-choice'].querySelector = () => firstGender;
   const requests = [];
   const starts = [];
   vm.runInNewContext(source, {
@@ -19,7 +23,7 @@ function setup(fetchImpl) {
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
     fetch: async (path, options) => { requests.push({path, payload: JSON.parse(options.body)}); return fetchImpl(); },
   });
-  return {nodes, requests, starts,
+  return {nodes, requests, starts, firstGender, selectGender(value) { selectedGender = value; nodes['gender-choice'].listeners.change(); },
     submit: value => { nodes.username.value = value; return nodes['name-form'].listeners.submit({preventDefault() {}}); }};
 }
 
@@ -44,10 +48,12 @@ for (const value of ['', '   ', '가'.repeat(51)]) test(`reject invalid name len
 
 test('trim name and hand the first response to the game in the same document', async () => {
   const h = setup(success);
+  h.selectGender('female');
   await h.submit('  새 이름  ');
   assert.equal(h.requests.length, 1);
   assert.equal(h.requests[0].path, '/api/session');
   assert.equal(h.requests[0].payload.player_name, '새 이름');
+  assert.equal(h.requests[0].payload.gender, 'female');
   assert.equal(h.starts[0].name, '새 이름');
   assert.equal(h.starts[0].data.events[0].text, '첫 인사');
   assert.equal(h.starts[0].data.state_token, 'fresh');
@@ -55,12 +61,15 @@ test('trim name and hand the first response to the game in the same document', a
 
 test('50 characters accepted; failure keeps name and allows retry', async () => {
   const accepted = setup(success);
+  accepted.selectGender('male');
   await accepted.submit('가'.repeat(50));
   assert.equal(accepted.starts.length, 1);
   const failed = setup(() => ({ok: false, json: async () => ({error: {message: '실패'}})}));
+  failed.selectGender('female');
   await failed.submit(' 유지할 이름 ');
   assert.equal(failed.starts.length, 0);
   assert.equal(failed.nodes.username.value, ' 유지할 이름 ');
+  assert.equal(failed.requests[0].payload.gender, 'female');
   assert.equal(failed.nodes['name-submit'].disabled, false);
   await failed.submit('재시도');
   assert.equal(failed.requests.length, 2);
@@ -69,9 +78,25 @@ test('50 characters accepted; failure keeps name and allows retry', async () => 
 test('duplicate submit is blocked while the first request is pending', async () => {
   let resolve;
   const h = setup(() => new Promise(r => { resolve = r; }));
+  h.selectGender('male');
   const pending = h.submit('이름');
   await h.submit('이름');
   assert.equal(h.requests.length, 1);
   resolve(success());
   await pending;
+});
+
+test('name alone and gender alone cannot start; both selections can', async () => {
+  const h = setup(success);
+  await h.submit('새 이름');
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.nodes['gender-choice'].attrs['aria-invalid'], 'true');
+  assert.equal(h.firstGender.focused, true);
+  h.selectGender('male');
+  await h.submit('');
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.nodes.username.attrs['aria-invalid'], 'true');
+  await h.submit('새 이름');
+  assert.equal(h.requests.length, 1);
+  assert.equal(h.requests[0].payload.gender, 'male');
 });

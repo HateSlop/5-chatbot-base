@@ -28,7 +28,7 @@ TO_CHECKPOINT = [
 class StoryTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
-        response = self.client.post("/api/session", json={"player_name": "알렉스"})
+        response = self.client.post("/api/session", json={"player_name": "알렉스", "gender": "male"})
         self.assertEqual(response.status_code, 201)
         self.token = response.get_json()["state_token"]
 
@@ -138,11 +138,13 @@ class StoryTest(unittest.TestCase):
         self.checkpoint_at(65)
         choices = self.action("accept_job")
         self.assertEqual(choices["view"]["scene_id"], "job_choice")
+        self.assertIsNone(choices["view"]["job"])
         self.assertEqual([item["id"] for item in choices["view"]["available_actions"]],
                          ["choose_gardener", "choose_driver"])
         result = self.action("choose_gardener")
         state = decode_state(self.token)
         self.assertEqual((state["job"], state["affinity"], state["has_car_key"]), ("gardener", 70, False))
+        self.assertEqual(result["view"]["job"], "gardener")
         self.assertIn("직업 획득: 정원사", result["view"]["journal"])
         self.assertEqual(result["view"]["available_characters"], [])
         self.assertEqual(result["events"][0]["speaker_id"], "karen")
@@ -160,6 +162,7 @@ class StoryTest(unittest.TestCase):
         result = self.action("decline_job")
         state = decode_state(self.token)
         self.assertEqual((state["job"], state["affinity"], state["has_car_key"]), (None, 65, False))
+        self.assertIsNone(result["view"]["job"])
         self.assertEqual(result["view"]["scene_id"], "job_result")
         self.assertIn("서두르실 필요", result["events"][0]["text"])
         self.assertEqual(result["events"][0]["speaker_id"], "karen")
@@ -211,7 +214,7 @@ class StoryTest(unittest.TestCase):
         self.assertTrue(any("오후 6시" in hit.content for hit in retriever.search("약속", "jimmy", "dinner_invite", ["brazier"])))
 
     def test_place_has_one_character_and_affinity_is_shared_with_bob(self):
-        start = self.client.post("/api/session", json={"player_name": "검증"}).get_json()["view"]
+        start = self.client.post("/api/session", json={"player_name": "검증", "gender": "male"}).get_json()["view"]
         self.assertEqual((start["location_name"], start["affinity"]), ("새집", 50))
         self.assertEqual(start["available_characters"][0]["id"], "jimmy")
         self.assertEqual(self.action("visit_neighbors")["view"]["available_characters"], [])
@@ -511,9 +514,11 @@ class StoryTest(unittest.TestCase):
                 self.checkpoint_at(score)
                 learned = self.action("accept_job")
                 self.assertEqual(learned["view"]["affinity"], score)
+                self.assertIsNone(learned["view"]["job"])
                 self.assertFalse(decode_state(self.token)["has_car_key"])
                 accepted = self.action("choose_driver")
                 self.assertEqual(accepted["view"]["affinity"], min(100, score + 5))
+                self.assertEqual(accepted["view"]["job"], "driver")
                 self.assertIn("고마워요", accepted["events"][0]["text"])
                 self.assertTrue(decode_state(self.token)["job_offered"])
                 self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "accept_job"}).status_code, 409)

@@ -2,10 +2,15 @@ const nameForm = document.getElementById("name-form");
 const nameInput = document.getElementById("username");
 const nameSubmit = document.getElementById("name-submit");
 const nameStatus = document.getElementById("name-status");
+const genderChoice = document.getElementById("gender-choice");
 let submittingName = false;
 
 nameInput.addEventListener("input", () => {
   nameInput.removeAttribute("aria-invalid");
+  nameStatus.textContent = "";
+});
+genderChoice.addEventListener("change", () => {
+  genderChoice.removeAttribute("aria-invalid");
   nameStatus.textContent = "";
 });
 
@@ -19,6 +24,13 @@ nameForm.addEventListener("submit", async (event) => {
     nameInput.focus();
     return;
   }
+  const gender = nameForm.querySelector('input[name="gender"]:checked')?.value;
+  if (!gender) {
+    nameStatus.textContent = "성별을 남 또는 여로 선택해 주세요.";
+    genderChoice.setAttribute("aria-invalid", "true");
+    genderChoice.querySelector('input[name="gender"]').focus();
+    return;
+  }
   submittingName = true;
   nameSubmit.disabled = true;
   nameInput.readOnly = true;
@@ -27,7 +39,7 @@ nameForm.addEventListener("submit", async (event) => {
   try {
     const response = await fetch("/api/session", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_name: playerName }),
+      body: JSON.stringify({ player_name: playerName, gender }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message || "새 이야기를 시작하지 못했습니다.");

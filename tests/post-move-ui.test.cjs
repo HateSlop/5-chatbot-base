@@ -50,6 +50,25 @@ test('registered home name is literal text and hints fill a draft without sendin
   h.input.disabled=true;h.input.value='유지';h.nodes.get('.move-hints').children[1].click();assert.equal(h.input.value,'유지');
 });
 
+test('profile uses server date and chosen job; both genders share a source-free temporary portrait',()=>{
+  const h=setup();
+  h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'<b>새 이름</b>',gender:'male',today:'2월 28일',job:null});
+  assert.equal(h.nodes.get('.player-name').textContent,'<b>새 이름</b>');
+  assert.equal(h.nodes.get('.player-today').textContent,'2월 28일');
+  assert.equal(h.nodes.get('.player-job').textContent,'미정');
+  assert.equal(h.nodes.get('.player-photo').attrs['data-gender'],'male');
+  assert.equal(h.nodes.get('.player-photo').src,undefined);
+  h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'새 이름',gender:'female',today:'3월 1일',job:'gardener'});
+  assert.equal(h.nodes.get('.player-today').textContent,'3월 1일');
+  assert.equal(h.nodes.get('.player-job').textContent,'정원사');
+  assert.equal(h.nodes.get('.player-photo').attrs['data-gender'],'female');
+  assert.equal(h.nodes.get('.player-photo').src,undefined);
+  h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'새 이름',gender:'female',today:'3월 2일',job:'driver'});
+  assert.equal(h.nodes.get('.player-job').textContent,'트럭 운전수');
+  h.ui.render({locationId:'player_house',locationName:'새집',registeredName:'새 이름',gender:'female',today:'3월 2일',job:null});
+  assert.equal(h.nodes.get('.player-job').textContent,'미정');
+});
+
 test('suggestions follow the scene, place and speaker without revealing future clues',()=>{
   const h=setup();
   const cases=[
