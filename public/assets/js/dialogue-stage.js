@@ -101,15 +101,20 @@ window.DialogueStage = class {
       this.typingTimer = null;
       this.text.textContent = this.typingText;
     }
+    this.syncProgress();
+  }
+  syncProgress() {
+    const lastPage = !this.pages || this.pageIndex === this.pages.length - 1;
+    this.root.dataset.dialogueComplete = String(!this.box.hidden && lastPage && !this.typingTimer);
   }
   typeCurrentPage() {
     const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
     if (this.typingTimer && this.typingText === text) return;
     this.finishTyping();
     this.text.textContent = text;
-    if (this.box.hidden || this.lastTypedText === text) return;
+    if (this.box.hidden || this.lastTypedText === text) { this.syncProgress(); return; }
     this.lastTypedText = text;
-    if (typeof setTimeout !== 'function' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (typeof setTimeout !== 'function' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { this.syncProgress(); return; }
     this.typingText = text;
     this.typingWidth = this.box.clientWidth;
     this.typingHeight = this.box.clientHeight;
@@ -120,6 +125,7 @@ window.DialogueStage = class {
       count += step;
       this.text.textContent = letters.slice(0, count).join('');
       this.typingTimer = count < letters.length ? setTimeout(tick, 12) : null;
+      this.syncProgress();
     };
     tick();
   }
@@ -139,6 +145,7 @@ window.DialogueStage = class {
       if ((this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
       else { this.lastTypedText = null; this.typeCurrentPage(); }
     }
+    this.syncProgress();
   }
   measurePages() {
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
@@ -153,7 +160,7 @@ window.DialogueStage = class {
     };
     reserve();
     this.text.textContent = this.fullText || '';
-    if (fit()) { this.pages = [this.fullText || '']; return; }
+    if (fit()) { this.pages = [this.fullText || '']; this.pageIndex = 0; this.showPage(false); return; }
     this.box.classList.add('is-paged');
     this.pager.hidden = false;
     reserve();
@@ -295,6 +302,7 @@ window.DialogueStage = class {
     this.text.textContent = partial ?? text;
     if (this.fullText !== text) this.pageIndex = 0;
     this.fullText = text;
+    this.root.dataset.dialogueComplete = 'false';
     this.box.scrollTop = 0;
     let revealBackground;
     this.backgroundReady = new Promise(resolve => { revealBackground = resolve; });

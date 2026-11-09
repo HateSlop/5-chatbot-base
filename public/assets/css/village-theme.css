@@ -292,3 +292,5 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
   @keyframes doorway-beacon { 0%, 35%, 41%, 48%, 100% { opacity: .2; filter: brightness(1.05); } 37%, 44%, 65% { opacity: .95; filter: brightness(1.45) drop-shadow(0 0 8px #ffe1a099); } }
 }
 .post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { animation: none; opacity: 1; filter: brightness(1.5); }
+/* Keep controls in layout while the reader finishes every dialogue page. */
+.dialogue-stage[data-dialogue-complete="false"] :is(.scene-actions, .dialogue-advance) { visibility: hidden; pointer-events: none; }

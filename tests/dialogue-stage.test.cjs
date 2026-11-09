@@ -414,6 +414,24 @@ test('fast text reveal preserves Unicode and can be completed immediately', () =
   assert.equal(nodes['.dialogue-text'].textContent,stage.fullText);
 });
 
+test('progress stays hidden until the last page finishes typing, including immediate reveal', () => {
+  const timers = new Map(); let id = 0;
+  const {stage} = setup({setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});
+  stage.box.hidden = false;
+  stage.pages = ['첫 번째 대사', '마지막 대사'];
+  stage.previous = {}; stage.next = {}; stage.pageLabel = {};
+  stage.showPage();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.pageIndex = 1; stage.showPage();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'true');
+  stage.pageIndex = 0; stage.showPage(); stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+});
+
 test('every new line types and repeated renders or layout do not finish it early', async () => {
   const timers=new Map();let id=0;
   const {stage,nodes}=setup({setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});

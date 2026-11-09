@@ -199,6 +199,9 @@ brazierHotspot.addEventListener('click', () => {
 let secretFrame = 0;
 let karenDinnerDismissed = false;
 let karenDepartureTimer;
+let jobDepartureTimer;
+let jobDeparturePending = false;
+let jobDepartureFailed = false;
 const greetingChats = new Map();
 function greetingLocked(view) {
   return ['arrival', 'neighbors'].includes(view.scene_id) && view.available_characters.length > 0 &&
@@ -256,7 +259,7 @@ function renderMessages() {
   const festivalScene = ['festival', 'hair_found'].includes(currentView.scene_id);
   const festivalEvents = conversation.filter(item => item.kind === 'scene');
   const line = festivalScene && currentView.scene_id === 'hair_found'
-    ? (festivalFrame === 0 ? null : festivalEvents[Math.min(festivalFrame - 1, festivalEvents.length - 1)])
+    ? festivalEvents[Math.min(festivalFrame, festivalEvents.length - 1)]
     : conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
     background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : ['meat','hair','stares'][Math.min(festivalFrame, 2)]}.png` : currentView.scene_id === 'photo_found' ? '/assets/images/karen_secret_room_angle2.png' : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
@@ -318,6 +321,32 @@ function renderMessages() {
     });
   }
   log.scrollTop = log.scrollHeight;
+  clearTimeout(jobDepartureTimer);
+  if (currentView.scene_id === 'job_result' && !jobDeparturePending && !jobDepartureFailed) {
+    const scene = currentView;
+    let readAt = null;
+    const depart = async () => {
+      if (currentView !== scene || busy || !stateToken || jobDeparturePending) return;
+      if (shopStage.dataset.dialogueComplete !== 'true') readAt = null;
+      else readAt ??= Date.now();
+      if (readAt === null || Date.now() - readAt < 1500) {
+        jobDepartureTimer = setTimeout(depart, 250);
+        return;
+      }
+      jobDeparturePending = true;
+      await dialogueStage.depart?.(false);
+      if (currentView !== scene || !stateToken) return;
+      await performAction('see_karen_off');
+      if (currentView.scene_id === 'job_result') {
+        jobDepartureFailed = true;
+        jobDeparturePending = false;
+        renderView(currentView);
+      }
+    };
+    Promise.resolve(dialogueStage.ready).then(() => {
+      if (currentView === scene && !jobDeparturePending) jobDepartureTimer = setTimeout(depart, 1500);
+    });
+  }
 }
 
 function renderView(view) {
@@ -380,13 +409,14 @@ function renderView(view) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
+    if (view.scene_id === 'job_result' && action.id === 'see_karen_off' && !jobDepartureFailed) continue;
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
     if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id === 'inspect_brazier') continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `action-button ${action.kind}`;
-    button.textContent = emptyShop && action.id === 'inspect_basement' ? '지하실에 내려가본다' : emptyShop && action.id === 'inspect_room' ? '방에 들어가본다' : action.label;
+    button.textContent = view.scene_id === 'job_result' && action.id === 'see_karen_off' ? '계속하기' : emptyShop && action.id === 'inspect_basement' ? '지하실에 내려가본다' : emptyShop && action.id === 'inspect_room' ? '방에 들어가본다' : action.label;
     button.disabled = busy;
     button.addEventListener("click", () => performAction(action.id));
     actionList.append(button);
@@ -439,6 +469,9 @@ function applyResponse(data, kind, characterId = null) {
   clearReaction();
   if (decreased) angryReaction = characterId;
   if (changedScene) {
+    clearTimeout(jobDepartureTimer);
+    jobDeparturePending = false;
+    jobDepartureFailed = false;
     festivalFrame = 0;
     secretFrame = 0;
     karenDinnerDismissed = false;
@@ -528,6 +561,7 @@ async function request(path, payload) {
 }
 
 async function performAction(actionId) {
+  if (shopStage.dataset?.dialogueComplete === 'false' && dialogueStage.box && !dialogueStage.box.hidden) return;
   if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
   if (currentView.scene_id === 'photo_found' && secretFrame < 2 &&
@@ -576,6 +610,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  clearTimeout(jobDepartureTimer);
+  jobDeparturePending = true;
   dialogueStage.resetSelection?.();
   clearReaction();
   greetedPlaces.clear();

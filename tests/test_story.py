@@ -555,6 +555,10 @@ class StoryTest(unittest.TestCase):
         for action_id in ("return_home", "decline_job", "see_karen_off", "go_festival"):
             self.action(action_id)
         food = self.action("inspect_food")
+        self.assertEqual(len(food["events"]), 3)
+        self.assertTrue(food["events"][0]["text"].startswith("와… 이게 다 뭐야?"))
+        self.assertTrue(food["events"][0]["text"].endswith("잠깐, 이건 뭐지?"))
+        self.assertEqual(food["events"][1]["text"], "밥은 머리카락이 없는데?")
         thoughts = " ".join(item["text"] for item in food["events"])
         for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
             self.assertIn(detail, thoughts)

@@ -6,7 +6,7 @@ const path = require('node:path');
 
 function node() {
   return {
-    children: [], listeners: {}, style: {}, hidden: false, disabled: false,
+    children: [], listeners: {}, style: {}, dataset: {}, hidden: false, disabled: false,
     append(item) { this.children.push(item); },
     replaceChildren(...items) { this.children = items; },
     attrs: {},
@@ -85,6 +85,41 @@ test('job explanation and reward keep Karen visible without asking for another c
   assert.equal(h.nodes.get('user-message').disabled, true);
 });
 
+test('job result waits for reading, fades once and automatically requests the next scene', async () => {
+  const h = setup();
+  const result = response('job_result', 'player_house', null, [{speaker_id:'karen',text:'축하드려요.',image:'/assets/images/karen_smile.svg'}]);
+  result.view.available_actions = [{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
+  let fades = 0, requests = 0;
+  vm.runInContext('dialogueStage.depart = async () => { window.faded(); }',h.context);
+  h.context.window.faded = () => ++fades;
+  h.context.fetch = async () => {++requests; return {ok:true,json:async()=>response('festival_invite','player_house','bob',[])};};
+  h.context.window.startStory(result,'테스트');
+  await new Promise(r=>setImmediate(r));
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  const tick = async () => {const [id, timer] = h.timers.entries().next().value; h.timers.delete(id); await timer.callback();};
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete = 'false';
+  await tick(); assert.equal(requests,0);
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete = 'true';
+  await tick(); assert.equal(requests,0);
+  h.setClock(1500); await tick();
+  assert.equal(fades,1); assert.equal(requests,1);
+  assert.equal(h.stage().sceneId,'festival_invite');
+});
+
+test('failed automatic departure offers continue instead of repeated automatic requests', async () => {
+  const h = setup();
+  const result = response('job_result','player_house',null,[{speaker_id:'karen',text:'괜찮아요.',image:'/assets/images/karen_smile.svg'}]);
+  result.view.available_actions=[{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
+  h.context.fetch=async()=>{throw Error('연결 오류');};
+  h.context.window.startStory(result,'테스트');
+  await new Promise(r=>setImmediate(r));
+  const tick=async()=>{const [id,timer]=h.timers.entries().next().value;h.timers.delete(id);await timer.callback();};
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete='true';
+  await tick();h.setClock(1500);await tick();
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'계속하기');
+  assert.equal(h.timers.size,0);
+});
+
 test('successful movement clears progress status while failures remain visible', async () => {
   const h = setup();
   h.context.window.startStory(response('festival_invite', 'player_house', 'bob', []), '알렉스');
@@ -138,6 +173,7 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   assert.equal(h.split(), true);
   assert.equal(h.stage().image, null);
   const discovery = response('hair_found', 'square', 'bob', [
+    {speaker_id:'thought', text:'와… 이게 다 뭐야? 진짜 맛있어 보이는데? 잠깐, 이건 뭐지?', image:null},
     {speaker_id:'thought', text:'음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다.', image:null},
     {speaker_id:'thought', text:'그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다.', image:null},
   ]);
@@ -146,19 +182,19 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   await vm.runInContext("performAction('inspect_food')", h.context);
   const buttons = () => h.nodes.get('action-list').children;
   assert.equal(h.stage().background, '/assets/images/festival_meat.png');
-  assert.equal(h.stage().text, '');
+  assert.equal(h.stage().text, discovery.events[0].text);
   assert.deepEqual(buttons().map(button => button.textContent), ['다음 장면 ›']);
   h.context.fetch = async () => { throw Error('presentation must not call the server'); };
   await vm.runInContext("performAction('escape')", h.context);
   buttons()[0].listeners.click();
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
-  assert.equal(h.stage().text, discovery.events[0].text);
+  assert.equal(h.stage().text, discovery.events[1].text);
   h.context.renderView(discovery.view);
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
   buttons()[0].listeners.click();
   assert.equal(h.stage().background, '/assets/images/festival_stares.png');
   assert.equal(h.split(), true);
-  assert.equal(h.stage().text, discovery.events[1].text);
+  assert.equal(h.stage().text, discovery.events[2].text);
   assert.equal(h.stage().image, null);
   assert.deepEqual(buttons().map(button => button.textContent), ['escape','stay']);
   h.context.applyResponse(response('ending_escape', 'square', null, []), 'scene');

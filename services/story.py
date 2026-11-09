@@ -199,7 +199,7 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "festival_invite":
         return [_action("go_festival", "마을 축제로 간다", "move")]
     if scene == "festival":
-        return [_action("inspect_food", "음식을 살핀다", "inspect")]
+        return [_action("inspect_food", "축제 음식을 살펴본다", "inspect")]
     if scene == "hair_found":
         return [
             _action("escape", "마을에서 도망친다", "choice"),
@@ -391,8 +391,9 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["clues"].append("jimmy_hair")
         next_state["journal"].append("축제 음식에서 주황빛 적갈색 머리카락을 발견했다.")
         events += [
-            event("thought", "음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다."),
-            event("thought", "그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다."),
+            event("thought", "와… 이게 다 뭐야? 진짜 맛있어 보이는데?\n\n밥이 요리를 이렇게 잘하는 사람이었어? 솜씨가 대단한걸?\n\n뭐부터 먹어볼까…?\n\n…응?\n\n잠깐, 이건 뭐지?"),
+            event("thought", "밥은 머리카락이 없는데?"),
+            event("thought", "음식에서 발견한 주황빛 적갈색 머리카락… 음식을 만든 밥은 대머리다. 그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다."),
         ]
     elif scene == "hair_found":
         ending = "assimilation" if action_id == "stay" else "escape" if state["has_car_key"] else "death"
