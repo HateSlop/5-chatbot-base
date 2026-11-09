@@ -31,6 +31,8 @@ test('live entry begins at the pre-move house, then waits for Jimmy after depart
   h.get('entry-depart').listeners.click();await new Promise(r=>setImmediate(r));
   assert.equal(h.renders.at(-1).dialogue,false);assert.equal(h.delay,1500);
   h.timers.get(1)();assert.equal(h.renders.at(-1).speaker,'지미');
+  assert.match(h.renders.at(-1).text,/내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어!/);
+  assert.match(h.renders.at(-1).text,/아 참, 너의 이름은 뭐야\?$/);
   assert.equal(h.get('entry-answer').hidden,false);
   h.get('entry-answer').listeners.click();assert.equal(h.get('entry-name-dialog').open,true);assert.equal(h.get('username').focused,true);
 });

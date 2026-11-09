@@ -71,6 +71,35 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(decode_state(self.token)["scene_id"], "hair_found")
         self.action("begin_final_choice")
 
+    def test_charles_first_greeting_and_early_questions_keep_jimmy_belief_public(self):
+        started = self.client.post("/api/session", json={"player_name": "알렉스", "gender": "female"}).get_json()
+        self.token = started["state_token"]
+        greeting = started["events"][0]["text"]
+        self.assertNotIn("찰스", greeting)
+        self.assertEqual(started["view"]["scene_id"], "arrival")
+        self.assertNotIn("실종", greeting)
+        initial_lines = decode_state(self.token)["scene_events"]
+        self.assertIn("내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어!", initial_lines[0]["text"])
+        self.assertEqual(initial_lines[1]["text"], greeting.removeprefix("안녕, 알렉스! "))
+        turns = [
+            {"reply": "찰스는 내 친구야. 지난주 마을을 떠났어.", "visual_cue": "neutral"},
+            {"reply": "왜 떠났는지는 나도 몰라.", "visual_cue": "neutral"},
+        ]
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", side_effect=turns) as generate:
+            for question in ("찰스가 누구야?", "왜 떠났어?"):
+                response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "jimmy", "message": question})
+                self.assertEqual(response.status_code, 200)
+                self.token = response.get_json()["state_token"]
+        first, second = (call.args for call in generate.call_args_list)
+        self.assertIn("찰스는 지미의 친구", first[3][0].content)
+        self.assertIn("지난주 마을을 떠났다고 알고", first[3][0].content)
+        self.assertIn("떠난 이유와 행선지는 모른다", first[3][0].content)
+        self.assertEqual(first[7], initial_lines)
+        self.assertIn("찰스는 내 친구야", second[4][-1]["content"])
+        for args in (first, second):
+            self.assertNotIn("실종", str((args[2], args[3], args[7], args[8])))
+            self.assertNotIn("화로", str((args[2], args[3], args[7], args[8])))
+
     def test_low_affinity_goes_to_butcher_death_without_festival(self):
         checkpoint = self.checkpoint_at(64)
         state = decode_state(self.token)
