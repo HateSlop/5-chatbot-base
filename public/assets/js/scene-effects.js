@@ -5,12 +5,13 @@ window.sceneEffects = new class {
     this.screen = document.getElementById('death-screen');
     this.video = document.getElementById('death-video');
     this.status = document.getElementById('death-status');
+    this.controls = document.getElementById('death-controls');
     this.replay = document.getElementById('death-replay');
     this.game = document.getElementById('game-screen');
     this.replay.addEventListener('click', () => { this.video.currentTime = 0; this.play(); });
     document.getElementById('death-restart').addEventListener('click', () => window.location.reload());
-    this.video.addEventListener('ended', () => { this.status.textContent = '이야기가 끝났습니다.'; this.replay.focus(); });
-    this.video.addEventListener('error', () => { this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 새로 시작해 주세요.'; });
+    this.video.addEventListener('ended', () => { this.controls.hidden = false; this.status.textContent = '이야기가 끝났습니다.'; this.replay.focus(); });
+    this.video.addEventListener('error', () => { this.controls.hidden = false; this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 새로 시작해 주세요.'; });
     window.addEventListener('pagehide', () => { this.video.pause(); });
   }
   async transition(show) {
@@ -30,9 +31,10 @@ window.sceneEffects = new class {
     } finally { this.curtain.hidden = true; }
   }
   async play() {
+    this.controls.hidden = true;
     this.status.textContent = '';
     try { await this.video.play(); }
-    catch { this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
+    catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
   ending(type, text = '') {
     const death = type === 'death';

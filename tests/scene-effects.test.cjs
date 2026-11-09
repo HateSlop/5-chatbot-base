@@ -18,9 +18,13 @@ test('scene changes happen under black, then fade back; failures never leave a c
 test('death plays once, other endings do not, replay and new game remain available',async()=>{
   const h=setup();h.effects.ending('escape');assert.equal(h.plays(),0);
   h.effects.ending('death','사망');h.effects.ending('death','사망');assert.equal(h.plays(),1);assert.equal(h.get('game-screen').inert,true);
+  assert.equal(h.get('death-controls').hidden,true);
   h.get('death-video').listeners.ended();assert.equal(h.get('death-replay').focused,true);
+  assert.equal(h.get('death-controls').hidden,false);
   h.get('death-replay').listeners.click();assert.equal(h.plays(),2);
+  assert.equal(h.get('death-controls').hidden,true);
   h.effects.ending(null);assert.equal(h.get('death-screen').hidden,true);assert.equal(h.get('game-screen').inert,false);
   h.get('death-video').play=()=>Promise.reject(Error('blocked'));await h.effects.play();assert.match(h.get('death-status').textContent,/재생 버튼/);
+  assert.equal(h.get('death-controls').hidden,false);
   h.get('death-video').listeners.error();assert.match(h.get('death-status').textContent,/불러오지/);
 });

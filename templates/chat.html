@@ -93,8 +93,8 @@
     </div>
     <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden></div>
     <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
-      <video id="death-video" controls playsinline preload="none" aria-label="사망 엔딩 영상" src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
-      <div class="death-controls">
+      <video id="death-video" playsinline preload="none" aria-label="사망 엔딩 영상" src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}"></video>
+      <div id="death-controls" class="death-controls" hidden>
         <p id="death-description"></p>
         <p id="death-status" role="status"></p>
         <button id="death-replay" type="button">다시 재생</button>
@@ -102,7 +102,7 @@
       </div>
     </section>
     <dialog id="entry-ad-dialog" class="entry-ad-dialog" aria-label="더뉴빌리지 TV 광고">
-      <video id="entry-ad-video" controls playsinline preload="none" src="{{ asset_url('assets/videos/village-ad.mp4') }}" aria-label="더뉴빌리지 광고 영상"></video>
+      <video id="entry-ad-video" playsinline preload="none" src="{{ asset_url('assets/videos/village-ad.mp4') }}" aria-label="더뉴빌리지 광고 영상"></video>
       <p id="entry-ad-status" role="status"></p>
       <button id="entry-ad-retry" type="button" hidden>광고 재생</button>
       <button id="entry-ad-continue" type="button" hidden>계속하기 ›</button>
