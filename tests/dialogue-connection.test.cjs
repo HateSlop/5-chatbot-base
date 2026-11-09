@@ -28,6 +28,7 @@ function setup({missingBasket = false} = {}) {
   let stage;
   let move;
   let split;
+  let choice;
   let clock = 0;
   const context = vm.createContext({
     document: {
@@ -38,11 +39,12 @@ function setup({missingBasket = false} = {}) {
     },
     window: {
       addEventListener: (name, callback) => { listeners[name] = callback; },
+      FestivalChoice: class {update(data){choice=data;} reset(){}},
       location: {reload() { this.reloaded = true; }, assign(path) { this.assigned = path; }},
     },
     localStorage: new Proxy({}, {get() { throw Error('persistent storage forbidden'); }}),
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
-    DialogueStage: class {render(data) { stage = data; }},
+    DialogueStage: class {render(data) { stage = data; } replaceBackground(path) {stage.background=path; return Promise.resolve(true);}},
     PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
     Date: {now:()=>clock},
@@ -50,7 +52,7 @@ function setup({missingBasket = false} = {}) {
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split, choice:()=>choice,
     setClock:value=>clock=value,
     transcript: () => vm.runInContext('transcript', context)};
 }
@@ -243,7 +245,12 @@ test('meat goes directly to the hair photo, shakes once and changes to stares fo
   assert.equal(h.stage().background,'/assets/images/festival_hair.png');
   assert.equal(shakes,1);
   assert.equal(root.children.some(n=>n.className==='festival-hand-motion'),false);
-  assert.equal(h.stage().backgroundForPage(lines.slice(4).join('\n'),2,[lines.slice(0,2).join('\n'),lines.slice(2,4).join('\n'),lines.slice(4).join('\n')]),'/assets/images/festival_stares.png');
+  root.dataset.dialogueComplete='false';
+  assert.equal(h.choice().ready(),false);
+  assert.equal(h.stage().background,'/assets/images/festival_hair.png');
+  root.dataset.dialogueComplete='true';
+  assert.equal(h.choice().ready(),true);
+  await h.choice().onRead();
   h.context.renderView(data.view);assert.equal(h.stage().background,'/assets/images/festival_stares.png');
   h.context.window.startStory(data,'다시');h.context.window.matchMedia=()=>({matches:true});
   await meat.listeners.click();assert.equal(shakes,1);

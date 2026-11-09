@@ -17,10 +17,25 @@ test('the choice clock starts after the final dialogue page, never while reading
   const h=setup();let ready=false;
   h.ui.update({reading:true,ready:()=>ready});
   h.clock(10000);await h.tick();assert.deepEqual(h.calls,[]);
-  ready=true;await h.tick();h.clock(11499);await h.tick();assert.deepEqual(h.calls,[]);
-  h.clock(11500);await h.tick();assert.deepEqual(h.calls,['begin_final_choice']);
-  h.ui.update({deadline:21500});assert.equal(h.dialog.open,true);assert.equal(h.count.textContent,'10');
-  h.clock(14500);await h.tick();assert.equal(h.count.textContent,'7');
+  ready=true;await h.tick();h.clock(11999);await h.tick();assert.deepEqual(h.calls,[]);
+  h.clock(12000);await h.tick();assert.deepEqual(h.calls,['begin_final_choice']);
+  h.ui.update({deadline:22000});assert.equal(h.dialog.open,true);assert.equal(h.count.textContent,'10');
+  h.clock(15000);await h.tick();assert.equal(h.count.textContent,'7');
+});
+
+test('the two-second pause starts after the stares background is ready and is cancelled on exit',async()=>{
+  const h=setup();let ready=false,loaded,switches=0;
+  h.ui.update({reading:true,ready:()=>ready,onRead:()=>{switches++;return new Promise(resolve=>loaded=resolve);}});
+  assert.equal(switches,0);
+  ready=true;const waiting=h.tick();
+  assert.equal(switches,1);h.clock(10000);assert.deepEqual(h.calls,[]);
+  loaded();await waiting;
+  h.clock(11999);await h.tick();assert.deepEqual(h.calls,[]);
+  h.clock(12000);await h.tick();assert.deepEqual(h.calls,['begin_final_choice']);
+  const exited=setup();let finish;
+  exited.ui.update({reading:true,ready:()=>true,onRead:()=>new Promise(resolve=>finish=resolve)});
+  exited.events.pagehide();finish();await Promise.resolve();
+  assert.equal(exited.timers.size,0);assert.deepEqual(exited.calls,[]);
 });
 test('choice is submitted once, timer cannot change it during the request, and Escape is blocked',async()=>{
   const h=setup();h.ui.update({deadline:10000});

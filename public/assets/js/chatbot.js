@@ -319,10 +319,6 @@ function renderMessages() {
     sceneId: currentView.scene_id,
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
-    backgroundForPage: currentView.scene_id === 'hair_found' && festivalFrame === 1 ? (_text, page, pages) => {
-      festivalStares = pages.slice(0, page + 1).join('').includes('설마');
-      return `/assets/images/festival_${festivalStares ? 'stares' : 'hair'}.png`;
-    } : null,
     dialogue: currentView.scene_id !== 'final_choice' && (!cathyBasketScene || !basketGreetingDone),
     selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
@@ -516,6 +512,10 @@ function renderView(view) {
   renderMessages();
   festivalChoice?.update({reading: view.scene_id === 'hair_found' && festivalFrame === 1,
     ready: () => !busy && shopStage.dataset.dialogueComplete === 'true',
+    onRead: () => {
+      festivalStares = true;
+      return dialogueStage.replaceBackground('/assets/images/festival_stares.png');
+    },
     deadline: view.scene_id === 'final_choice' ? view.choice_deadline : null, busy});
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
   window.sceneEffects?.ending(view.ending, endingText);

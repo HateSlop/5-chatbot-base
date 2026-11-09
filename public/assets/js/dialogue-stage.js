@@ -135,11 +135,6 @@ window.DialogueStage = class {
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
-    const background = this.backgroundForPage?.(this.text.textContent, this.pageIndex, this.pages);
-    if (background && this.paths.get(this.background) !== background) {
-      this.lastBackground = background;
-      this.image(this.background, background, '현재 장소 배경');
-    }
     if (animate) this.typeCurrentPage();
   }
   layoutPages() {
@@ -190,6 +185,10 @@ window.DialogueStage = class {
     this.showPage(false);
   }
   pause(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  replaceBackground(background) {
+    this.lastBackground = background;
+    return this.image(this.background, background, '현재 장소 배경');
+  }
   image(node, path, alt) {
     if (this.paths.get(node) === (path || null)) return this.requests.get(node);
     this.paths.set(node, path || null);
@@ -239,8 +238,7 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1, backgroundForPage = null }) {
-    this.backgroundForPage = backgroundForPage;
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1 }) {
     if (this.dialogueKey !== dialogueKey) {
       this.finishTyping();
       this.lastTypedText = null;
