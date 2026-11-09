@@ -9,9 +9,6 @@ const entryAnswer = document.getElementById('entry-answer');
 const entryTV = document.getElementById('entry-tv-hotspot');
 const entryTVTutorial = document.getElementById('entry-tv-tutorial');
 function hideTVTutorial() { if (entryTVTutorial) entryTVTutorial.hidden = true; }
-entryTVTutorial?.addEventListener('animationend', event => {
-  if (event.animationName === 'entry-tv-demo') hideTVTutorial();
-});
 // Match the original TV cutout to the background's object-fit: cover crop.
 function positionEntryTV() {
   const width = entryRoot.clientWidth, height = entryRoot.clientHeight;
@@ -100,7 +97,7 @@ entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getEl
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
 window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';entryTV.hidden=true;hideTVTutorial();adVideo.pause();adDialog.close();});
 entryDepart.addEventListener('click', async () => {
-  if (departed || introStep !== 'after') return;
+  if (departed || introStep !== 'after' || entryRoot.dataset.dialogueComplete === 'false') return;
   departed = true;
   if (window.sceneEffects) await window.sceneEffects.transition(showEntry);
   else showEntry();

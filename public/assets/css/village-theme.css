@@ -259,9 +259,9 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .entry-tv-hotspot::after { content: ''; position: absolute; left: 45%; top: 43.4%; width: 8.4%; height: 12.6%; border: 2px solid #ffe8ac; border-radius: 18%; opacity: 0; }
 .entry-tv-hotspot:focus-visible::after { opacity: 1; }
 .dialogue-stage[data-background-ready="false"] .entry-tv-hotspot { visibility: hidden; }
-.entry-tv-tutorial { position: absolute; z-index: 6; width: 22px; height: 30px; pointer-events: none; animation: entry-tv-demo 3.2s ease-in-out both; filter: drop-shadow(0 2px 3px #120b12aa); }
+.entry-tv-tutorial { position: absolute; z-index: 6; width: 22px; height: 30px; pointer-events: none; animation: entry-tv-demo 3.2s ease-in-out infinite; filter: drop-shadow(0 2px 3px #120b12aa); }
 .entry-tv-tutorial svg { display: block; width: 100%; height: 100%; }
-.entry-tv-tutorial::after { content: ''; position: absolute; top: -15px; left: -15px; width: 30px; height: 30px; border: 2px solid #ffe5a1; border-radius: 50%; opacity: 0; animation: entry-tv-click 3.2s ease-out both; }
+.entry-tv-tutorial::after { content: ''; position: absolute; top: -15px; left: -15px; width: 30px; height: 30px; border: 2px solid #ffe5a1; border-radius: 50%; opacity: 0; animation: entry-tv-click 3.2s ease-out infinite; }
 @keyframes entry-tv-demo {
   0% { opacity: 0; transform: translate(-120px, 90px); }
   10% { opacity: 1; transform: translate(-120px, 90px); }

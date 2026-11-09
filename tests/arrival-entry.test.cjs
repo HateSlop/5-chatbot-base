@@ -7,7 +7,7 @@ async function setup({prologue=false}={}){
   const nodes=new Map(),events={},renders=[],timers=new Map();let delay;
   let finishPrologue;
   let resizeTV;
-  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,style:{},listeners:{},querySelector(){return {decode:async()=>{}};},addEventListener(k,fn){this.listeners[k]=fn;},showModal(){this.open=true;},close(){this.open=false;},pause(){this.paused=true;},play(){this.paused=false;this.plays=(this.plays||0)+1;return Promise.resolve();},focus(){this.focused=true;}});return nodes.get(id);};
+  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,style:{},dataset:{},listeners:{},querySelector(){return {decode:async()=>{}};},addEventListener(k,fn){this.listeners[k]=fn;},showModal(){this.open=true;},close(){this.open=false;},pause(){this.paused=true;},play(){this.paused=false;this.plays=(this.plays||0)+1;return Promise.resolve();},focus(){this.focused=true;}});return nodes.get(id);};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/arrival-entry.js'),'utf8'),{
     document:{getElementById:get},window:{addEventListener:(k,fn)=>events[k]=fn,
       ...(prologue ? {Prologue:class {play(){return new Promise(resolve=>finishPrologue=resolve);}}} : {})},
@@ -36,6 +36,23 @@ test('live entry begins at the pre-move house, then waits for Jimmy after depart
 });
 test('leaving cancels pending Jimmy appearance',async()=>{
   const h=await setup();h.events.pagehide();assert.equal(h.timers.size,0);
+});
+
+test('departure waits for the final TV monologue page to finish and has no truck emoji',async()=>{
+  const h=await setup();
+  h.get('entry-tv-hotspot').listeners.click();
+  await h.get('entry-ad-video').listeners.ended();
+  const root=h.get('entry-stage');
+  root.dataset.dialogueComplete='false';
+  await h.get('entry-depart').listeners.click();
+  assert.equal(h.timers.size,0);
+  root.dataset.dialogueComplete='true';
+  await h.get('entry-depart').listeners.click();
+  assert.equal(h.delay,1500);
+  const markup=fs.readFileSync(path.join(__dirname,'../templates/chat.html'),'utf8');
+  assert.match(markup,/id="entry-depart"[^>]*>더뉴빌리지로 이사 가기<\/button>/);
+  const css=fs.readFileSync(path.join(__dirname,'../public/assets/css/village-theme.css'),'utf8');
+  assert.match(css,/data-dialogue-complete="false"[^}]*\.dialogue-advance[^}]*visibility: hidden/);
 });
 
 test('ad must finish before departure; playback failure offers retry and recovery',async()=>{
@@ -82,11 +99,13 @@ test('the TV cutout stays aligned with the background cover crop when the screen
   assert.equal(tv.style.height,'816px');assert.equal(tv.style.top,'-208px');
 });
 
-test('the first TV demonstrates a click once without opening the ad automatically',async()=>{
+test('the TV repeats its click demonstration until the real click without opening the ad automatically',async()=>{
   const h=await setup();const tutorial=h.get('entry-tv-tutorial');
   assert.equal(tutorial.hidden,false);
-  tutorial.listeners.animationend({animationName:'entry-tv-click'});assert.equal(tutorial.hidden,false);
-  tutorial.listeners.animationend({animationName:'entry-tv-demo'});assert.equal(tutorial.hidden,true);
+  assert.equal(tutorial.listeners.animationend,undefined);
+  const css=fs.readFileSync(path.join(__dirname,'../public/assets/css/village-theme.css'),'utf8');
+  assert.match(css,/animation: entry-tv-demo 3\.2s ease-in-out infinite/);
+  assert.match(css,/animation: entry-tv-click 3\.2s ease-out infinite/);
   assert.equal(h.get('entry-ad-dialog').open,undefined);
   assert.equal(h.get('entry-ad-video').plays,undefined);
   h.get('entry-tv-hotspot').listeners.click();assert.equal(h.get('entry-ad-video').plays,1);
