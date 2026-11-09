@@ -27,7 +27,7 @@ window.DialogueStage = class {
       this.talkCue = doc.createElement('button');
       this.talkCue.type = 'button';
       this.talkCue.className = 'character-talk-cue';
-      this.talkCue.textContent = '!';
+      this.talkCue.textContent = '...';
       this.talkCue.hidden = true;
       root.append(this.talkCue);
       this.talkCue.addEventListener('click', () => this.openDialogue());

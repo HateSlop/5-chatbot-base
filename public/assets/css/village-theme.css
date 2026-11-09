@@ -187,16 +187,17 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 
 .dialogue-stage[data-background-ready="false"] .photo-hotspot { visibility: hidden; }
 
-/* A small brass badge matching the village's plum and antique-gold controls. */
+/* A speech bubble matching the village's plum and antique-gold controls. */
 .dialogue-stage .character-talk-cue {
-  position: absolute; z-index: 5; width: 48px; height: 58px; padding: 0 0 2px;
+  position: absolute; z-index: 5; width: 56px; height: 44px; padding: 0 0 12px;
   transform: translate(-50%, -55%); border: 1px solid #dcb67a;
-  border-radius: 15px 15px 22px 22px;
+  border-radius: 16px 16px 16px 4px;
+  outline: 1px solid #b88c585c; outline-offset: -5px;
   background: radial-gradient(ellipse at 35% 8%, #78534688, transparent 65%), linear-gradient(145deg, #48303d, #241a27 80%);
   color: #ffe1a0; box-shadow: inset 0 1px 0 #ffe5b766, inset 0 -3px 6px #110c16aa, 0 4px 8px #100b1699;
-  font: 700 38px/1 Georgia, serif; text-shadow: 0 1px 0 #fff0c644, 0 2px 2px #100b16;
+  font: 700 30px/1 Georgia, serif; letter-spacing: 2px; text-indent: 2px; text-shadow: 0 1px 0 #fff0c644, 0 2px 2px #100b16;
 }
-.character-talk-cue::before { content: ''; position: absolute; inset: 4px; border: 1px solid #b88c585c; border-radius: 11px 11px 18px 18px; pointer-events: none; }
+.character-talk-cue::before { content: ''; position: absolute; bottom: -5px; left: 9px; width: 9px; height: 9px; background: #2b1e2c; border-right: 1px solid #dcb67a; border-bottom: 1px solid #dcb67a; transform: rotate(45deg); pointer-events: none; }
 .character-talk-cue::after { content: '✦'; position: absolute; top: -7px; right: -5px; color: #ffe8b6; font: 16px/1 Georgia, serif; text-shadow: 0 0 7px #efbd70aa; pointer-events: none; }
 .dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.06); border-color: #ffe4ad; }
 .dialogue-stage .character-talk-cue:focus-visible { outline: 2px solid #ffe4ad; outline-offset: 4px; }
