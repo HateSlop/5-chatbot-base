@@ -34,3 +34,14 @@ test('blocked playback retries on a gesture without changing the enabled prefere
   h.audio.play=()=>{h.audio.paused=false;return Promise.resolve();};
   h.events.pointerdown({target:{closest:()=>false}});assert.equal(h.audio.paused,false);
 });
+
+test('the salon mission uses its own track, preserves mute and returns to salon music after the result',()=>{
+  const h=setup();h.music.enter('salon');
+  h.music.enter('salon',null,'cathy_help');assert.equal(h.audio.src,'/assets/audio/cathy-minigame-bgm.mp3');
+  h.audio.currentTime=12;const plays=h.audio.plays;
+  h.music.enter('salon',null,'cathy_help');assert.equal(h.audio.currentTime,12);assert.equal(h.audio.plays,plays);
+  h.button.click();h.music.enter('salon',null,'cathy_result');
+  assert.equal(h.audio.src,'/assets/audio/salon-bgm.mp3');assert.equal(h.audio.paused,true);
+  h.music.enter('salon',null,'cathy_help');assert.equal(h.audio.paused,true);
+  h.music.enter('square','death','ending');assert.equal(h.audio.paused,true);
+});

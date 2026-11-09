@@ -43,6 +43,7 @@ const photoFlip = document.getElementById('photo-flip');
 const basketDialog = document.getElementById('cathy-basket-dialog');
 const basketImage = document.getElementById('cathy-basket-image');
 const basketRequest = document.getElementById('cathy-basket-request');
+const basketCountdownDisplay = document.getElementById('cathy-basket-countdown');
 const basketStatus = document.getElementById('cathy-basket-status');
 const basketHotspot = document.createElement('button');
 basketHotspot.type = 'button';
@@ -54,6 +55,7 @@ document.getElementById('dialogue-stage').append(basketHotspot);
 let basketStarted = false;
 let basketReady = false;
 let basketTimer;
+let basketCountdown = 3;
 let basketGreetingDone = false;
 let basketGreetingPending = false;
 let basketGreetingTimer;
@@ -62,14 +64,17 @@ const cathySelected = new Set();
 function renderBasket() {
   if (!basketDialog) return;
   basketRequest.hidden = !basketStarted || basketReady;
+  if (basketCountdownDisplay) {
+    basketCountdownDisplay.hidden = !basketStarted || basketReady;
+    basketCountdownDisplay.textContent = String(basketCountdown);
+  }
   document.getElementById('cathy-tool-list').hidden = !basketReady;
-  document.getElementById('cathy-basket-hint').hidden = !basketReady;
+  document.getElementById('cathy-basket-hint').hidden = !basketStarted;
   const selectedLabels = currentView?.available_actions
     .filter(action => cathySelected.has(action.id.replace('choose_', '')))
     .map(action => action.label.replace(/ 선택$/, '')) || [];
-  document.getElementById('cathy-basket-hint').textContent = selectedLabels.length
-    ? `선택한 도구: ${selectedLabels.join(', ')} · 다시 누르면 선택 취소`
-    : '캐시가 부탁한 도구 그림을 모두 눌러 주세요.';
+  document.getElementById('cathy-basket-hint').textContent = '캐시가 말한 도구를 기억하고 찾아보세요.' +
+    (selectedLabels.length ? ` 선택한 도구: ${selectedLabels.join(', ')} · 다시 누르면 선택 취소` : '');
   document.getElementById('cathy-deliver').hidden = !basketReady;
   document.getElementById('cathy-deliver').disabled = busy;
   for (const button of document.querySelectorAll('#cathy-tool-list button')) {
@@ -85,10 +90,15 @@ basketHotspot.addEventListener('click', () => {
     renderBasket();
     Promise.resolve(basketImage.decode?.().catch(() => {})).then(() => {
       if (currentView?.scene_id !== 'cathy_help') return;
-      basketTimer = setTimeout(() => {
-        basketReady = true;
+      const started = Date.now();
+      const step = 2000 / 3;
+      const tick = () => {
+        if (currentView?.scene_id !== 'cathy_help') return;
+        if (--basketCountdown === 0) basketReady = true;
         renderBasket();
-      }, 3000);
+        if (!basketReady) basketTimer = setTimeout(tick, Math.max(0, (4 - basketCountdown) * step - (Date.now() - started)));
+      };
+      basketTimer = setTimeout(tick, step);
     });
   }
   basketDialog.showModal();
@@ -253,7 +263,7 @@ function renderMessages() {
         if (visit !== basketVisit || currentView?.scene_id !== 'cathy_help') return;
         basketGreetingDone = true;
         renderView(currentView);
-      }, 3500);
+      }, 1400);
     });
   }
   clearTimeout(karenDepartureTimer);
@@ -295,7 +305,7 @@ function renderView(view) {
   basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog || !basketGreetingDone;
   basketHotspot.disabled = busy;
   renderBasket();
-  window.locationMusic?.enter(view.location_id, view.ending);
+  window.locationMusic?.enter(view.location_id, view.ending, view.scene_id);
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
   photoHotspot.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
@@ -417,6 +427,7 @@ function applyResponse(data, kind, characterId = null) {
     basketTimer = undefined;
     basketStarted = false;
     basketReady = false;
+    basketCountdown = 3;
     clearTimeout(basketGreetingTimer);
     ++basketVisit;
     basketGreetingDone = false;
@@ -457,6 +468,7 @@ window.startStory = (data, name) => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  basketCountdown = 3;
   clearTimeout(basketGreetingTimer);
   ++basketVisit;
   basketGreetingDone = false;
@@ -552,6 +564,7 @@ window.addEventListener("pagehide", () => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  basketCountdown = 3;
   clearTimeout(basketGreetingTimer);
   ++basketVisit;
   basketGreetingDone = false;

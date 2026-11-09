@@ -22,8 +22,8 @@ window.locationMusic = new class {
     this.button.setAttribute('aria-pressed', String(this.enabled));
     this.button.title = label;
   }
-  enter(location, ending = null) {
-    const track = ending ? null : this.tracks[location] || null;
+  enter(location, ending = null, sceneId = null) {
+    const track = ending ? null : sceneId === 'cathy_help' ? 'cathy-minigame' : this.tracks[location] || null;
     this.button.hidden = !!ending;
     if (track !== this.track) {
       this.audio.pause();

@@ -28,6 +28,7 @@ function setup({missingBasket = false} = {}) {
   let stage;
   let move;
   let split;
+  let clock = 0;
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
@@ -44,11 +45,13 @@ function setup({missingBasket = false} = {}) {
     DialogueStage: class {render(data) { stage = data; }},
     PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
+    Date: {now:()=>clock},
     setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, {callback, ms}); return id; },
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
   return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
+    setClock:value=>clock=value,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -500,7 +503,7 @@ test('Jimmy frame opens only on angle2, flips, closes and resets without changin
   assert.equal(hotspot.hidden,true);
 });
 
-test('Cathy asks for help and leaves before the illustrated basket and tool request appear', async () => {
+test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a memory hint', async () => {
   const h = setup();
   const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
   const task = response('cathy_help', 'salon', null, [
@@ -517,7 +520,7 @@ test('Cathy asks for help and leaves before the illustrated basket and tool requ
   assert.match(h.stage().text, /지금 너무 바쁘니까/);
   assert.equal(hotspot.hidden, true);
   await Promise.resolve();
-  const greeting = [...h.timers.values()].find(item => item.ms === 3500);
+  const greeting = [...h.timers.values()].find(item => item.ms === 1400);
   assert.ok(greeting);
   await greeting.callback();
   assert.equal(h.stage().dialogue, false);
@@ -529,15 +532,26 @@ test('Cathy asks for help and leaves before the illustrated basket and tool requ
   assert.equal(hotspot.attrs['aria-label'], '미용실 바구니 열기');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   assert.equal(h.move().actions.length, 0);
-  assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);
+  assert.equal([...h.timers.values()].some(item => Math.abs(item.ms - 2000 / 3) < .01), false);
   hotspot.listeners.click();
   assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
   assert.equal(h.nodes.get('cathy-basket-request').textContent, request);
   assert.equal(h.nodes.get('cathy-tool-list').hidden, true);
   await Promise.resolve();
-  const timer = [...h.timers.values()].find(item => item.ms === 3000);
-  assert.ok(timer);
-  timer.callback();
+  const counter=h.nodes.get('cathy-basket-countdown');
+  assert.equal(counter.textContent,'3');assert.equal(counter.hidden,false);
+  assert.equal(h.nodes.get('cathy-basket-hint').hidden,false);
+  assert.match(h.nodes.get('cathy-basket-hint').textContent,/캐시가 말한 도구를 기억하고 찾아보세요/);
+  for (const [remaining,elapsed,delay] of [['2',730,2000/3],['1',4000/3,4000/3-730]]) {
+    const [id,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-delay)<.01);
+    h.setClock(elapsed);
+    h.timers.delete(id);timer.callback();
+    assert.equal(counter.textContent,remaining);
+    assert.equal(h.nodes.get('cathy-basket-request').hidden,false);
+    assert.equal(h.nodes.get('cathy-tool-list').hidden,true);
+  }
+  const [,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-2000/3)<.01);h.setClock(2000);timer.callback();
+  assert.equal(counter.hidden,true);
   assert.equal(h.nodes.get('cathy-basket-request').hidden, true);
   assert.equal(h.nodes.get('cathy-tool-list').hidden, false);
   const sent = [];
@@ -564,7 +578,7 @@ test('leaving or restarting cannot reveal an old Cathy basket greeting', async (
   const task=response('cathy_help','salon',null,[{speaker_id:'cathy',text:'샴푸, 가위, 빗',image:null}]);
   h.context.window.startStory(task,'테스트');
   await Promise.resolve();
-  const greeting=[...h.timers.values()].find(item=>item.ms===3500);
+  const greeting=[...h.timers.values()].find(item=>item.ms===1400);
   h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 이름');
   await greeting.callback();
   assert.equal(h.stage().sceneId,'arrival');
