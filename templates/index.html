@@ -23,7 +23,7 @@
       <div class="cover-slot" aria-hidden="true"></div>
       <div class="start-panel">
       <nav class="start-actions" aria-label="이야기 시작">
-        <button id="start-action" class="image-action" type="button" aria-haspopup="dialog">시작하기</button>
+        <button id="start-action" class="image-action" type="button" aria-haspopup="dialog"><img src="{{ asset_url('assets/images/start/start-button.png') }}" alt="START"></button>
       </nav>
       </div>
     </main>
@@ -31,13 +31,12 @@
       <h2 id="gender-heading">주인공을 선택하세요</h2>
       <div class="gender-options">
         <a class="gender-option" data-gender="male" href="{{ url_for('chat') }}?gender=male" aria-label="남성 주인공 선택">
-          <span class="gender-art" role="img" aria-label="남성 주인공 그림 준비 중">그림 준비 중</span><strong>남</strong>
+          <img class="gender-art" src="{{ asset_url('assets/images/player_male.png') }}" alt="남성 주인공 액자"><strong>남</strong>
         </a>
         <a class="gender-option" data-gender="female" href="{{ url_for('chat') }}?gender=female" aria-label="여성 주인공 선택">
-          <span class="gender-art" role="img" aria-label="여성 주인공 그림 준비 중">그림 준비 중</span><strong>여</strong>
+          <img class="gender-art" src="{{ asset_url('assets/images/player_female.png') }}" alt="여성 주인공 액자"><strong>여</strong>
         </a>
       </div>
-      <button id="gender-back" type="button">뒤로</button>
     </dialog>
   </body>
 </html>
