@@ -14,6 +14,7 @@ window.DialogueStage = class {
     this.homeVisitor = null;
     this.visitorVisible = false;
     this.pageIndex = 0;
+    window.addEventListener?.('pagehide', () => { ++this.version; this.doorbell?.stop(); });
     if (this.box.ownerDocument) {
       const doc = this.box.ownerDocument;
       this.box.addEventListener('click', event => {
@@ -223,7 +224,7 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1 }) {
     if (this.dialogueKey !== dialogueKey) {
       this.finishTyping();
       this.lastTypedText = null;
@@ -244,6 +245,10 @@ window.DialogueStage = class {
       (visitorId || (isJimmy ? 'jimmy' : /\/([a-z]+)[_.-]/.exec(image)?.[1]) || image) : null;
     const arriving = !!visitor && (visitor !== this.homeVisitor || !this.visitorVisible);
     const hadHome = this.paths.get(this.background) === '/assets/images/player_house.svg';
+    if (visitor !== this.homeVisitor || !visitor) {
+      this.doorbell?.stop();
+      this.doorbellReady = null;
+    }
     if (visitor !== this.homeVisitor) this.arrivalWait = !!visitor && !hadHome;
     this.homeVisitor = visitor;
     if (!visitor || arriving) this.visitorVisible = false;
@@ -299,6 +304,12 @@ window.DialogueStage = class {
       if (arriving) {
         if (this.arrivalWait) await this.pause(1500);
         if (version !== this.version) return false;
+        if (window.Doorbell) {
+          this.doorbell ||= new window.Doorbell();
+          this.doorbellReady ||= this.doorbell.ring(doorbellCount);
+          await this.doorbellReady;
+          if (version !== this.version) return false;
+        }
         await this.image(this.background, '/assets/images/player_house_open.png', '문이 열린 집');
         if (version !== this.version) return false;
         this.lastBackground = '/assets/images/player_house_open.png';

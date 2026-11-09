@@ -590,3 +590,11 @@ test('Karen departure countdown waits until the character is selected', async ()
   select(true);await new Promise(resolve=>setImmediate(resolve));
   assert.equal([...h.timers.values()].some(t=>t.ms===4500),true);
 });
+
+test('urgent Karen bell uses the server summons action, not a client affinity check',()=>{
+  const h=setup();const data=response('checkpoint','player_house','karen',[],90);
+  data.view.available_actions=[{id:'go_butcher',kind:'move',label:'정육점으로 간다'}];
+  h.context.window.startStory(data,'테스트');assert.equal(h.stage().doorbellCount,3);
+  data.view.affinity=20;data.view.available_actions=[{id:'accept_job',kind:'choice',label:'수락'}];
+  h.context.renderView(data.view);assert.equal(h.stage().doorbellCount,1);
+});
