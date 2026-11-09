@@ -45,3 +45,24 @@ test('the salon mission uses its own track, preserves mute and returns to salon 
   h.music.enter('salon',null,'cathy_help');assert.equal(h.audio.paused,true);
   h.music.enter('square','death','ending');assert.equal(h.audio.paused,true);
 });
+
+test('the dark butcher and basement share one track, later scenes share aftermath except the secret room',()=>{
+  const h=setup();
+  h.music.enter('butcher_shop',null,'neighbors');assert.equal(h.audio.src,'/assets/audio/butcher-bgm.mp3');
+  for (const scene of ['butcher_search','empty_butcher','basement','bob_caught']) {
+    h.music.enter(scene==='basement'?'basement':'butcher_shop',null,scene);
+    assert.equal(h.audio.src,'/assets/audio/frightened-jimmy-bgm.mp3');
+    h.audio.currentTime=9;
+  }
+  assert.equal(h.audio.currentTime,9);
+  for (const scene of ['dinner_invite','wait_dinner','karen_dinner','checkpoint','job_choice','job_result','festival_invite','festival','hair_found','final_choice']) {
+    h.music.enter('square',null,scene);assert.equal(h.audio.src,'/assets/audio/after-basement-bgm.mp3');
+    h.audio.currentTime=12;
+  }
+  h.music.enter('karen_house',null,'photo_found');assert.equal(h.audio.src,'/assets/audio/urgent-bgm.mp3');
+  h.audio.currentTime=7;h.music.enter('karen_house',null,'photo_found');assert.equal(h.audio.currentTime,7);
+  h.button.click();h.music.enter('player_house',null,'checkpoint');assert.equal(h.audio.paused,true);
+  assert.equal(h.audio.src,'/assets/audio/after-basement-bgm.mp3');
+  h.music.enter('square','death','ending');assert.equal(h.audio.src,undefined);
+  h.music.enter('player_house',null,'arrival');assert.equal(h.audio.src,'/assets/audio/home-bgm.mp3');
+});
