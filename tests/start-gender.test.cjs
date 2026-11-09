@@ -27,4 +27,7 @@ test('start opens a two-sided gender choice and back returns focus', () => {
   assert.match(markup, /data-gender="male"/);
   assert.match(markup, /data-gender="female"/);
   assert.doesNotMatch(markup, /gender-art[^>]*src=/);
+  const css = fs.readFileSync('public/assets/css/start.css', 'utf8');
+  assert.match(css, /\.gender-dialog \{[^}]*width: 100vw/);
+  assert.match(css, /\.gender-options \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });

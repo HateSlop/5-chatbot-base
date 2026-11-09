@@ -3,13 +3,13 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
-async function setup({prologue=false}={}){
+async function setup({prologue=false,genderReady=true}={}){
   const nodes=new Map(),events={},renders=[],timers=new Map();let delay;
   let finishPrologue;
   let resizeTV;
   const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,style:{},dataset:{},listeners:{},querySelector(){return {decode:async()=>{}};},addEventListener(k,fn){this.listeners[k]=fn;},showModal(){this.open=true;},close(){this.open=false;},pause(){this.paused=true;},play(){this.paused=false;this.plays=(this.plays||0)+1;return Promise.resolve();},focus(){this.focused=true;}});return nodes.get(id);};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/arrival-entry.js'),'utf8'),{
-    document:{getElementById:get},window:{addEventListener:(k,fn)=>events[k]=fn,
+    document:{getElementById:get},window:{protagonistGenderReady:genderReady,addEventListener:(k,fn)=>events[k]=fn,
       ...(prologue ? {Prologue:class {play(){return new Promise(resolve=>finishPrologue=resolve);}}} : {})},
     DialogueStage:class{render(data){renders.push(data);}},PostMoveUI:class{render(){} setSplit(){}},
     ResizeObserver:class {constructor(callback){resizeTV=callback;} observe(){}},
@@ -36,6 +36,11 @@ test('live entry begins at the pre-move house, then waits for Jimmy after depart
 });
 test('leaving cancels pending Jimmy appearance',async()=>{
   const h=await setup();h.events.pagehide();assert.equal(h.timers.size,0);
+});
+test('the intro waits until gender has been selected',async()=>{
+  const h=await setup({genderReady:false,prologue:true});
+  assert.equal(h.renders.length,0);
+  assert.equal(h.timers.size,0);
 });
 
 test('the ad can be skipped during normal playback and continues with the post-ad monologue',async()=>{

@@ -13,20 +13,18 @@ function setup(fetchImpl, gender = 'male') {
   const requests = [];
   const starts = [];
   const navigation = [];
-  const dialogs = [];
+  const browser = {startStory: (data, name) => starts.push({data, name}),
+    location: {search: gender === null ? '' : `?gender=${gender}`, pathname: '/chat', replace: url => navigation.push(url)},
+    history: {replaceState: (_, __, url) => navigation.push(url)}};
   vm.runInNewContext(source, {
-    document: {getElementById: id => nodes[id], body: {append: dialog => dialogs.push(dialog)},
-      createElement: () => ({attrs: {}, setAttribute(key, value) { this.attrs[key] = value; },
-        querySelector() { return {focus() {}}; }, showModal() { this.open = true; }})},
-    window: {startStory: (data, name) => starts.push({data, name}),
-      location: {search: gender === null ? '' : `?gender=${gender}`, pathname: '/chat', replace: url => navigation.push(url)},
-      history: {replaceState: (_, __, url) => navigation.push(url)}},
+    document: {getElementById: id => nodes[id]},
+    window: browser,
     URLSearchParams,
     localStorage: new Proxy({}, {get() { throw Error('persistent storage forbidden'); }}),
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
     fetch: async (path, options) => { requests.push({path, payload: JSON.parse(options.body)}); return fetchImpl(); },
   });
-  return {nodes, requests, starts, navigation, dialogs,
+  return {nodes, requests, starts, navigation, browser,
     submit: value => { nodes.username.value = value; return nodes['name-form'].listeners.submit({preventDefault() {}}); }};
 }
 
@@ -56,6 +54,7 @@ test('trim name and hand the first response to the game in the same document', a
   assert.equal(h.requests[0].path, '/api/session');
   assert.equal(h.requests[0].payload.player_name, '새 이름');
   assert.equal(h.requests[0].payload.gender, 'female');
+  assert.equal(h.browser.protagonistGenderReady,true);
   assert.deepEqual(h.navigation, ['/chat']);
   assert.equal(h.starts[0].name, '새 이름');
   assert.equal(h.starts[0].data.events[0].text, '첫 인사');
@@ -86,7 +85,7 @@ test('duplicate submit is blocked while the first request is pending', async () 
   await pending;
 });
 
-test('name is required after gender selection; an old START link opens the choice instead of looping', async () => {
+test('name is required after gender selection; direct chat returns to the start before the intro', async () => {
   const h = setup(success, 'female');
   await h.submit('');
   assert.equal(h.requests.length, 0);
@@ -96,9 +95,8 @@ test('name is required after gender selection; an old START link opens the choic
   assert.equal(h.requests[0].payload.gender, 'female');
   for (const gender of [null, 'other']) {
     const missing = setup(success, gender);
-    assert.equal(missing.dialogs[0].open, true);
-    assert.match(missing.dialogs[0].innerHTML, /\/chat\?gender=male/);
-    assert.match(missing.dialogs[0].innerHTML, /\/chat\?gender=female/);
+    assert.deepEqual(missing.navigation, ['/']);
+    assert.equal(missing.browser.protagonistGenderReady,false);
     await missing.submit('새 이름');
     assert.equal(missing.requests.length, 0);
   }
