@@ -320,7 +320,7 @@ function renderView(view) {
   const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
-  postMoveUI.setSplit?.(!festival && !view.ending && view.scene_id !== 'cathy_help');
+  postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');
   if (showingDiscovery || secretDiscovery) {
     const next = document.createElement('button');
     next.type = 'button';
