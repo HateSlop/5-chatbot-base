@@ -4,20 +4,11 @@ const nameSubmit = document.getElementById("name-submit");
 const nameStatus = document.getElementById("name-status");
 const playerGender = new URLSearchParams(window.location.search).get("gender");
 if (playerGender === "male" || playerGender === "female") {
+  window.protagonistGenderReady = true;
   window.history.replaceState(null, "", window.location.pathname);
 } else {
-  const choice = document.createElement("dialog");
-  choice.className = "gender-dialog";
-  choice.setAttribute("aria-labelledby", "gender-heading");
-  choice.innerHTML = `<h2 id="gender-heading">주인공을 선택하세요</h2>
-    <div class="gender-options">
-      <a class="gender-option" data-gender="male" href="/chat?gender=male" aria-label="남성 주인공 선택"><span class="gender-art" role="img" aria-label="남성 주인공 그림 준비 중">그림 준비 중</span><strong>남</strong></a>
-      <a class="gender-option" data-gender="female" href="/chat?gender=female" aria-label="여성 주인공 선택"><span class="gender-art" role="img" aria-label="여성 주인공 그림 준비 중">그림 준비 중</span><strong>여</strong></a>
-    </div>
-    <a id="gender-back" href="/">뒤로</a>`;
-  document.body.append(choice);
-  choice.showModal();
-  choice.querySelector('.gender-option').focus();
+  window.protagonistGenderReady = false;
+  window.location.replace("/");
 }
 let submittingName = false;
 

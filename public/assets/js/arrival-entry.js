@@ -129,4 +129,4 @@ async function showIntro() {
     if (prologue) entryTV.focus();
   }
 }
-showIntro();
+if (window.protagonistGenderReady === true) showIntro();
