@@ -10,6 +10,16 @@ from services.generator import StoryGenerator
 
 
 class GeneratorTest(unittest.TestCase):
+    def test_karen_keeps_composed_persona_and_never_outputs_her_old_laugh(self):
+        config = json.loads((Path(__file__).resolve().parents[1] / "config" / "chatbot_config.json").read_text(encoding="utf-8"))
+        karen = config["characters"]["karen"]
+        with patch("services.generator.OpenAI") as client:
+            client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text=json.dumps({"reply":"마음을 내주셔서 고마워요. 후후.","visual_cue":"smile"}))
+            turn = StoryGenerator().generate("일을 도울게요", "확인", karen, [], [], "새집", 65, [], ("일자리 권유", "마을의 일", "이후 사건"))
+        self.assertNotIn("후후", turn["reply"])
+        self.assertEqual(turn["reply"], "마음을 내주셔서 고마워요.")
+        self.assertIn("짧고 단호", client.return_value.responses.create.call_args.kwargs["instructions"])
+
     def test_short_question_follows_latest_scene_after_older_chat(self):
         answer = {"reply": "그래요.", "visual_cue": "neutral"}
         history = [{"role": "user", "content": "이웃은 누구예요?"}, {"role": "assistant", "content": "세 사람이 있어."}]

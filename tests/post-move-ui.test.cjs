@@ -106,6 +106,7 @@ test('heart fills from 0 to 100 and unknown affinity stays distinct from zero',(
   const fill=h.nodes.get('.affinity-fill'),meter=h.nodes.get('.move-affinity');
   for(const [value,height] of [[0,0],[50,46],[100,92]]){
     show(value);assert.equal(Number(fill.attrs.height),height);
+    assert.equal(h.nodes.get('.affinity-liquid').attrs.transform,`translate(0 ${92-height})`);
     assert.equal(Number(fill.attrs.y),92-height);assert.equal(meter.attrs['aria-valuenow'],String(value));
   }
   show(null);assert.equal(meter.attrs['aria-valuenow'],undefined);

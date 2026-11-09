@@ -159,7 +159,7 @@ test('continuous Jimmy dialogue keeps panels visible and preserves the requested
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_angry.png');
 });
 
-test('each resident shakes once on a visible smile-to-anger transition, not repeated renders or first appearances', async () => {
+test('each resident shakes once on a visible smile-to-anger transition, including first angry appearance, not repeated renders', async () => {
   for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
     const {nodes, stage} = setup();
     let shakes = 0;
@@ -170,19 +170,19 @@ test('each resident shakes once on a visible smile-to-anger transition, not repe
     };
     const scene = image => ({background:'/assets/images/salon.svg', image:`/assets/images/${id}_${image}.png`});
     stage.render(scene('angry')); await stage.ready;
-    assert.equal(shakes, 0);
+    assert.equal(shakes, 1);
     stage.render(scene('smile')); await stage.ready;
     stage.render(scene('angry')); const first = stage.ready;
     stage.render(scene('angry')); await first; await stage.ready;
-    assert.equal(shakes, 1);
+    assert.equal(shakes, 2);
     stage.render(scene('angry')); await stage.ready;
-    assert.equal(shakes, 1);
+    assert.equal(shakes, 2);
     stage.render(scene('smile')); await stage.ready;
     stage.render(scene('angry')); await stage.ready;
-    assert.equal(shakes, 2);
+    assert.equal(shakes, 3);
     stage.render({background:'/square.svg'}); await stage.ready;
     stage.render(scene('angry')); await stage.ready;
-    assert.equal(shakes, 2);
+    assert.equal(shakes, 4);
   }
 });
 
@@ -197,7 +197,7 @@ test('anger shaking respects reduced motion and does not carry across residents'
   other.nodes['.dialogue-figure'].animate = () => { ++shakes; };
   other.stage.render({image:'/assets/images/karen_smile.png'}); await other.stage.ready;
   other.stage.render({image:'/assets/images/bob_angry.png'}); await other.stage.ready;
-  assert.equal(shakes, 0);
+  assert.equal(shakes, 1);
 });
 
 test('leaving during door opening cannot reveal Jimmy or dialogue over another scene',async()=>{
@@ -295,12 +295,34 @@ test('long dialogue pages preserve every character without scroll or HTML interp
   assert.equal(stage.next.disabled,true);assert.equal(stage.previous.disabled,false);
 });
 
+test('paragraph breaks never produce empty dialogue pages at a page boundary', () => {
+  const {stage,nodes}=setup();
+  stage.pager={};stage.previous={};stage.next={};stage.pageLabel={};
+  stage.box.hidden=false;stage.box.clientHeight=100;
+  stage.box.querySelector=()=>null;stage.box.style={};
+  stage.box.classList={add(){},remove(){}};
+  stage.copy={clientHeight:1};
+  Object.defineProperty(stage.copy,'scrollHeight',{get(){return nodes['.dialogue-text'].textContent.split('\n').length;}});
+  stage.fullText='첫 독백입니다.\n\n다음 대사입니다.\n\n마지막 대사입니다.';
+  stage.layoutPages();
+  assert.equal(stage.pages.length,3);
+  assert.equal(stage.pages.join(''),stage.fullText);
+  for(let i=0;i<stage.pages.length;i++) {
+    stage.pageIndex=i;stage.showPage();
+    assert.ok(nodes['.dialogue-text'].textContent.trim());
+  }
+  stage.copy.clientHeight=2;
+  stage.layoutPages();
+  assert.equal(stage.pages.length,2);
+  assert.match(stage.displayText(stage.pages[0]),/첫 독백입니다\.\n다음 대사입니다\./);
+});
+
 test('the secret room is selected only for the disclosed photo_found scene',async()=>{
   const {nodes,stage}=setup();
   stage.render({background:'/assets/images/karen_house.svg',sceneId:'karen_dinner'});await stage.ready;
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_house.svg');
   stage.render({background:'/assets/images/karen_house.svg',sceneId:'photo_found'});await stage.ready;
-  assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_secret_room_angle2.png');
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/karen_secret_room.png');
 });
 
 test('a server response followed by its final render cannot skip a pending home entrance',async()=>{
@@ -393,6 +415,19 @@ test('character selection reveals dialogue once per encounter and never gates em
   assert.equal(nodes['.dialogue-box'].hidden,false);
 });
 
+test('an already visible character never re-enters loading while waiting for a click', async () => {
+  const {stage,nodes}=setup();
+  const scene={background:'/assets/images/salon.svg',image:'/assets/images/cathy_smile.png',sceneId:'neighbors',speaker:'캐시',text:'안녕하세요',selectCharacter:true};
+  stage.render(scene);await stage.ready;
+  nodes['.dialogue-figure'].hidden=false;
+  assert.equal(stage.box.hidden,true);
+  stage.render(scene);
+  assert.equal(stage.root.dataset.loading,'false');
+  assert.equal(nodes['.dialogue-figure'].hidden,false);
+  await stage.ready;
+  assert.equal(stage.awaitingSelection,true);
+});
+
 test('continuing the selected naming visit does not ask for another character click', async () => {
   const {stage,nodes}=setup();
   stage.skipSelectionOnce=true;
@@ -475,7 +510,7 @@ test('Jimmy smiles throughout the first conversation and keeps later scene expre
   for (const emotion of ['basic','angry','anxiety']) {
     stage.render({sceneId:'arrival',background:'/assets/images/player_house.svg',image:`/assets/images/jimmy_${emotion}.png`});
     await stage.ready;
-    assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_smile.png');
+    assert.equal(nodes['.dialogue-figure'].src,emotion === 'angry' ? '/assets/images/jimmy_angry.png' : '/assets/images/jimmy_smile.png');
   }
   stage.render({sceneId:'dinner_invite',background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_basic.png'});await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/jimmy_anxiety.png');

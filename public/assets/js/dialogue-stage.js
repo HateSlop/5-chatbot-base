@@ -70,7 +70,7 @@ window.DialogueStage = class {
   positionTalkCue() {
     if (!this.talkCue || !this.figure.getBoundingClientRect) return;
     const figure = this.figure.getBoundingClientRect(), root = this.root.getBoundingClientRect();
-    this.talkCue.style.left = `${Math.max(28, Math.min(root.width - 28, figure.left - root.left + figure.width / 2 + 32))}px`;
+    this.talkCue.style.left = `${Math.max(38, Math.min(root.width - 38, figure.left - root.left + figure.width * .68))}px`;
     this.talkCue.style.top = `${Math.max(20, Math.min(root.height - 70, figure.top - root.top + 8))}px`;
   }
   openDialogue() {
@@ -108,7 +108,7 @@ window.DialogueStage = class {
     this.root.dataset.dialogueComplete = String(!this.box.hidden && lastPage && !this.typingTimer);
   }
   typeCurrentPage() {
-    const text = this.pages?.[this.pageIndex] ?? this.fullText ?? '';
+    const text = this.displayText(this.pages?.[this.pageIndex] ?? this.fullText);
     if (this.typingTimer && this.typingText === text) return;
     this.finishTyping();
     this.text.textContent = text;
@@ -131,10 +131,15 @@ window.DialogueStage = class {
   }
   showPage(animate = true) {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex, this.pages.length - 1));
-    this.text.textContent = this.pages[this.pageIndex];
+    this.text.textContent = this.displayText(this.pages[this.pageIndex]);
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
     this.next.disabled = this.pageIndex === this.pages.length - 1;
+    const background = this.backgroundForPage?.(this.text.textContent, this.pageIndex, this.pages);
+    if (background && this.paths.get(this.background) !== background) {
+      this.lastBackground = background;
+      this.image(this.background, background, '현재 장소 배경');
+    }
     if (animate) this.typeCurrentPage();
   }
   layoutPages() {
@@ -142,11 +147,12 @@ window.DialogueStage = class {
     const typingText = this.typingText;
     this.measurePages();
     if (partial !== null) {
-      if ((this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
+      if (this.displayText(this.pages?.[this.pageIndex] ?? this.fullText) === typingText) this.text.textContent = partial;
       else { this.lastTypedText = null; this.typeCurrentPage(); }
     }
     this.syncProgress();
   }
+  displayText(text) { return (text || '').trim().replace(/\n\s*\n/g, '\n'); }
   measurePages() {
     if (!this.pager || !this.box.clientHeight || this.box.hidden) return;
     this.box.classList.remove('is-paged');
@@ -159,7 +165,7 @@ window.DialogueStage = class {
       this.box.style.minHeight = `${Math.max(112, (this.controls?.offsetHeight || 0) + (status?.offsetHeight || 0) + 76)}px`;
     };
     reserve();
-    this.text.textContent = this.fullText || '';
+    this.text.textContent = this.displayText(this.fullText);
     if (fit()) { this.pages = [this.fullText || '']; this.pageIndex = 0; this.showPage(false); return; }
     this.box.classList.add('is-paged');
     this.pager.hidden = false;
@@ -171,11 +177,13 @@ window.DialogueStage = class {
       let low = 1, high = characters.length - start, count = 1;
       while (low <= high) {
         const middle = Math.floor((low + high) / 2);
-        this.text.textContent = characters.slice(start, start + middle).join('');
+        this.text.textContent = this.displayText(characters.slice(start, start + middle).join(''));
         if (fit()) { count = middle; low = middle + 1; }
         else high = middle - 1;
       }
-      pages.push(characters.slice(start, start + count).join(''));
+      const page = characters.slice(start, start + count).join('');
+      if (page.trim()) pages.push(page);
+      else if (pages.length) pages[pages.length - 1] += page;
       start += count;
     }
     this.pages = pages.length ? pages : [''];
@@ -231,7 +239,8 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1 }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1, backgroundForPage = null }) {
+    this.backgroundForPage = backgroundForPage;
     if (this.dialogueKey !== dialogueKey) {
       this.finishTyping();
       this.lastTypedText = null;
@@ -240,7 +249,7 @@ window.DialogueStage = class {
     const partial = this.typingTimer && this.fullText === text ? this.text.textContent : null;
     if (partial === null) this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
-    if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room_angle2.png';
+    if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room.png';
     const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
     if (legacyKaren) image = legacyKaren[1] === 'smile' ? '/assets/images/karen_smile.png' : '/assets/images/karen_basic.png';
     if (sceneId === 'photo_found' && /\/karen_/.test(image || '')) image = '/assets/images/karen_angry.png';
@@ -261,7 +270,7 @@ window.DialogueStage = class {
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
     if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
-    if (sceneId === 'arrival' && isJimmy) image = '/assets/images/jimmy_smile.png';
+    if (sceneId === 'arrival' && isJimmy && !/\/jimmy_angry\.png$/.test(image || '')) image = '/assets/images/jimmy_smile.png';
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
     if (sceneId === 'empty_butcher') image = null;
@@ -287,8 +296,9 @@ window.DialogueStage = class {
     const changedScene = this.lastBackground !== background;
     if (changedScene) this.appearancePending = !!image;
     const continuous = !arriving && this.lastBackground === background && !this.box.hidden;
+    const figureVisible = !arriving && this.lastBackground === background && !this.figure.hidden;
     this.lastBackground = background;
-    this.root.dataset.loading = continuous ? 'false' : 'true';
+    this.root.dataset.loading = continuous || figureVisible ? 'false' : 'true';
     this.root.dataset.simultaneous = String(sceneId === 'butcher_search');
     const composer = this.root.querySelector('.move-composer');
     if (!continuous || !dialogue) this.box.hidden = true;
@@ -344,9 +354,8 @@ window.DialogueStage = class {
       this.root.dataset.loading = 'false';
       if (this.displayedFigure !== image) {
         this.angerAnimation?.cancel();
-        const previous = /\/(jimmy|karen|bob|cathy)_(basic|neutral|smile)\.(png|svg)$/.exec(this.displayedFigure || '');
         this.displayedFigure = image;
-        if (previous && image === `/assets/images/${previous[1]}_angry.png` &&
+        if (/\/(jimmy|karen|bob|cathy)_angry\.png$/.test(image || '') &&
             !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
           this.angerAnimation = this.figure.animate?.([
             {transform:'translateX(0)'}, {transform:'translateX(-8px)'},
