@@ -101,7 +101,7 @@ test('job result waits for reading, fades once and automatically requests the ne
   await tick(); assert.equal(requests,0);
   h.nodes.get('dialogue-stage').dataset.dialogueComplete = 'true';
   await tick(); assert.equal(requests,0);
-  h.setClock(1500); await tick();
+  h.setClock(3200); await tick();
   assert.equal(fades,1); assert.equal(requests,1);
   assert.equal(h.stage().sceneId,'festival_invite');
 });
@@ -115,9 +115,22 @@ test('failed automatic departure offers continue instead of repeated automatic r
   await new Promise(r=>setImmediate(r));
   const tick=async()=>{const [id,timer]=h.timers.entries().next().value;h.timers.delete(id);await timer.callback();};
   h.nodes.get('dialogue-stage').dataset.dialogueComplete='true';
-  await tick();h.setClock(1500);await tick();
+  await tick();h.setClock(3200);await tick();
   assert.equal(h.nodes.get('action-list').children[0].textContent,'계속하기');
   assert.equal(h.timers.size,0);
+});
+
+test('a long final job page stays visible for the reading delay before Karen leaves', async () => {
+  const h=setup();let calls=0;
+  h.context.window.startStory(response('job_result','player_house',null,[{speaker_id:'karen',text:'트럭 차 키를 잘 챙겨두세요.',image:'/assets/images/karen_smile.svg'}]),'확인');
+  vm.runInContext("dialogueStage.pages=['긴 마지막 대사'.repeat(20)];dialogueStage.pageIndex=0",h.context);
+  h.context.fetch=async()=>{calls++;return {ok:true,json:async()=>response('festival_invite','player_house','bob',[])};};
+  await new Promise(r=>setImmediate(r));
+  const tick=async()=>{const [id,timer]=h.timers.entries().next().value;h.timers.delete(id);await timer.callback();};
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete='true';
+  await tick();h.setClock(3200);await tick();assert.equal(calls,0);
+  h.setClock(6499);await tick();assert.equal(calls,0);
+  h.setClock(6500);await tick();assert.equal(calls,1);
 });
 
 test('successful movement clears progress status while failures remain visible', async () => {
@@ -334,7 +347,7 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   assert.equal(h.stage().image,'/assets/images/karen_smile.png');
   assert.equal(h.nodes.get('action-list').children.length,0);
   await Promise.resolve();
-  const timer = [...h.timers.values()].find(t => t.ms === 4500);
+  const timer = [...h.timers.values()].find(t => t.ms === 1800);
   await timer.callback();
   assert.equal(h.stage().image,null);
   assert.equal(h.stage().text,'');
@@ -797,9 +810,9 @@ test('Karen departure countdown waits until the character is selected', async ()
   vm.runInContext('dialogueStage.opened = pendingSelection',h.context);
   h.context.window.startStory(response('karen_dinner','karen_house','karen',[{speaker_id:'karen',text:'편히 둘러보세요.',image:null}]),'테스트');
   await Promise.resolve();
-  assert.equal([...h.timers.values()].some(t=>t.ms===4500),false);
+  assert.equal([...h.timers.values()].some(t=>t.ms===1800),false);
   select(true);await new Promise(resolve=>setImmediate(resolve));
-  assert.equal([...h.timers.values()].some(t=>t.ms===4500),true);
+  assert.equal([...h.timers.values()].some(t=>t.ms===1800),true);
 });
 
 test('urgent Karen bell uses the server summons action, not a client affinity check',()=>{

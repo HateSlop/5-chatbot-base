@@ -333,3 +333,30 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 
 .post-move-stage .festival-meat-hotspot { z-index: 1; }
 .post-move-stage .festival-meat-hotspot:is(:hover, :focus-visible) { filter: brightness(1.12) saturate(1.03); }
+/* Charred wood, oxblood enamel and quiet brass. */
+.move-sidebar { background-color: #251916; background-image: linear-gradient(90deg, #100b0955, transparent 18%, transparent 82%, #100b0977), url('../images/ui-village-wallpaper.svg'), radial-gradient(ellipse at 50% 0, #70342b66, transparent 65%); }
+.move-sidebar .move-affinity { background: radial-gradient(ellipse at 50% 25%, #773b2e44, #24171399 80%); }
+.move-sidebar .move-help { background: linear-gradient(#2b1b17dd, #2b1b17aa); }
+.post-move-screen .move-hints button { background: linear-gradient(125deg, #58302a, #33201c); }
+.post-move-stage .move-location { background: linear-gradient(#60352b77, #291915bb), url('../images/ui-village-wallpaper.svg') center / 72px 96px repeat, #36231d; }
+.move-affinity .affinity-heart strong { background: linear-gradient(#58342a, #2b1c17); color: #f0d7b1; font: 600 16px/1.2 'Segoe UI', 'Malgun Gothic', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.dialogue-copy { flex: none; font-size: clamp(14px, 1.1vw, 16px); line-height: 1.55; height: calc(3.1em + 1px); max-height: calc(3.1em + 1px); }
+.dialogue-stage .character-talk-cue { background: radial-gradient(ellipse at 35% 8%, #a56b4244, transparent 65%), linear-gradient(145deg, #583029, #2c1d18 80%); }
+.character-talk-cue::before { background: #2c1d18; }
+.festival-choice-dialog { width: min(620px, calc(100vw - 40px)); padding: 0; border: 0; border-radius: 0; outline: none; background: transparent; box-shadow: none; overflow: visible; }
+.festival-choice-timer { margin: 0 0 28px; color: #f1d4a5; text-shadow: 0 3px 12px #0b0605; }
+.festival-choice-timer strong { font: 500 clamp(48px, 7vw, 64px)/1 'Segoe UI', 'Malgun Gothic', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.festival-choice-actions { gap: 16px; }
+.festival-choice-dialog .festival-choice-actions button { min-height: 68px; border: 1px solid #cfaa7488; border-radius: 10px; background: linear-gradient(125deg, #6b3028, #3c211c); color: #f9e7c9; font: 600 clamp(18px, 2.5vw, 24px)/1.4 'Malgun Gothic', sans-serif; box-shadow: inset 0 1px #eec69c22, 0 6px 20px #08050499; }
+.festival-choice-dialog [data-choice-status]:empty { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .festival-choice-actions { animation: decision-tremble 430ms linear infinite; }
+  @keyframes decision-tremble { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-1px, .5px); } 50% { transform: translate(.7px, -.5px); } 75% { transform: translate(-.4px, .4px); } }
+}
+body, body.chat-page { background-color: #140e0b; }
+.affinity-empty { fill: #2b211b; }
+.dialogue-box { background: linear-gradient(115deg, #201512d9, #2c1c17d1); }
+.post-move-stage .chat-input-area textarea { background: #211915f2; }
+.entry-name-dialog, #arrival-name-dialog { background: linear-gradient(#3c2820, #211712); }
+.entry-ad-dialog #entry-ad-continue { background: #291c15cc; }
+.festival-choice-dialog::backdrop { background: #0c0806db; }
