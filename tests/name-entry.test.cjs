@@ -13,8 +13,11 @@ function setup(fetchImpl, gender = 'male') {
   const requests = [];
   const starts = [];
   const navigation = [];
+  const dialogs = [];
   vm.runInNewContext(source, {
-    document: {getElementById: id => nodes[id]},
+    document: {getElementById: id => nodes[id], body: {append: dialog => dialogs.push(dialog)},
+      createElement: () => ({attrs: {}, setAttribute(key, value) { this.attrs[key] = value; },
+        querySelector() { return {focus() {}}; }, showModal() { this.open = true; }})},
     window: {startStory: (data, name) => starts.push({data, name}),
       location: {search: gender === null ? '' : `?gender=${gender}`, pathname: '/chat', replace: url => navigation.push(url)},
       history: {replaceState: (_, __, url) => navigation.push(url)}},
@@ -23,7 +26,7 @@ function setup(fetchImpl, gender = 'male') {
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
     fetch: async (path, options) => { requests.push({path, payload: JSON.parse(options.body)}); return fetchImpl(); },
   });
-  return {nodes, requests, starts, navigation,
+  return {nodes, requests, starts, navigation, dialogs,
     submit: value => { nodes.username.value = value; return nodes['name-form'].listeners.submit({preventDefault() {}}); }};
 }
 
@@ -83,7 +86,7 @@ test('duplicate submit is blocked while the first request is pending', async () 
   await pending;
 });
 
-test('name is required after gender selection; a direct or refreshed chat returns to the first screen', async () => {
+test('name is required after gender selection; an old START link opens the choice instead of looping', async () => {
   const h = setup(success, 'female');
   await h.submit('');
   assert.equal(h.requests.length, 0);
@@ -93,7 +96,9 @@ test('name is required after gender selection; a direct or refreshed chat return
   assert.equal(h.requests[0].payload.gender, 'female');
   for (const gender of [null, 'other']) {
     const missing = setup(success, gender);
-    assert.deepEqual(missing.navigation, ['/']);
+    assert.equal(missing.dialogs[0].open, true);
+    assert.match(missing.dialogs[0].innerHTML, /\/chat\?gender=male/);
+    assert.match(missing.dialogs[0].innerHTML, /\/chat\?gender=female/);
     await missing.submit('새 이름');
     assert.equal(missing.requests.length, 0);
   }

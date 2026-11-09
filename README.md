@@ -23,7 +23,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 - Flask 서버가 현재 장면, 허용된 대화 상대와 버튼, 호감도, 차 키, 엔딩을 판정한다. 장면 및 엔딩 규칙은 `services/story.py`에 있다.
 - 화면의 자유 입력은 `POST /api/chat`으로 전달된다. 서버는 현재 인물과 장면에 공개 가능한 사실만 `data/knowledge/facts.json`에서 검색하고, 그 장면에서 해당 인물이 이미 한 고정 대사를 AI에 함께 준다. OpenAI 모델 한 번의 구조화된 응답으로 대사, 대화 태도, 이미지 표정을 얻는다.
 - 이미지 선택기는 `data/images/catalog.json`에서 인물·표정에 맞는 자산을 고른다. 현재 SVG는 교체 가능한 임시 그림이다.
-- 진행 상태는 `STORY_STATE_KEY`로 암호화한 토큰으로 응답하며 플레이 중인 화면의 메모리에만 남는다. 새로고침하거나 화면을 떠났다가 돌아오면 첫 화면의 성별 선택부터 새로 시작한다. 엔딩을 읽은 뒤에도 새 성별과 이름으로 시작할 수 있다.
+- 진행 상태는 `STORY_STATE_KEY`로 암호화한 토큰으로 응답하며 플레이 중인 화면의 메모리에만 남는다. 새로고침하거나 화면을 떠났다가 돌아오면 성별 선택부터 새로 시작한다. 엔딩을 읽은 뒤에도 새 성별과 이름으로 시작할 수 있다.
 
 화면은 서버의 `view`와 `events`만 표시한다. API의 요청·응답 예시는 [계약서](docs/API_CONTRACT.md)에 있다.
 
