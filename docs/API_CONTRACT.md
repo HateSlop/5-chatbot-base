@@ -48,13 +48,15 @@
 
 대화 입력은 AI 대사와 제한된 호감도 변화만 만든다. 장면 이동, 단서 획득, 차 키, 엔딩은 `action_id`로만 처리한다. 화면은 요청 중 다른 요청을 보내지 않고, 성공 응답의 새 토큰으로 이전 토큰을 교체한다. 모델 실패 시 이전 토큰을 유지한다.
 
-미용실 `cathy_help` 장면에서는 먼저 캐시가 “지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?”라고 부탁하고 퇴장하는 화면 연출을 보여준다. 그 뒤 배경 중앙에 투명 배경의 바구니를 표시한다. 바구니를 누르면 확대 화면에서 서버 `events`의 구체적인 캐시 요청을 3초 보여준 뒤 그림 속 도구를 고를 수 있다. 2026-11-09 사용자가 첨부 그림에 맞춘 선택지 변경을 선택함에 따라, 도구는 `view.available_actions`의 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_spray`, `choose_serum`, `choose_brush`, `choose_mirror`, `choose_towel`, `choose_roller`를 사용한다. 그림에 없는 `choose_dryer`는 더 이상 제공하지 않는다. 기존 요청인 샴푸·가위·빗은 그림에 모두 있으므로 정답으로 유지한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
+미용실 `cathy_help` 장면에서는 먼저 캐시가 “지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?”라고 부탁하고 퇴장하는 화면 연출을 보여준다. 인사 뒤 대기는 1.4초이며, 퇴장 뒤 배경 중앙에 투명 배경의 바구니를 표시한다. 바구니를 누르면 서버 `events`의 구체적인 요청을 한 줄로 표시하고 `3→2→1` 카운트를 약 0.67초씩, 총 2초 진행한다. 이후 요청·숫자를 함께 숨기고 도구 선택을 시작한다. 아래의 작은 기억 도움말은 계속 유지한다. 이 장면 동안에는 사용자 제공 미니게임 음악을 사용하고 결과 장면에서는 원래 장소 음악으로 돌아간다. 2026-11-09 사용자가 첨부 그림에 맞춘 선택지 변경을 선택함에 따라, 도구는 `view.available_actions`의 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_spray`, `choose_serum`, `choose_brush`, `choose_mirror`, `choose_towel`, `choose_roller`를 사용한다. 그림에 없는 `choose_dryer`는 더 이상 제공하지 않는다. 기존 요청인 샴푸·가위·빗은 그림에 모두 있으므로 정답으로 유지한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
 
 정육점의 `inspect_basement`는 기존처럼 지하실 **입장** 행동이다. `basement` 장면에서는 그림의 화로를 클릭할 때만 `view.available_actions`의 `inspect_brazier`를 `/api/action`에 보낸다. 성공 응답의 단서 사건을 표시한 뒤 서버가 제공하는 `go_upstairs`(“지하실에서 나온다”)를 보여준다. 입장만으로 단서를 표시하거나 조사 전 퇴장을 제공하지 않는다. 같은 행동을 반복 요청하면 기존 `invalid_action` 오류가 난다. 공개 API 필드와 토큰 전달 방식은 그대로다.
 
 캐런의 집에서 `inspect_room`을 실행하면 `photo_found`로 이동하지만, 이때는 사진 단서와 호감도 변화가 없다. 화면이 기존 사진 확대·앞뒷면 확인 흐름을 보여준 뒤 `view.available_actions`의 `recognize_photo`를 `/api/action`에 보내면, 서버가 사진 단서·호감도 −5·캐런의 고정 대사를 한 번 적용한다. 성공 응답에서만 `return_home`이 제공된다. 요청·응답 형식과 장면 ID는 그대로다.
 
 `photo_found`에서 액자 **뒷면을 열 때** 화면은 `view.available_actions`의 `inspect_photo_back`을 `/api/action`에 보낸다. 성공한 응답의 `view.photo_back_date`를 뒷면에 표시하고 날짜 단서를 기록한다. 요청 전에는 뒷면 날짜를 표시하거나 단서를 기록하지 않는다. 이 조사는 한 번만 가능하며 `recognize_photo`의 사진 인지·감점·캐런 대사는 변경하지 않는다. 뒤집기 요청이 실패하면 이전 토큰과 사진 상태를 유지한다.
+
+사진 사건 뒤 귀가 시 65점 이상이면 `checkpoint`에서 `accept_job`(일자리를 알아본다)·`decline_job`(지금은 거절한다)을 제공합니다. `accept_job`은 `job_choice`로 이동하며 `choose_gardener`·`choose_driver` 중 하나를 선택합니다. 직업 확정 시에만 +5(최대 100)를 적용하고 트럭 운전수만 차 키를 받습니다. 직업 선택과 거절 뒤에는 `job_result`에서 캐런의 축하·안내 대사를 표시하며, 마지막 대사까지 읽은 뒤 화면이 캐런을 페이드아웃하고 기존 `see_karen_off`를 자동 요청하면 `festival_invite`로 이동해 밥의 초대를 보여 줍니다. 자동 요청 실패 때만 ‘계속하기’로 같은 행동을 다시 요청합니다. 직업과 이미 받은 키는 `journal`에 기록하며 새 응답 필드는 없습니다. `job_result`는 고정 대사를 읽는 장면으로 자유 대화 상대가 없습니다.
 
 마을 호감도는 인물 사이에 공유된다. 한 인물과의 대화로 점수가 바뀌면 이후 다른 인물의 대사 태도에도 반영한다. 인물별 최근 대화는 진행 토큰에 따로 보관해 같은 인물을 다시 만났을 때 이어 쓴다. 사진 사건 뒤 귀가할 때의 일자리 판정은 그 시점에 고정하고 이후 대화로 바꾸지 않는다.
 

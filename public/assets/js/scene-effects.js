@@ -18,7 +18,7 @@ window.sceneEffects = new class {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const fade = async (from, to) => {
       if (!reduced && this.curtain.animate) {
-        await this.curtain.animate([{opacity:from}, {opacity:to}], {duration:350, easing:'ease-in-out'}).finished;
+        await this.curtain.animate([{opacity:from}, {opacity:to}], {duration:180, easing:'ease-in-out'}).finished;
       }
       this.curtain.style.opacity = String(to);
     };

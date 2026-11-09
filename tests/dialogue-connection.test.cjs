@@ -6,7 +6,7 @@ const path = require('node:path');
 
 function node() {
   return {
-    children: [], listeners: {}, style: {}, hidden: false, disabled: false,
+    children: [], listeners: {}, style: {}, dataset: {}, hidden: false, disabled: false,
     append(item) { this.children.push(item); },
     replaceChildren(...items) { this.children = items; },
     attrs: {},
@@ -28,6 +28,7 @@ function setup({missingBasket = false} = {}) {
   let stage;
   let move;
   let split;
+  let clock = 0;
   const context = vm.createContext({
     document: {
       querySelector: () => node(),
@@ -44,11 +45,13 @@ function setup({missingBasket = false} = {}) {
     DialogueStage: class {render(data) { stage = data; }},
     PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
+    Date: {now:()=>clock},
     setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, {callback, ms}); return id; },
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
   return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
+    setClock:value=>clock=value,
     transcript: () => vm.runInContext('transcript', context)};
 }
 
@@ -64,6 +67,58 @@ function response(sceneId, locationId, characterId, events, affinity = 50) {
     },
   };
 }
+
+test('job explanation and reward keep Karen visible without asking for another character click', () => {
+  const h = setup();
+  h.context.window.startStory(response('checkpoint', 'player_house', 'karen', []), '테스트');
+  h.context.applyResponse(response('job_choice', 'player_house', 'karen', [
+    {speaker_id:'karen', text:'어떤 일이 더 자신 있으세요?', image:'/assets/images/karen_smile.svg'},
+  ]), 'scene');
+  assert.equal(h.stage().selectCharacter, false);
+  assert.match(h.stage().text, /어떤 일/);
+  h.context.applyResponse(response('job_result', 'player_house', null, [
+    {speaker_id:'karen', text:'여기, 트럭 차 키예요.', image:'/assets/images/karen_smile.svg'},
+  ]), 'scene');
+  assert.equal(h.stage().selectCharacter, false);
+  assert.equal(h.stage().image, '/assets/images/karen_smile.svg');
+  assert.match(h.stage().text, /차 키/);
+  assert.equal(h.nodes.get('user-message').disabled, true);
+});
+
+test('job result waits for reading, fades once and automatically requests the next scene', async () => {
+  const h = setup();
+  const result = response('job_result', 'player_house', null, [{speaker_id:'karen',text:'축하드려요.',image:'/assets/images/karen_smile.svg'}]);
+  result.view.available_actions = [{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
+  let fades = 0, requests = 0;
+  vm.runInContext('dialogueStage.depart = async () => { window.faded(); }',h.context);
+  h.context.window.faded = () => ++fades;
+  h.context.fetch = async () => {++requests; return {ok:true,json:async()=>response('festival_invite','player_house','bob',[])};};
+  h.context.window.startStory(result,'테스트');
+  await new Promise(r=>setImmediate(r));
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  const tick = async () => {const [id, timer] = h.timers.entries().next().value; h.timers.delete(id); await timer.callback();};
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete = 'false';
+  await tick(); assert.equal(requests,0);
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete = 'true';
+  await tick(); assert.equal(requests,0);
+  h.setClock(1500); await tick();
+  assert.equal(fades,1); assert.equal(requests,1);
+  assert.equal(h.stage().sceneId,'festival_invite');
+});
+
+test('failed automatic departure offers continue instead of repeated automatic requests', async () => {
+  const h = setup();
+  const result = response('job_result','player_house',null,[{speaker_id:'karen',text:'괜찮아요.',image:'/assets/images/karen_smile.svg'}]);
+  result.view.available_actions=[{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
+  h.context.fetch=async()=>{throw Error('연결 오류');};
+  h.context.window.startStory(result,'테스트');
+  await new Promise(r=>setImmediate(r));
+  const tick=async()=>{const [id,timer]=h.timers.entries().next().value;h.timers.delete(id);await timer.callback();};
+  h.nodes.get('dialogue-stage').dataset.dialogueComplete='true';
+  await tick();h.setClock(1500);await tick();
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'계속하기');
+  assert.equal(h.timers.size,0);
+});
 
 test('successful movement clears progress status while failures remain visible', async () => {
   const h = setup();
@@ -118,6 +173,7 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   assert.equal(h.split(), true);
   assert.equal(h.stage().image, null);
   const discovery = response('hair_found', 'square', 'bob', [
+    {speaker_id:'thought', text:'와… 이게 다 뭐야? 진짜 맛있어 보이는데? 잠깐, 이건 뭐지?', image:null},
     {speaker_id:'thought', text:'음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다.', image:null},
     {speaker_id:'thought', text:'그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다.', image:null},
   ]);
@@ -126,19 +182,19 @@ test('festival keeps the sidebar, uses the four scene photos and reveals choices
   await vm.runInContext("performAction('inspect_food')", h.context);
   const buttons = () => h.nodes.get('action-list').children;
   assert.equal(h.stage().background, '/assets/images/festival_meat.png');
-  assert.equal(h.stage().text, '');
+  assert.equal(h.stage().text, discovery.events[0].text);
   assert.deepEqual(buttons().map(button => button.textContent), ['다음 장면 ›']);
   h.context.fetch = async () => { throw Error('presentation must not call the server'); };
   await vm.runInContext("performAction('escape')", h.context);
   buttons()[0].listeners.click();
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
-  assert.equal(h.stage().text, discovery.events[0].text);
+  assert.equal(h.stage().text, discovery.events[1].text);
   h.context.renderView(discovery.view);
   assert.equal(h.stage().background, '/assets/images/festival_hair.png');
   buttons()[0].listeners.click();
   assert.equal(h.stage().background, '/assets/images/festival_stares.png');
   assert.equal(h.split(), true);
-  assert.equal(h.stage().text, discovery.events[1].text);
+  assert.equal(h.stage().text, discovery.events[2].text);
   assert.equal(h.stage().image, null);
   assert.deepEqual(buttons().map(button => button.textContent), ['escape','stay']);
   h.context.applyResponse(response('ending_escape', 'square', null, []), 'scene');
@@ -390,6 +446,17 @@ test('open butcher doorway reveals thought before submitting the existing baseme
   assert.equal(door.hidden, true);
 });
 
+test('frightened Jimmy, the empty shop and caught Bob all keep the incident shop background',()=>{
+  const h=setup();
+  for (const [scene,character] of [['butcher_search','jimmy'],['empty_butcher',null],['bob_caught','bob']]) {
+    const data=response(scene,'butcher_shop',character,[{speaker_id:character||'thought',text:'현재 사건',image:character?`/assets/images/${character}_worried.svg`:null}]);
+    h.context.window.startStory(data,'테스트');
+    assert.equal(h.stage().background,'/assets/images/butcher_shop_open.png');
+  }
+  h.context.window.startStory(response('neighbors','butcher_shop','bob',[]),'다시 시작');
+  assert.equal(h.stage().background,'/assets/images/butcher_shop.svg');
+});
+
 test('basement brazier click alone requests its clue and then reveals the exit', async () => {
   const h = setup();
   const basement = response('basement', 'basement', null, []);
@@ -593,7 +660,7 @@ test('photo scene has no next button while festival discovery keeps its next but
   assert.equal(h.nodes.get('action-list').children[0].textContent,'다음 장면 ›');
 });
 
-test('Cathy asks for help and leaves before the illustrated basket and tool request appear', async () => {
+test('Cathy leaves sooner, then the request counts 3-2-1 over two seconds with a memory hint', async () => {
   const h = setup();
   const request = '바구니에서 샴푸, 가위, 빗 좀 가져다줄래요?';
   const task = response('cathy_help', 'salon', null, [
@@ -610,7 +677,7 @@ test('Cathy asks for help and leaves before the illustrated basket and tool requ
   assert.match(h.stage().text, /지금 너무 바쁘니까/);
   assert.equal(hotspot.hidden, true);
   await Promise.resolve();
-  const greeting = [...h.timers.values()].find(item => item.ms === 3500);
+  const greeting = [...h.timers.values()].find(item => item.ms === 1400);
   assert.ok(greeting);
   await greeting.callback();
   assert.equal(h.stage().dialogue, false);
@@ -622,15 +689,26 @@ test('Cathy asks for help and leaves before the illustrated basket and tool requ
   assert.equal(hotspot.attrs['aria-label'], '미용실 바구니 열기');
   assert.equal(h.nodes.get('action-list').children.length, 0);
   assert.equal(h.move().actions.length, 0);
-  assert.equal([...h.timers.values()].some(item => item.ms === 3000), false);
+  assert.equal([...h.timers.values()].some(item => Math.abs(item.ms - 2000 / 3) < .01), false);
   hotspot.listeners.click();
   assert.equal(h.nodes.get('cathy-basket-dialog').open, true);
   assert.equal(h.nodes.get('cathy-basket-request').textContent, request);
   assert.equal(h.nodes.get('cathy-tool-list').hidden, true);
   await Promise.resolve();
-  const timer = [...h.timers.values()].find(item => item.ms === 3000);
-  assert.ok(timer);
-  timer.callback();
+  const counter=h.nodes.get('cathy-basket-countdown');
+  assert.equal(counter.textContent,'3');assert.equal(counter.hidden,false);
+  assert.equal(h.nodes.get('cathy-basket-hint').hidden,false);
+  assert.match(h.nodes.get('cathy-basket-hint').textContent,/캐시가 말한 도구를 기억하고 찾아보세요/);
+  for (const [remaining,elapsed,delay] of [['2',730,2000/3],['1',4000/3,4000/3-730]]) {
+    const [id,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-delay)<.01);
+    h.setClock(elapsed);
+    h.timers.delete(id);timer.callback();
+    assert.equal(counter.textContent,remaining);
+    assert.equal(h.nodes.get('cathy-basket-request').hidden,false);
+    assert.equal(h.nodes.get('cathy-tool-list').hidden,true);
+  }
+  const [,timer]=[...h.timers.entries()].find(([,item])=>Math.abs(item.ms-2000/3)<.01);h.setClock(2000);timer.callback();
+  assert.equal(counter.hidden,true);
   assert.equal(h.nodes.get('cathy-basket-request').hidden, true);
   assert.equal(h.nodes.get('cathy-tool-list').hidden, false);
   const sent = [];
@@ -657,7 +735,7 @@ test('leaving or restarting cannot reveal an old Cathy basket greeting', async (
   const task=response('cathy_help','salon',null,[{speaker_id:'cathy',text:'샴푸, 가위, 빗',image:null}]);
   h.context.window.startStory(task,'테스트');
   await Promise.resolve();
-  const greeting=[...h.timers.values()].find(item=>item.ms===3500);
+  const greeting=[...h.timers.values()].find(item=>item.ms===1400);
   h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 이름');
   await greeting.callback();
   assert.equal(h.stage().sceneId,'arrival');
@@ -691,4 +769,20 @@ test('urgent Karen bell uses the server summons action, not a client affinity ch
   h.context.window.startStory(data,'테스트');assert.equal(h.stage().doorbellCount,3);
   data.view.affinity=20;data.view.available_actions=[{id:'accept_job',kind:'choice',label:'수락'}];
   h.context.renderView(data.view);assert.equal(h.stage().doorbellCount,1);
+});
+
+test('the salon return uncovers its new background before the remaining arrival animation finishes',async()=>{
+  const h=setup();let finishArrival;
+  h.context.finishSteps=[];
+  h.context.backgroundDone=Promise.resolve(true);
+  h.context.arrivalDone=new Promise(resolve=>finishArrival=resolve);
+  h.context.window.sceneEffects={ending(){},transition:async show=>{await show();h.context.finishSteps.push('visible');}};
+  h.context.window.startStory(response('cathy_result','salon',null,[]),'테스트');
+  vm.runInContext('dialogueStage.backgroundReady=backgroundDone; dialogueStage.ready=arrivalDone',h.context);
+  h.context.fetch=async()=>({ok:true,json:async()=>response('jimmy_butcher','player_house','jimmy',[])});
+  const returning=vm.runInContext("request('/api/action', {action_id:'return_home'})",h.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(h.context.finishSteps,['visible']);
+  let complete=false;returning.then(()=>complete=true);await Promise.resolve();assert.equal(complete,false);
+  finishArrival();await returning;assert.equal(complete,true);
 });

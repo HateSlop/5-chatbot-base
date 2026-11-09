@@ -43,6 +43,7 @@ const photoFlip = document.getElementById('photo-flip');
 const basketDialog = document.getElementById('cathy-basket-dialog');
 const basketImage = document.getElementById('cathy-basket-image');
 const basketRequest = document.getElementById('cathy-basket-request');
+const basketCountdownDisplay = document.getElementById('cathy-basket-countdown');
 const basketStatus = document.getElementById('cathy-basket-status');
 const basketHotspot = document.createElement('button');
 basketHotspot.type = 'button';
@@ -54,6 +55,7 @@ document.getElementById('dialogue-stage').append(basketHotspot);
 let basketStarted = false;
 let basketReady = false;
 let basketTimer;
+let basketCountdown = 3;
 let basketGreetingDone = false;
 let basketGreetingPending = false;
 let basketGreetingTimer;
@@ -62,14 +64,17 @@ const cathySelected = new Set();
 function renderBasket() {
   if (!basketDialog) return;
   basketRequest.hidden = !basketStarted || basketReady;
+  if (basketCountdownDisplay) {
+    basketCountdownDisplay.hidden = !basketStarted || basketReady;
+    basketCountdownDisplay.textContent = String(basketCountdown);
+  }
   document.getElementById('cathy-tool-list').hidden = !basketReady;
-  document.getElementById('cathy-basket-hint').hidden = !basketReady;
+  document.getElementById('cathy-basket-hint').hidden = !basketStarted;
   const selectedLabels = currentView?.available_actions
     .filter(action => cathySelected.has(action.id.replace('choose_', '')))
     .map(action => action.label.replace(/ 선택$/, '')) || [];
-  document.getElementById('cathy-basket-hint').textContent = selectedLabels.length
-    ? `선택한 도구: ${selectedLabels.join(', ')} · 다시 누르면 선택 취소`
-    : '캐시가 부탁한 도구 그림을 모두 눌러 주세요.';
+  document.getElementById('cathy-basket-hint').textContent = '캐시가 말한 도구를 기억하고 찾아보세요.' +
+    (selectedLabels.length ? ` 선택한 도구: ${selectedLabels.join(', ')} · 다시 누르면 선택 취소` : '');
   document.getElementById('cathy-deliver').hidden = !basketReady;
   document.getElementById('cathy-deliver').disabled = busy;
   for (const button of document.querySelectorAll('#cathy-tool-list button')) {
@@ -85,10 +90,15 @@ basketHotspot.addEventListener('click', () => {
     renderBasket();
     Promise.resolve(basketImage.decode?.().catch(() => {})).then(() => {
       if (currentView?.scene_id !== 'cathy_help') return;
-      basketTimer = setTimeout(() => {
-        basketReady = true;
+      const started = Date.now();
+      const step = 2000 / 3;
+      const tick = () => {
+        if (currentView?.scene_id !== 'cathy_help') return;
+        if (--basketCountdown === 0) basketReady = true;
         renderBasket();
-      }, 3000);
+        if (!basketReady) basketTimer = setTimeout(tick, Math.max(0, (4 - basketCountdown) * step - (Date.now() - started)));
+      };
+      basketTimer = setTimeout(tick, step);
     });
   }
   basketDialog.showModal();
@@ -189,6 +199,9 @@ brazierHotspot.addEventListener('click', () => {
 let secretFrame = 0;
 let karenDinnerDismissed = false;
 let karenDepartureTimer;
+let jobDepartureTimer;
+let jobDeparturePending = false;
+let jobDepartureFailed = false;
 const greetingChats = new Map();
 function greetingLocked(view) {
   return ['arrival', 'neighbors'].includes(view.scene_id) && view.available_characters.length > 0 &&
@@ -246,10 +259,10 @@ function renderMessages() {
   const festivalScene = ['festival', 'hair_found'].includes(currentView.scene_id);
   const festivalEvents = conversation.filter(item => item.kind === 'scene');
   const line = festivalScene && currentView.scene_id === 'hair_found'
-    ? (festivalFrame === 0 ? null : festivalEvents[Math.min(festivalFrame - 1, festivalEvents.length - 1)])
+    ? festivalEvents[Math.min(festivalFrame, festivalEvents.length - 1)]
     : conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: currentView.scene_id === 'photo_found' ? '/assets/images/karen_secret_room_angle2.png' : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
+    background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : ['meat','hair','stares'][Math.min(festivalFrame, 2)]}.png` : currentView.scene_id === 'photo_found' ? '/assets/images/karen_secret_room_angle2.png' : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
     image: festivalScene ? null : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
@@ -261,7 +274,7 @@ function renderMessages() {
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
     dialogue: !cathyBasketScene || !basketGreetingDone,
-    selectCharacter: !cathyBasketScene && !festivalScene,
+    selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
   if (cathyBasketScene && !basketGreetingDone && !basketGreetingPending) {
     basketGreetingPending = true;
@@ -274,7 +287,7 @@ function renderMessages() {
         if (visit !== basketVisit || currentView?.scene_id !== 'cathy_help') return;
         basketGreetingDone = true;
         renderView(currentView);
-      }, 3500);
+      }, 1400);
     });
   }
   clearTimeout(karenDepartureTimer);
@@ -308,6 +321,32 @@ function renderMessages() {
     });
   }
   log.scrollTop = log.scrollHeight;
+  clearTimeout(jobDepartureTimer);
+  if (currentView.scene_id === 'job_result' && !jobDeparturePending && !jobDepartureFailed) {
+    const scene = currentView;
+    let readAt = null;
+    const depart = async () => {
+      if (currentView !== scene || busy || !stateToken || jobDeparturePending) return;
+      if (shopStage.dataset.dialogueComplete !== 'true') readAt = null;
+      else readAt ??= Date.now();
+      if (readAt === null || Date.now() - readAt < 1500) {
+        jobDepartureTimer = setTimeout(depart, 250);
+        return;
+      }
+      jobDeparturePending = true;
+      await dialogueStage.depart?.(false);
+      if (currentView !== scene || !stateToken) return;
+      await performAction('see_karen_off');
+      if (currentView.scene_id === 'job_result') {
+        jobDepartureFailed = true;
+        jobDeparturePending = false;
+        renderView(currentView);
+      }
+    };
+    Promise.resolve(dialogueStage.ready).then(() => {
+      if (currentView === scene && !jobDeparturePending) jobDepartureTimer = setTimeout(depart, 1500);
+    });
+  }
 }
 
 function renderView(view) {
@@ -316,7 +355,7 @@ function renderView(view) {
   basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog || !basketGreetingDone;
   basketHotspot.disabled = busy;
   renderBasket();
-  window.locationMusic?.enter(view.location_id, view.ending);
+  window.locationMusic?.enter(view.location_id, view.ending, view.scene_id);
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame === 2;
   photoHotspot.disabled = busy;
   photoFlip.disabled = busy;
@@ -342,7 +381,7 @@ function renderView(view) {
   const showingDiscovery = view.scene_id === 'hair_found' && festivalFrame < 2;
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
-  postMoveUI.setSplit?.(!festival && !view.ending && view.scene_id !== 'cathy_help');
+  postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');
   if (showingDiscovery) {
     const next = document.createElement('button');
     next.type = 'button';
@@ -354,7 +393,13 @@ function renderView(view) {
       ++festivalFrame;
       if (window.sceneEffects) {
         busy = true;
-        try { await window.sceneEffects.transition(async () => { renderView(currentView); await dialogueStage.ready; }); }
+        try {
+          await window.sceneEffects.transition(async () => {
+            renderView(currentView);
+            await (dialogueStage.backgroundReady || dialogueStage.ready);
+          });
+          await dialogueStage.ready;
+        }
         finally { busy = false; renderView(currentView); }
       } else renderView(currentView);
     });
@@ -364,13 +409,14 @@ function renderView(view) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
+    if (view.scene_id === 'job_result' && action.id === 'see_karen_off' && !jobDepartureFailed) continue;
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
     if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id === 'inspect_brazier') continue;
     if (view.scene_id === 'neighbors' && action.kind === 'move' && greetedPlaces.has(greetingDestinations[action.id])) continue;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `action-button ${action.kind}`;
-    button.textContent = emptyShop && action.id === 'inspect_basement' ? '지하실에 내려가본다' : emptyShop && action.id === 'inspect_room' ? '방에 들어가본다' : action.label;
+    button.textContent = view.scene_id === 'job_result' && action.id === 'see_karen_off' ? '계속하기' : emptyShop && action.id === 'inspect_basement' ? '지하실에 내려가본다' : emptyShop && action.id === 'inspect_room' ? '방에 들어가본다' : action.label;
     button.disabled = busy;
     button.addEventListener("click", () => performAction(action.id));
     actionList.append(button);
@@ -423,6 +469,9 @@ function applyResponse(data, kind, characterId = null) {
   clearReaction();
   if (decreased) angryReaction = characterId;
   if (changedScene) {
+    clearTimeout(jobDepartureTimer);
+    jobDeparturePending = false;
+    jobDepartureFailed = false;
     festivalFrame = 0;
     secretFrame = 0;
     karenDinnerDismissed = false;
@@ -430,6 +479,7 @@ function applyResponse(data, kind, characterId = null) {
     basketTimer = undefined;
     basketStarted = false;
     basketReady = false;
+    basketCountdown = 3;
     clearTimeout(basketGreetingTimer);
     ++basketVisit;
     basketGreetingDone = false;
@@ -471,6 +521,7 @@ window.startStory = (data, name) => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  basketCountdown = 3;
   clearTimeout(basketGreetingTimer);
   ++basketVisit;
   basketGreetingDone = false;
@@ -501,14 +552,16 @@ async function request(path, payload) {
   }
   const show = async () => {
     applyResponse(data, path === "/api/chat" ? "chat" : "scene", payload.character_id);
-    await dialogueStage.ready;
+    await (dialogueStage.backgroundReady || dialogueStage.ready);
   };
   const moving = currentView && (currentView.location_id !== data.view.location_id || currentView.background !== data.view.background || data.view.ending && !currentView.ending);
   if (moving && window.sceneEffects) await window.sceneEffects.transition(show);
   else await show();
+  await dialogueStage.ready;
 }
 
 async function performAction(actionId) {
+  if (shopStage.dataset?.dialogueComplete === 'false' && dialogueStage.box && !dialogueStage.box.hidden) return;
   if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
   if (currentView.scene_id === 'photo_found' && secretFrame < 2 &&
@@ -557,6 +610,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  clearTimeout(jobDepartureTimer);
+  jobDeparturePending = true;
   dialogueStage.resetSelection?.();
   clearReaction();
   greetedPlaces.clear();
@@ -567,6 +622,7 @@ window.addEventListener("pagehide", () => {
   basketTimer = undefined;
   basketStarted = false;
   basketReady = false;
+  basketCountdown = 3;
   clearTimeout(basketGreetingTimer);
   ++basketVisit;
   basketGreetingDone = false;

@@ -6,7 +6,24 @@ const entryForm = document.getElementById('entry-chat');
 const entryUI = new PostMoveUI(entryRoot, entryForm, entryInput, document.getElementById('entry-send'), () => {});
 const entryDialog = document.getElementById('entry-name-dialog');
 const entryAnswer = document.getElementById('entry-answer');
-const entryWatch = document.getElementById('entry-watch');
+const entryTV = document.getElementById('entry-tv-hotspot');
+const entryTVTutorial = document.getElementById('entry-tv-tutorial');
+function hideTVTutorial() { if (entryTVTutorial) entryTVTutorial.hidden = true; }
+// Match the original TV cutout to the background's object-fit: cover crop.
+function positionEntryTV() {
+  const width = entryRoot.clientWidth, height = entryRoot.clientHeight;
+  if (!width || !height) return;
+  const scale = Math.max(width / 1456, height / 816);
+  entryTV.style.left = `${(width - 1456 * scale) / 2}px`;
+  entryTV.style.top = `${(height - 816 * scale) / 2}px`;
+  entryTV.style.width = `${1456 * scale}px`;
+  entryTV.style.height = `${816 * scale}px`;
+  if (entryTVTutorial) {
+    entryTVTutorial.style.left = `${(width - 1456 * scale) / 2 + 720 * scale}px`;
+    entryTVTutorial.style.top = `${(height - 816 * scale) / 2 + 404 * scale}px`;
+  }
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(positionEntryTV).observe(entryRoot);
 const prologueRoot = document.getElementById('entry-prologue');
 const prologue = prologueRoot && window.Prologue ? new window.Prologue(prologueRoot) : null;
 const adDialog = document.getElementById('entry-ad-dialog');
@@ -26,18 +43,19 @@ async function finishAd() {
   introStep = 'after';
   adVideo.pause();
   adDialog.close();
-  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'저기로 갈까?'});
+  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'오…? 이런 곳도 있었네?\n\n마을도 평화로워 보이고, 사람들도 다들 좋아 보이는데…\n\n여기라면 나도 새롭게 시작할 수 있지 않을까?\n\n좋아, 한번 가보자!'});
   if (entryStage.ready) await entryStage.ready;
   if (introStep !== 'after') return;
   entryDepart.hidden = false;
   entryStage.layoutPages?.();
   entryDepart.focus();
 }
-entryWatch.addEventListener('click', () => {
+entryTV.addEventListener('click', () => {
   if (introStep !== 'before') return;
   introStep = 'playing';
   entryStage.finishTyping?.();
-  entryWatch.hidden = true;
+  entryTV.hidden = true;
+  hideTVTutorial();
   adContinue.hidden = true;
   adDialog.showModal();
   playAd();
@@ -62,7 +80,8 @@ async function showEntry() {
   entryStage.render({background:'/assets/images/player_house.svg', dialogue:false});
   window.locationMusic?.enter('player_house');
   entryUI.render({locationId:'player_house',locationName:'새집',busy:true});
-  await entryRoot.querySelector('.dialogue-background').decode().catch(() => {});
+  if (entryStage.backgroundReady) await entryStage.backgroundReady;
+  else await entryRoot.querySelector('.dialogue-background').decode().catch(() => {});
   if (run !== entryRun) return;
   entryTimer = setTimeout(async () => {
     if (document.getElementById('name-screen').hidden) return;
@@ -76,9 +95,9 @@ async function showEntry() {
 }
 entryAnswer.addEventListener('click',()=>{entryDialog.showModal();document.getElementById('username').focus();});
 entryDialog.addEventListener('cancel',event=>event.preventDefault());
-window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';adVideo.pause();adDialog.close();});
+window.addEventListener('pagehide',()=>{++entryRun;clearTimeout(entryTimer);introStep='left';entryTV.hidden=true;hideTVTutorial();adVideo.pause();adDialog.close();});
 entryDepart.addEventListener('click', async () => {
-  if (departed || introStep !== 'after') return;
+  if (departed || introStep !== 'after' || entryRoot.dataset.dialogueComplete === 'false') return;
   departed = true;
   if (window.sceneEffects) await window.sceneEffects.transition(showEntry);
   else showEntry();
@@ -87,7 +106,8 @@ async function showIntro() {
   entryUI.setSplit(false);
   entryAnswer.hidden = true;
   entryDepart.hidden = true;
-  entryWatch.hidden = true;
+  entryTV.hidden = true;
+  hideTVTutorial();
   entryStage.render({background:'/assets/images/pre-move-house.png', dialogue:false});
   if (entryStage.ready) await entryStage.ready;
   if (introStep !== 'before') return;
@@ -99,8 +119,14 @@ async function showIntro() {
     if (!finished || introStep === 'left') return;
     introStep = 'before';
   }
-  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'티비나 볼까?'});
+  entryStage.render({background:'/assets/images/pre-move-house.png',speaker:'',text:'하아… 생각만 한다고 달라지는 건 없겠지.\n\n일단 TV나 볼까…? 뭐라도 보고 있으면 좀 나아지려나.'});
   if (entryStage.ready) await entryStage.ready;
-  if (!departed && introStep === 'before') { entryWatch.hidden = false; entryStage.layoutPages?.(); if (prologue) entryWatch.focus(); }
+  if (!departed && introStep === 'before') {
+    positionEntryTV();
+    entryTV.hidden = false;
+    if (entryTVTutorial) entryTVTutorial.hidden = false;
+    entryStage.layoutPages?.();
+    if (prologue) entryTV.focus();
+  }
 }
 showIntro();

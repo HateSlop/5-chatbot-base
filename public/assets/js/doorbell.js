@@ -1,4 +1,4 @@
-// A visit waits for its chime; blocked or missing audio never blocks the story.
+// Open soon after the last ring starts; let the sound's tail finish naturally.
 window.Doorbell = class {
   constructor() {
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.stop(); });
@@ -29,7 +29,11 @@ window.Doorbell = class {
       sounds.push(sound);
       sound.onerror = finish;
       if (index === count - 1) sound.onended = finish;
-      const play = () => { sound.play().catch(finish); };
+      const play = () => {
+        sound.play().then(() => {
+          if (!done && index === count - 1) timers.push(setTimeout(resolve, 450));
+        }).catch(finish);
+      };
       if (index === 0) play();
       else timers.push(setTimeout(play, index * 300));
     }

@@ -63,14 +63,17 @@ class StoryTest(unittest.TestCase):
 
     def festival(self, checkpoint_action):
         self.action(checkpoint_action)
+        if checkpoint_action == "accept_job":
+            self.action("choose_driver")
+        self.action("see_karen_off")
         self.action("go_festival")
         self.action("inspect_food")
         self.assertEqual(decode_state(self.token)["scene_id"], "hair_found")
 
     def test_low_affinity_goes_to_butcher_death_without_festival(self):
-        checkpoint = self.checkpoint_at(69)
+        checkpoint = self.checkpoint_at(64)
         state = decode_state(self.token)
-        self.assertEqual(state["affinity"], 69)
+        self.assertEqual(state["affinity"], 64)
         self.assertEqual(state["story_day"], 1)
         self.assertIsNone(state["ending"])
         self.assertFalse(state["has_car_key"])
@@ -87,7 +90,7 @@ class StoryTest(unittest.TestCase):
         self.assertIn("정육점으로 오라고 불렀다", generate.call_args.args[-1][0])
         self.assertNotIn("식인", " ".join(generate.call_args.args[-1]))
         self.chat("karen", "고마워요", "friendly")
-        self.assertGreaterEqual(decode_state(self.token)["affinity"], 70)
+        self.assertGreaterEqual(decode_state(self.token)["affinity"], 65)
         self.assertEqual([action["id"] for action in available_actions(decode_state(self.token))], ["go_butcher"])
         result = self.action("go_butcher")
         self.assertEqual(result["view"]["ending"], "death")
@@ -106,9 +109,10 @@ class StoryTest(unittest.TestCase):
             self.assertEqual(response.status_code, 409)
 
     def test_threshold_and_high_affinity_job_choices(self):
-        checkpoint = self.checkpoint_at(70)
+        checkpoint = self.checkpoint_at(65)
         self.assertEqual([action["id"] for action in checkpoint["view"]["available_actions"]], ["accept_job", "decline_job"])
-        invitation = self.action("decline_job")
+        self.action("decline_job")
+        invitation = self.action("see_karen_off")
         self.assertIn("내일 마을 축제", invitation["events"][-1]["text"])
         self.assertEqual(invitation["view"]["scene_id"], "festival_invite")
         self.action("go_festival")
@@ -129,6 +133,36 @@ class StoryTest(unittest.TestCase):
         self.festival("accept_job")
         self.assertTrue(decode_state(self.token)["has_car_key"])
         self.assertEqual(self.action("escape")["view"]["ending"], "escape")
+
+    def test_gardener_has_profession_without_truck_key(self):
+        self.checkpoint_at(65)
+        choices = self.action("accept_job")
+        self.assertEqual(choices["view"]["scene_id"], "job_choice")
+        self.assertEqual([item["id"] for item in choices["view"]["available_actions"]],
+                         ["choose_gardener", "choose_driver"])
+        result = self.action("choose_gardener")
+        state = decode_state(self.token)
+        self.assertEqual((state["job"], state["affinity"], state["has_car_key"]), ("gardener", 70, False))
+        self.assertIn("직업 획득: 정원사", result["view"]["journal"])
+        self.assertEqual(result["view"]["available_characters"], [])
+        self.assertEqual(result["events"][0]["speaker_id"], "karen")
+        self.assertIn("축하", result["events"][0]["text"])
+        for invalid in ("choose_gardener", "choose_driver", "go_festival"):
+            self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": invalid}).status_code, 409)
+        invitation = self.action("see_karen_off")
+        self.assertEqual(invitation["events"][0]["speaker_id"], "bob")
+        self.action("go_festival")
+        self.action("inspect_food")
+        self.assertEqual(self.action("escape")["view"]["ending"], "death")
+
+    def test_declining_keeps_profession_and_key_empty(self):
+        self.checkpoint_at(65)
+        result = self.action("decline_job")
+        state = decode_state(self.token)
+        self.assertEqual((state["job"], state["affinity"], state["has_car_key"]), (None, 65, False))
+        self.assertEqual(result["view"]["scene_id"], "job_result")
+        self.assertIn("서두르실 필요", result["events"][0]["text"])
+        self.assertEqual(result["events"][0]["speaker_id"], "karen")
 
     def test_everyday_conversation_can_reach_job_offer(self):
         self.chat("jimmy", "지미, 안녕하세요", "friendly")
@@ -430,6 +464,7 @@ class StoryTest(unittest.TestCase):
                         self.token = encode_state(state)
                     self.assertEqual(self.action(action_id)["view"]["today"], dinner, action_id)
                 self.assertEqual(self.action("decline_job")["view"]["today"], dinner)
+                self.assertEqual(self.action("see_karen_off")["view"]["today"], dinner)
                 arrived = self.action("go_festival")
                 self.assertEqual(arrived["view"]["today"], festival)
                 self.assertEqual(decode_state(self.token)["story_day"], 2)
@@ -474,7 +509,10 @@ class StoryTest(unittest.TestCase):
             with self.subTest(score=score):
                 self.setUp()
                 self.checkpoint_at(score)
-                accepted = self.action("accept_job")
+                learned = self.action("accept_job")
+                self.assertEqual(learned["view"]["affinity"], score)
+                self.assertFalse(decode_state(self.token)["has_car_key"])
+                accepted = self.action("choose_driver")
                 self.assertEqual(accepted["view"]["affinity"], min(100, score + 5))
                 self.assertIn("고마워요", accepted["events"][0]["text"])
                 self.assertTrue(decode_state(self.token)["job_offered"])
@@ -514,9 +552,13 @@ class StoryTest(unittest.TestCase):
         state = decode_state(self.token)
         state["affinity"] = 70
         self.token = encode_state(state)
-        for action_id in ("return_home", "decline_job", "go_festival"):
+        for action_id in ("return_home", "decline_job", "see_karen_off", "go_festival"):
             self.action(action_id)
         food = self.action("inspect_food")
+        self.assertEqual(len(food["events"]), 3)
+        self.assertTrue(food["events"][0]["text"].startswith("와… 이게 다 뭐야?"))
+        self.assertTrue(food["events"][0]["text"].endswith("잠깐, 이건 뭐지?"))
+        self.assertEqual(food["events"][1]["text"], "밥은 머리카락이 없는데?")
         thoughts = " ".join(item["text"] for item in food["events"])
         for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
             self.assertIn(detail, thoughts)
@@ -551,7 +593,7 @@ class StoryTest(unittest.TestCase):
             ("return_home", "jimmy", "오후 6시에"),
             ("accept_dinner_invite", None, None), ("go_karen_dinner", None, None),
             ("inspect_room", None, None), ("recognize_photo", None, None),
-            ("return_home", None, None), ("decline_job", "bob", "초대한 날의 다음 날"),
+            ("return_home", None, None), ("decline_job", None, None), ("see_karen_off", "bob", "초대한 날의 다음 날"),
         ]
         for action_id, character, expected in steps:
             if action_id == "return_home" and decode_state(self.token)["scene_id"] == "photo_found":
@@ -587,7 +629,8 @@ class StoryTest(unittest.TestCase):
             response = self.chat("karen", f"당신을 가만두지 않겠어요 {index}", "hostile")
         self.assertEqual(response["view"]["affinity"], 58)
         self.assertIn("accept_job", [action["id"] for action in response["view"]["available_actions"]])
-        self.assertTrue(decode_state(self.action("accept_job")["state_token"])["has_car_key"])
+        self.action("accept_job")
+        self.assertTrue(decode_state(self.action("choose_driver")["state_token"])["has_car_key"])
 
     def test_adjustment_center_edges_rounding_and_bounds(self):
         self.assertEqual(START_SCORE, 50)

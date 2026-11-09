@@ -414,6 +414,24 @@ test('fast text reveal preserves Unicode and can be completed immediately', () =
   assert.equal(nodes['.dialogue-text'].textContent,stage.fullText);
 });
 
+test('progress stays hidden until the last page finishes typing, including immediate reveal', () => {
+  const timers = new Map(); let id = 0;
+  const {stage} = setup({setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});
+  stage.box.hidden = false;
+  stage.pages = ['첫 번째 대사', '마지막 대사'];
+  stage.previous = {}; stage.next = {}; stage.pageLabel = {};
+  stage.showPage();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.pageIndex = 1; stage.showPage();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+  stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'true');
+  stage.pageIndex = 0; stage.showPage(); stage.finishTyping();
+  assert.equal(stage.root.dataset.dialogueComplete, 'false');
+});
+
 test('every new line types and repeated renders or layout do not finish it early', async () => {
   const timers=new Map();let id=0;
   const {stage,nodes}=setup({setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)});
@@ -477,4 +495,15 @@ test('home door stays closed until its bell finishes and repeated renders do not
   finish();await stage.ready;
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house_open.png');
   stage.render(visit);await stage.ready;assert.deepEqual(calls,[3]);
+});
+
+test('a new background is ready before home arrival pauses, bell and character dialogue', async () => {
+  const {stage,nodes}=setup();let finishArrival;
+  stage.pause=ms=>ms===1500 ? new Promise(resolve=>finishArrival=resolve) : Promise.resolve();
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.png'});
+  assert.equal(await stage.backgroundReady,true);
+  assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house.svg');
+  let finished=false;stage.ready.then(()=>finished=true);
+  await Promise.resolve();assert.equal(finished,false);
+  finishArrival();await stage.ready;assert.equal(finished,true);
 });

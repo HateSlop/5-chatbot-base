@@ -53,7 +53,11 @@
       <section id="entry-stage" class="game-screen dialogue-stage" aria-label="지미 방문과 이름 입력">
         <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
         <div class="dialogue-tv" hidden></div>
-        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-watch" class="dialogue-advance" type="button" hidden>TV 보기 ›</button><button id="entry-depart" class="dialogue-advance" type="button" hidden>이사하기 ›</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
+        <button id="entry-tv-hotspot" class="entry-tv-hotspot" type="button" aria-label="TV를 켜서 광고 보기" title="TV를 켜서 광고 보기" hidden></button>
+        <div id="entry-tv-tutorial" class="entry-tv-tutorial" aria-hidden="true" hidden>
+          <svg viewBox="0 0 32 44" width="32" height="44"><path d="M2 2v31l8-8 7 16 7-3-7-15h12Z" fill="#fff4d9" stroke="#34242d" stroke-width="2" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="entry-depart" class="dialogue-advance" type="button" hidden>더뉴빌리지로 이사 가기</button><button id="entry-answer" class="dialogue-advance" type="button" hidden>이름 입력하기 ›</button></div>
       </section>
       <form id="entry-chat" class="chat-input-area" hidden>
         <textarea id="entry-message" aria-label="이름 입력 전 대화" disabled></textarea><button id="entry-send" type="submit" disabled>보내기</button>
@@ -147,6 +151,7 @@
       <div class="basket-scene">
         <img id="cathy-basket-image" src="{{ asset_url('assets/images/cathy_basket.png') }}" alt="확대된 미용 도구 바구니" draggable="false">
         <div id="cathy-basket-request" class="basket-request" role="status" aria-live="polite" hidden></div>
+        <div id="cathy-basket-countdown" class="basket-countdown" role="timer" aria-label="도구 선택 시작 카운트" hidden></div>
         <div id="cathy-tool-list" class="cathy-tool-list" aria-label="바구니 속 도구" hidden>
           <button type="button" data-tool="shampoo" aria-label="샴푸" title="샴푸" aria-pressed="false"></button>
           <button type="button" data-tool="scissors" aria-label="가위" title="가위" aria-pressed="false"></button>

@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 
 START_SCORE = 50
-JOB_THRESHOLD = 70
+JOB_THRESHOLD = 65
 WELCOME_SCORE = 70
 WARY_SCORE = 35
 CHAT_DELTAS = {"friendly": 5, "cooperative": 7, "neutral": 0, "hostile": -2}
@@ -39,7 +39,8 @@ SCENE_CONTEXT = {
     "dinner_invite": ("지미가 캐런의 다음 날 저녁 식사 초대를 전하며 함께 가자고 했다. 다음 날 오후 6시에 플레이어의 집으로 데리러 오겠다고 약속했다. 플레이어는 지하실의 불탄 소지품만 보았고 주인을 모른다.", "지미는 앞서 정육점 지하실에서 마을의 사이비 의식과 식인의 비밀을 알게 됐다. 두려워서 아직 직접 밝히지 못한다.", "비밀 전체나 이후 사건을 미리 밝히지 않는다."),
     "karen_dinner": ("다음 날 오후 6시에 데리러 오겠다던 지미가 오후 7시까지 나타나지 않아 플레이어가 혼자 캐런의 집에 왔다.", "캐런은 지미가 오지 않은 사실을 안다. 이유는 확인되지 않았다.", "지미의 행방을 확정해서 말하거나 이후 사진 발견을 미리 언급하지 않는다."),
     "photo_found": ("플레이어가 캐런 집의 수상한 방에서 지미의 사진을 발견했고 캐런에게 들켰다.", "캐런은 플레이어가 자기 방에 들어와 사진을 본 것을 안다.", "지미의 운명이나 축제 음식의 정체를 밝히지 않는다."),
-    "checkpoint": ("플레이어가 사진을 본 뒤 집에 돌아왔다. 캐런이 유통 운전 일을 제안했다.", "캐런은 이미 일자리 제안 여부를 정했다.", "차 키를 받기 전부터 가지고 있다고 말하거나 축제의 비밀을 밝히지 않는다."),
+    "checkpoint": ("플레이어가 사진을 본 뒤 집에 돌아왔다. 캐런이 마을 일을 맡아보라고 권했다.", "캐런은 이미 일자리 제안 여부를 정했다.", "차 키를 받기 전부터 가지고 있다고 말하거나 축제의 비밀을 밝히지 않는다."),
+    "job_choice": ("플레이어가 일자리를 알아보기로 했다. 캐런이 정원사와 유통 트럭 운전수 일을 설명했다.", "정원사는 마을 정원을 가꾸고 트럭 운전수는 필요한 물건을 운반한다. 아직 직업을 선택하지 않았다.", "차 키를 이미 받았다고 하거나 이후 사건을 밝히지 않는다."),
     "festival_invite": ("밥이 초대한 날의 다음 날 열리는 마을 축제에 플레이어를 초대했다.", "밥은 축제 음식을 담당한다.", "음식의 재료나 축제에서 벌어질 일을 미리 밝히지 않는다."),
     "festival": ("밥이 초대한 다음 날, 플레이어가 광장에 차려진 축제 음식 앞에 있다.", "밥은 축제 음식을 담당한다.", "플레이어가 아직 발견하지 않은 음식의 정체를 밝히지 않는다."),
     "hair_found": ("플레이어가 축제 음식에서 주황빛 적갈색 머리카락을 발견하고, 대머리인 밥·지미의 실종·지하실 화로에서 본 불탄 소지품을 연결해 음식의 정체를 추리했다.", "밥은 플레이어가 머리카락을 발견한 상황을 볼 수 있다.", "플레이어 대신 다음 행동이나 결말을 결정하지 않는다."),
@@ -91,6 +92,7 @@ def new_state(player_name: str) -> dict:
         "hostile_streak": 0,
         "has_car_key": False,
         "job_offered": None,
+        "job": None,
         "ending": None,
         "history": {},
         "scene_events": [],
@@ -129,7 +131,7 @@ def available_characters(state: dict) -> list[str]:
         return ["bob"]
     if scene == "karen_dinner":
         return []
-    if scene == "checkpoint":
+    if scene in {"checkpoint", "job_choice"}:
         return ["karen"]
     if scene in {"festival", "hair_found"}:
         return ["bob"]
@@ -185,14 +187,19 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "checkpoint":
         if state.get("job_offered", state["affinity"] >= JOB_THRESHOLD):
             return [
-                _action("accept_job", "유통 운전 일을 수락한다", "choice"),
-                _action("decline_job", "일자리를 거절한다", "choice"),
+                _action("accept_job", "일자리를 알아본다", "choice"),
+                _action("decline_job", "지금은 거절한다", "choice"),
             ]
         return [_action("go_butcher", "캐런을 만나러 정육점에 간다", "move")]
+    if scene == "job_choice":
+        return [_action("choose_gardener", "정원사", "choice"),
+                _action("choose_driver", "트럭 운전수", "choice")]
+    if scene == "job_result":
+        return [_action("see_karen_off", "캐런을 배웅한다", "choice")]
     if scene == "festival_invite":
         return [_action("go_festival", "마을 축제로 간다", "move")]
     if scene == "festival":
-        return [_action("inspect_food", "음식을 살핀다", "inspect")]
+        return [_action("inspect_food", "축제 음식을 살펴본다", "inspect")]
     if scene == "hair_found":
         return [
             _action("escape", "마을에서 도망친다", "choice"),
@@ -345,24 +352,35 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state.update(scene_id="checkpoint", location_id="player_house")
             next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
             if next_state["job_offered"]:
-                events.append(event("karen", "내일부터 함께 일하지 않을래요? 유통 운전 일을 해줄 사람이 필요하거든요. "))
+                events.append(event("karen", "이제 마을 생활에도 제법 익숙해지신 것 같네요! 이웃들과도 많이 친해지셨고요. 다행이에요, 후후.\n\n참, 슬슬 마을에서 일을 맡아보시는 건 어때요? 저희는 모두가 서로 도우며 살아가거든요. 일도 하고, 사람들과 더 가까워질 좋은 기회가 될 거예요."))
             else:
                 events.append(event("karen", "정육점으로 와 주시겠어요?"))
     elif scene == "checkpoint":
         if action_id == "go_butcher":
             next_state.update(scene_id="ending", location_id="butcher_shop", ending="death")
-            death = "캐런의 부름을 따라 정육점에 들어서자 이웃들이 출구를 막았다. 그곳에서 목숨을 잃었다."
+            death = "캐런의 부름을 따라 정육점에 들어서자 이웃들이 출구를 막았다. 그곳에서 목숨을 잃었다. 조금 더 이웃들과 가까워졌더라면 달라졌을까."
             next_state["journal"].append(death)
             events.append(event("narrator", death, "/assets/images/ending_death.svg"))
             return next_state, events
-        next_state["scene_id"] = "festival_invite"
         if action_id == "accept_job":
-            next_state["has_car_key"] = True
-            next_state["affinity"] = min(100, next_state["affinity"] + 5)
-            next_state["journal"].append("캐런의 유통 운전 일을 받아 차 키를 얻었다.")
-            events.append(event("karen", "맡아 주셔서 고마워요. 함께 일하게 됐네요."))
+            next_state["scene_id"] = "job_choice"
+            events.append(event("karen", "잘 생각하셨어요! 마침 일손이 필요한 곳이 있었거든요.\n\n꼼꼼하게 마을 정원을 가꿔 줄 정원사와, 필요한 물건들을 운반해 줄 유통 트럭 운전수가 필요해요. 어떤 일이 더 자신 있으세요?"))
         elif action_id == "decline_job":
-            events.append(event("karen", "아쉽지만 괜찮아요. 축제에는 꼭 오세요."))
+            next_state["scene_id"] = "job_result"
+            events.append(event("karen", "아, 아직은 조금 더 쉬고 싶으신가 보네요. 괜찮아요! 서두르실 필요는 없죠.\n\n마음이 바뀌면 언제든 말씀해 주세요. 이 마을에는 누구에게나 어울리는 자리가 있으니까요. 후후."))
+    elif scene == "job_choice":
+        driver = action_id == "choose_driver"
+        next_state.update(scene_id="job_result", job="driver" if driver else "gardener", has_car_key=driver)
+        next_state["affinity"] = min(100, next_state["affinity"] + 5)
+        next_state["journal"].append("직업 획득: 트럭 운전수" if driver else "직업 획득: 정원사")
+        if driver:
+            next_state["journal"].append("트럭 차 키를 얻었다.")
+            text = "오! 운전에 자신 있으시군요? 물건을 운반해 줄 사람이 꼭 필요했는데 정말 다행이에요!\n\n오늘부터 트럭 운전수가 되신 걸 축하드려요. 맡아 주셔서 고마워요. 앞으로 잘 부탁드릴게요~!\n\n아, 맞다! 하마터면 깜빡할 뻔했네요. 여기, 트럭 차 키예요. 앞으로 필요할 테니 꼭 챙겨두세요. 잃어버리시면 곤란하니까요. 후후."
+        else:
+            text = "오, 정원 일을 좋아하시는군요! 마침 마을 정원에 손길이 많이 필요했는데 정말 잘됐네요.\n\n오늘부터 정원사가 되신 걸 축하드려요. 맡아 주셔서 고마워요. 앞으로 잘 부탁드릴게요~!"
+        events.append(event("karen", text))
+    elif scene == "job_result":
+        next_state["scene_id"] = "festival_invite"
         events.append(event("bob", "고기 좋아한다고 했지? 내일 마을 축제가 있으니, 꼭 오시오."))
     elif scene == "festival_invite":
         next_state.update(scene_id="festival", location_id="square")
@@ -373,8 +391,9 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["clues"].append("jimmy_hair")
         next_state["journal"].append("축제 음식에서 주황빛 적갈색 머리카락을 발견했다.")
         events += [
-            event("thought", "음식에서 주황빛 적갈색 머리카락을 발견했다. 음식을 만든 밥은 대머리다."),
-            event("thought", "그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다."),
+            event("thought", "와… 이게 다 뭐야? 진짜 맛있어 보이는데?\n\n밥이 요리를 이렇게 잘하는 사람이었어? 솜씨가 대단한걸?\n\n뭐부터 먹어볼까…?\n\n…응?\n\n잠깐, 이건 뭐지?"),
+            event("thought", "밥은 머리카락이 없는데?"),
+            event("thought", "음식에서 발견한 주황빛 적갈색 머리카락… 음식을 만든 밥은 대머리다. 그런 머리색을 가진 지미는 사라졌다. 지하실 화로에서 본 불탄 소지품까지 떠올리자 음식의 정체가 짐작됐다."),
         ]
     elif scene == "hair_found":
         ending = "assimilation" if action_id == "stay" else "escape" if state["has_car_key"] else "death"
