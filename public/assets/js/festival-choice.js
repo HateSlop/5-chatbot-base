@@ -56,7 +56,12 @@ window.FestivalChoice = class {
   tick() {
     if (this.phase !== 'choice') return;
     const remaining = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000));
-    this.count.textContent = String(remaining);
+    if (this.count.textContent !== String(remaining)) {
+      this.count.textContent = String(remaining);
+      if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        this.count.animate?.([{opacity:.5,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}], {duration:120,easing:'ease-out'});
+      }
+    }
     for (const button of this.buttons) button.disabled = this.busy || this.locked || remaining === 0;
     if (!remaining && !this.locked && !this.busy) { this.choose('choice_timeout'); return; }
     this.timer = setTimeout(() => this.tick(), 100);

@@ -146,9 +146,9 @@ def available_actions(state: dict) -> list[dict]:
         return [_action("visit_neighbors", "이웃들에게 인사하러 간다", "move")]
     if scene == "neighbors":
         actions = [
-            _action("visit_karen", "캐런의 집", "move"),
-            _action("visit_bob", "정육점", "move"),
-            _action("visit_cathy", "미용실", "move"),
+            _action("visit_karen", "캐런의 집에 가본다.", "move"),
+            _action("visit_bob", "정육점에 가본다.", "move"),
+            _action("visit_cathy", "미용실에 가본다.", "move"),
         ]
         if len(state["visited"]) == 3:
             actions.append(_action("return_home", "집으로 돌아간다", "move"))

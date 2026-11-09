@@ -67,7 +67,12 @@ function renderBasket() {
   basketRequest.hidden = !basketStarted || basketReady;
   if (basketCountdownDisplay) {
     basketCountdownDisplay.hidden = !basketStarted || basketReady;
-    basketCountdownDisplay.textContent = String(basketCountdown);
+    if (basketCountdownDisplay.textContent !== String(basketCountdown)) {
+      basketCountdownDisplay.textContent = String(basketCountdown);
+      if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        basketCountdownDisplay.animate?.([{opacity:.5,transform:'translateX(-50%) translateY(3px)'},{opacity:1,transform:'translateX(-50%) translateY(0)'}], {duration:150,easing:'ease-out'});
+      }
+    }
   }
   document.getElementById('cathy-tool-list').hidden = !basketReady;
   document.getElementById('cathy-basket-hint').hidden = !basketStarted;
@@ -341,8 +346,8 @@ function renderMessages() {
       if (opened === false) return;
       const depart = async () => {
         if (currentView?.scene_id !== 'karen_dinner' || karenDinnerDismissed || busy) return;
-        if (dialogueStage.pages && dialogueStage.pageIndex < dialogueStage.pages.length - 1) {
-          karenDepartureTimer = setTimeout(depart, 1000);
+        if (shopStage.dataset.dialogueComplete === 'false' || dialogueStage.pages && dialogueStage.pageIndex < dialogueStage.pages.length - 1) {
+          karenDepartureTimer = setTimeout(depart, 250);
           return;
         }
         await dialogueStage.depart?.(false);
@@ -350,7 +355,7 @@ function renderMessages() {
         karenDinnerDismissed = true;
         renderView(currentView);
       };
-      karenDepartureTimer = setTimeout(depart, 4500);
+      karenDepartureTimer = setTimeout(depart, 1800);
     });
   }
   clearTimeout(reactionTimer);
@@ -374,7 +379,9 @@ function renderMessages() {
       if (currentView !== scene || busy || !stateToken || jobDeparturePending) return;
       if (shopStage.dataset.dialogueComplete !== 'true') readAt = null;
       else readAt ??= Date.now();
-      if (readAt === null || Date.now() - readAt < 1500) {
+      const page = dialogueStage.pages?.[dialogueStage.pageIndex] || '';
+      const readDelay = Math.max(3200, Math.min(6500, Array.from(page).length * 75));
+      if (readAt === null || Date.now() - readAt < readDelay) {
         jobDepartureTimer = setTimeout(depart, 250);
         return;
       }
@@ -389,7 +396,7 @@ function renderMessages() {
       }
     };
     Promise.resolve(dialogueStage.ready).then(() => {
-      if (currentView === scene && !jobDeparturePending) jobDepartureTimer = setTimeout(depart, 1500);
+      if (currentView === scene && !jobDeparturePending) jobDepartureTimer = setTimeout(depart, 250);
     });
   }
 }
