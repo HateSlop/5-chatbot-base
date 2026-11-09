@@ -21,6 +21,20 @@
     "keywords": ["축제", "행사", "음식", "고기"]
   },
   {
+    "title": "지미의 친구 찰스",
+    "content": "찰스는 지미의 친구다. 지미는 찰스가 지난주 마을을 떠났다고 알고 있다. 떠난 이유와 행선지는 모른다.",
+    "characters": ["jimmy"],
+    "scenes": ["arrival", "cathy_task", "jimmy_butcher", "dinner_invite"],
+    "keywords": ["찰스", "Charles"]
+  },
+  {
+    "title": "찰스에 관한 공개 정보",
+    "content": "찰스가 지금 어디 있는지, 어떤 일을 겪었는지는 확인된 공개 정보가 없다. 모르는 사실을 추측해 말하지 않는다.",
+    "characters": ["karen", "bob", "cathy"],
+    "scenes": ["neighbors", "karen_search", "bob_caught", "karen_dinner", "photo_found", "checkpoint", "job_choice", "festival_invite", "festival", "hair_found"],
+    "keywords": ["찰스", "Charles"]
+  },
+  {
     "title": "지미의 저녁 약속",
     "content": "지미는 캐런의 다음 날 저녁 식사 초대를 전하며, 그날 오후 6시에 주인공의 집으로 데리러 오겠다고 약속했다.",
     "characters": ["jimmy"],

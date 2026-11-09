@@ -10,6 +10,16 @@ from services.retriever import StoryRetriever
 
 
 class KnowledgeTest(unittest.TestCase):
+    def test_charles_search_never_exposes_disappearance_early(self):
+        retriever = StoryRetriever()
+        jimmy = retriever.search("찰스가 왜 떠났어?", "jimmy", "arrival", [])
+        self.assertEqual([hit.title for hit in jimmy], ["지미의 친구 찰스"])
+        for character in ("karen", "bob", "cathy"):
+            hits = retriever.search("찰스는 어디 있어요?", character, "neighbors", [])
+            self.assertEqual([hit.title for hit in hits], ["찰스에 관한 공개 정보"])
+            self.assertNotIn("실종", hits[0].content)
+        self.assertNotIn("실종", jimmy[0].content)
+
     def test_karen_finds_public_neighbor_introductions_early(self):
         retriever = StoryRetriever()
         for question in ("마을 사람들은 누가 있어요?", "이웃들은 어떤 사람들이에요?", "여기 사는 주민을 소개해 주세요"):
