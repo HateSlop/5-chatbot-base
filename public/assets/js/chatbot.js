@@ -112,15 +112,36 @@ function showPhotoSide(back) {
   photoFlip.setAttribute('aria-label', back ? '액자 뒤집어 앞면 보기' : '액자 뒤집어 뒷면 보기');
   document.querySelector('.photo-front').setAttribute('aria-hidden', String(back));
   document.querySelector('.photo-back').setAttribute('aria-hidden', String(!back));
+  document.getElementById('photo-back-date').textContent = back ? currentView?.photo_back_date || '' : '';
   document.getElementById('photo-hint').textContent = back ? 'Jimmy… 사진을 누르면 앞면으로 돌아갑니다.' : '사진을 누르면 뒷면을 볼 수 있습니다.';
 }
 photoHotspot.addEventListener('click', () => {
-  if (busy || currentView?.scene_id !== 'photo_found' || secretFrame !== 1) return;
+  if (busy || currentView?.scene_id !== 'photo_found' || secretFrame === 2) return;
+  secretFrame = 1;
+  renderView(currentView);
   showPhotoSide(false);
   photoDialog.showModal();
 });
-photoFlip.addEventListener('click', () => showPhotoSide(!photoBack));
-document.getElementById('photo-close').addEventListener('click', () => photoDialog.close());
+photoFlip.addEventListener('click', async () => {
+  if (busy) return;
+  if (photoBack) return showPhotoSide(false);
+  if (!currentView.photo_back_date && !await performAction('inspect_photo_back')) {
+    document.getElementById('photo-hint').textContent = statusMessage.textContent;
+    return;
+  }
+  showPhotoSide(true);
+});
+async function closePhoto() {
+  if (busy || !photoDialog.open) return;
+  photoDialog.close();
+  if (currentView?.scene_id === 'photo_found' && currentView.photo_back_date && secretFrame < 2 &&
+      await performAction('recognize_photo')) {
+    secretFrame = 2;
+    renderView(currentView);
+  }
+}
+document.getElementById('photo-close').addEventListener('click', closePhoto);
+photoDialog.addEventListener('cancel', event => { event.preventDefault(); return closePhoto(); });
 // Match the clickable doorway to the background's cover crop at any window size.
 const shopStage = document.getElementById('dialogue-stage');
 function positionDoor() {
@@ -224,7 +245,7 @@ function renderMessages() {
   }
   const line = conversation.findLast(item => item.speaker !== "user");
   dialogueStage.render({
-    background: currentView.scene_id === 'photo_found' ? (secretFrame === 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
+    background: currentView.scene_id === 'photo_found' ? '/assets/images/karen_secret_room_angle2.png' : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
     image: cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
@@ -291,8 +312,9 @@ function renderView(view) {
   basketHotspot.disabled = busy;
   renderBasket();
   window.locationMusic?.enter(view.location_id, view.ending);
-  photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame !== 1;
+  photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame === 2;
   photoHotspot.disabled = busy;
+  photoFlip.disabled = busy;
   if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
   brazierHotspot.hidden = view.scene_id !== 'basement' || !view.available_actions.some(a => a.id === 'inspect_brazier');
   brazierHotspot.disabled = busy;
@@ -316,7 +338,7 @@ function renderView(view) {
   const secretDiscovery = view.scene_id === 'photo_found' && secretFrame < 2;
   const karenGreeting = view.scene_id === 'karen_dinner' && !karenDinnerDismissed;
   postMoveUI.setSplit?.(!festival && !view.ending && view.scene_id !== 'cathy_help');
-  if (showingDiscovery || secretDiscovery) {
+  if (showingDiscovery) {
     const next = document.createElement('button');
     next.type = 'button';
     next.className = 'action-button';
@@ -324,10 +346,7 @@ function renderView(view) {
     next.disabled = busy;
     next.addEventListener('click', async () => {
       if (busy) return;
-      if (secretDiscovery && secretFrame === 1) {
-        if (await performAction('recognize_photo')) secretFrame = 2;
-      } else if (secretDiscovery) ++secretFrame;
-      else ++festivalFrame;
+      ++festivalFrame;
       if (window.sceneEffects) {
         busy = true;
         try { await window.sceneEffects.transition(async () => { renderView(currentView); await dialogueStage.ready; }); }
@@ -375,7 +394,7 @@ function renderView(view) {
   const endingCard = document.getElementById("ending-card");
   endingCard.hidden = !view.ending;
   endingCard.textContent = view.ending ? `ENDING — ${endingNames[view.ending] || view.ending}` : "";
-  document.getElementById("ending-restart").hidden = !view.ending;
+  document.getElementById("ending-restart").hidden = !view.ending || view.ending === 'death';
   const canChat = !!character && !view.ending && !festival && !secretDiscovery &&
     !(view.scene_id === 'karen_dinner' && karenDinnerDismissed);
   input.disabled = busy || !canChat;
@@ -441,6 +460,7 @@ window.startStory = (data, name) => {
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
+  showPhotoSide(false);
   if (basketDialog?.open) basketDialog.close();
   clearTimeout(basketTimer);
   basketTimer = undefined;
@@ -486,7 +506,9 @@ async function request(path, payload) {
 async function performAction(actionId) {
   if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
-  if (currentView.scene_id === 'photo_found' && secretFrame < 2 && !(actionId === 'recognize_photo' && secretFrame === 1)) return;
+  if (currentView.scene_id === 'photo_found' && secretFrame < 2 &&
+      !(['inspect_photo_back', 'recognize_photo'].includes(actionId) &&
+        (actionId !== 'recognize_photo' || currentView.photo_back_date))) return;
   if (currentView.scene_id === 'hair_found' && festivalFrame < 2) return;
   busy = true;
   renderView(currentView);
@@ -550,9 +572,8 @@ window.addEventListener("pagehide", () => {
   stateToken = null;
   transcript = [];
 });
-for (const id of ['restart-btn', 'ending-restart']) {
-  document.getElementById(id).addEventListener('click', () => { if (!busy) window.location.reload(); });
-}
+document.getElementById('restart-btn').addEventListener('click', () => { if (!busy) window.location.reload(); });
+document.getElementById('ending-restart').addEventListener('click', () => { if (!busy) window.location.assign('/'); });
 window.addEventListener("pageshow", event => {
   document.getElementById("username").value = "";
   if (event.persisted) window.location.reload();
