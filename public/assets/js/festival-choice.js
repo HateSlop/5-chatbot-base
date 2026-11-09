@@ -15,6 +15,7 @@ window.FestivalChoice = class {
     this.version = (this.version || 0) + 1;
     this.phase = null;
     this.readAt = null;
+    this.stareAt = null;
     this.locked = false;
     if (this.dialog.open) this.dialog.close();
   }
@@ -46,15 +47,17 @@ window.FestivalChoice = class {
     if (this.phase !== 'reading') return;
     const version = this.version;
     if (!this.ready()) this.readAt = null;
-    else if (this.readAt === null) {
+    else this.readAt ??= Date.now();
+    // Rest on the thought before the reveal, then give the gaze its own pause.
+    if (this.readAt !== null && Date.now() - this.readAt >= 2000 && this.stareAt === null) {
       await this.onRead?.();
       if (this.phase !== 'reading' || version !== this.version) return;
-      if (this.ready()) this.readAt = Date.now();
+      this.stareAt = Date.now();
     }
-    if (this.readAt !== null && Date.now() - this.readAt >= 2000) {
+    if (this.stareAt !== null && Date.now() - this.stareAt >= 4000 && this.ready()) {
       const run = this.phase;
       this.onAction('begin_final_choice').then(() => {
-        if (this.phase === run && version === this.version) { this.readAt = null; this.timer = setTimeout(() => this.poll(), 1000); }
+        if (this.phase === run && version === this.version) { this.stareAt = Date.now(); this.timer = setTimeout(() => this.poll(), 1000); }
       });
       return;
     }

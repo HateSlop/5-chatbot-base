@@ -206,7 +206,7 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "final_choice":
         return [
             _action("escape", "도망친다", "choice"),
-            _action("stay", "남은 고기를 맛있게 먹는다", "choice"),
+            _action("stay", "모른척 참고 먹는다", "choice"),
             _action("choice_timeout", "선택 시간 종료", "choice"),
         ]
     return []
