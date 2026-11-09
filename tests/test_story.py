@@ -69,6 +69,7 @@ class StoryTest(unittest.TestCase):
         self.action("go_festival")
         self.action("inspect_food")
         self.assertEqual(decode_state(self.token)["scene_id"], "hair_found")
+        self.action("begin_final_choice")
 
     def test_low_affinity_goes_to_butcher_death_without_festival(self):
         checkpoint = self.checkpoint_at(64)
@@ -108,6 +109,30 @@ class StoryTest(unittest.TestCase):
             response = self.client.post("/api/action", json={"state_token": self.token, "action_id": forbidden})
             self.assertEqual(response.status_code, 409)
 
+    def test_final_choice_deadline_is_server_owned_and_late_choices_die_even_with_key(self):
+        for action, moment, ending in (("escape", 1009.999, "escape"), ("stay",1009.999,"assimilation"),
+                                       ("escape",1010,"death"), ("stay",1010,"death"), ("choice_timeout",1010,"death")):
+            with self.subTest(action=action,moment=moment):
+                state=decode_state(self.token)
+                state.update(scene_id="hair_found",location_id="square",ending=None,has_car_key=True)
+                self.token=encode_state(state)
+                self.assertIsNone(self.client.post('/api/session/resume',json={"state_token":self.token}).get_json()["view"]["choice_deadline"])
+                with patch('services.story.time.time',return_value=1000):
+                    opened=self.action('begin_final_choice')
+                self.assertEqual(opened['view']['choice_deadline'],1010000)
+                self.assertEqual(opened['view']['available_characters'],[])
+                with patch('services.story.time.time',return_value=moment):
+                    self.assertEqual(self.action(action)['view']['ending'],ending)
+                self.assertIsNone(self.client.post('/api/session/resume',json={"state_token":self.token}).get_json()['view']['choice_deadline'])
+
+    def test_timeout_cannot_be_submitted_early_and_decision_cannot_be_started_twice(self):
+        state=decode_state(self.token);state.update(scene_id='hair_found',location_id='square')
+        self.token=encode_state(state)
+        with patch('services.story.time.time',return_value=1000):
+            self.action('begin_final_choice')
+            for action in ('choice_timeout','begin_final_choice'):
+                self.assertEqual(self.client.post('/api/action',json={"state_token":self.token,"action_id":action}).status_code,409)
+
     def test_threshold_and_high_affinity_job_choices(self):
         checkpoint = self.checkpoint_at(65)
         self.assertEqual([action["id"] for action in checkpoint["view"]["available_actions"]], ["accept_job", "decline_job"])
@@ -117,6 +142,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(invitation["view"]["scene_id"], "festival_invite")
         self.action("go_festival")
         self.action("inspect_food")
+        self.action("begin_final_choice")
         self.assertFalse(decode_state(self.token)["has_car_key"])
         self.assertEqual(self.action("escape")["view"]["ending"], "death")
 
@@ -155,6 +181,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(invitation["events"][0]["speaker_id"], "bob")
         self.action("go_festival")
         self.action("inspect_food")
+        self.action("begin_final_choice")
         self.assertEqual(self.action("escape")["view"]["ending"], "death")
 
     def test_declining_keeps_profession_and_key_empty(self):
@@ -179,6 +206,19 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(state["affinity"], 73)
         self.assertTrue(state["job_offered"])
         self.assertIn("accept_job", [item["id"] for item in available_actions(state)])
+
+    def test_frightened_jimmy_only_answers_ellipsis_then_leaves_in_a_hurry(self):
+        for action in TO_CHECKPOINT[:TO_CHECKPOINT.index("approach_jimmy")]:
+            data = self.action(action)
+        self.assertEqual(data["events"][0]["text"], "...")
+        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate") as generate:
+            answer = self.client.post("/api/chat", json={"state_token":self.token,"character_id":"jimmy","message":"무슨 일이야?"}).get_json()
+        generate.assert_not_called()
+        self.assertEqual(answer["events"][0]["text"], "...")
+        self.token = answer["state_token"]
+        left = self.action("approach_jimmy")
+        self.assertEqual(left["events"][0]["text"], "(지미가 급하게 나갔다)")
+        self.assertEqual(left["view"]["available_characters"], [])
 
     def test_continued_hostility_path_has_no_job_offer(self):
         self.chat("jimmy", "적대 arrival", "hostile")
@@ -560,14 +600,15 @@ class StoryTest(unittest.TestCase):
         for action_id in ("return_home", "decline_job", "see_karen_off", "go_festival"):
             self.action(action_id)
         food = self.action("inspect_food")
-        self.assertEqual(len(food["events"]), 3)
+        self.assertEqual(len(food["events"]), 2)
         self.assertTrue(food["events"][0]["text"].startswith("와… 이게 다 뭐야?"))
-        self.assertTrue(food["events"][0]["text"].endswith("잠깐, 이건 뭐지?"))
-        self.assertEqual(food["events"][1]["text"], "밥은 머리카락이 없는데?")
+        self.assertTrue(food["events"][0]["text"].endswith("어…? 이게 뭐지?"))
+        self.assertEqual(len(food["events"][1]["text"].splitlines()), 6)
+        self.assertTrue(food["events"][1]["text"].endswith("그럼 지금까지 내가 먹었던 게…"))
         thoughts = " ".join(item["text"] for item in food["events"])
-        for detail in ("주황빛 적갈색 머리카락", "밥은 대머리", "지미는 사라졌다", "화로", "음식의 정체"):
+        for detail in ("머리카락", "밥은 머리카락이 없잖아", "지미", "설마", "먹었던 게"):
             self.assertIn(detail, thoughts)
-        self.assertEqual([item["id"] for item in food["view"]["available_actions"]], ["escape", "stay"])
+        self.assertEqual([item["id"] for item in food["view"]["available_actions"]], ["begin_final_choice"])
 
     def test_fixed_scene_line_reaches_ai_without_private_thoughts(self):
         for action_id in TO_CHECKPOINT[:-1]:
@@ -612,6 +653,10 @@ class StoryTest(unittest.TestCase):
                     response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": character, "message": "무슨 일이에요?"})
                     self.assertEqual(response.status_code, 200)
                     self.token = response.get_json()["state_token"]
+                if action_id == "go_butcher":
+                    generate.assert_not_called()
+                    self.assertEqual(response.get_json()["events"][0]["text"], "...")
+                    continue
                 context = generate.call_args.args[-1]
                 self.assertIn(expected, " ".join(context), action_id)
                 if character != "jimmy" or expected == "고기를 사러 정육점에 다녀오겠다고":

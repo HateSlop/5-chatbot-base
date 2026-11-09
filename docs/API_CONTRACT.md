@@ -25,6 +25,7 @@
     "journal": [],
     "today": "11월 9일",
     "photo_back_date": null,
+    "choice_deadline": null,
     "ending": null
   }
 }
@@ -51,11 +52,13 @@
 
 대화 입력은 AI 대사와 제한된 호감도 변화만 만든다. 장면 이동, 단서 획득, 차 키, 엔딩은 `action_id`로만 처리한다. 화면은 요청 중 다른 요청을 보내지 않고, 성공 응답의 새 토큰으로 이전 토큰을 교체한다. 모델 실패 시 이전 토큰을 유지한다.
 
-미용실 `cathy_help` 장면에서는 먼저 캐시가 “지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?”라고 부탁하고 퇴장하는 화면 연출을 보여준다. 인사 뒤 대기는 1.4초이며, 퇴장 뒤 배경 중앙에 투명 배경의 바구니를 표시한다. 바구니를 누르면 서버 `events`의 구체적인 요청을 한 줄로 표시하고 `3→2→1` 카운트를 약 0.67초씩, 총 2초 진행한다. 이후 요청·숫자를 함께 숨기고 도구 선택을 시작한다. 아래의 작은 기억 도움말은 계속 유지한다. 이 장면 동안에는 사용자 제공 미니게임 음악을 사용하고 결과 장면에서는 원래 장소 음악으로 돌아간다. 2026-11-09 사용자가 첨부 그림에 맞춘 선택지 변경을 선택함에 따라, 도구는 `view.available_actions`의 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_spray`, `choose_serum`, `choose_brush`, `choose_mirror`, `choose_towel`, `choose_roller`를 사용한다. 그림에 없는 `choose_dryer`는 더 이상 제공하지 않는다. 기존 요청인 샴푸·가위·빗은 그림에 모두 있으므로 정답으로 유지한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
+미용실 `cathy_help` 장면에서는 먼저 캐시가 “지금 너무 바쁘니까 바구니에서 물건 좀 꺼내와줄래요?”라고 부탁하고 퇴장하는 화면 연출을 보여준다. 인사 뒤 대기는 1.4초이며, 퇴장 뒤 배경 중앙에 투명 배경의 바구니를 표시한다. 바구니를 누르면 서버 `events`의 구체적인 요청을 한 줄로 표시하고 `3→2→1` 카운트를 약 1초씩, 총 3초 진행한다. 이후 요청·숫자를 함께 숨기고 도구 선택을 시작한다. 아래의 작은 기억 도움말은 계속 유지한다. 이 장면 동안에는 사용자 제공 미니게임 음악을 사용하고 결과 장면에서는 원래 장소 음악으로 돌아간다. 2026-11-09 사용자가 첨부 그림에 맞춘 선택지 변경을 선택함에 따라, 도구는 `view.available_actions`의 `choose_shampoo`, `choose_scissors`, `choose_conditioner`, `choose_comb`, `choose_spray`, `choose_serum`, `choose_brush`, `choose_mirror`, `choose_towel`, `choose_roller`를 사용한다. 그림에 없는 `choose_dryer`는 더 이상 제공하지 않는다. 기존 요청인 샴푸·가위·빗은 그림에 모두 있으므로 정답으로 유지한다. 같은 ID를 다시 보내면 해당 도구의 선택이 취소된다. `help_cathy`는 현재 선택을 서버에서 판정해 `cathy_result`로 이동하며, 성공일 때만 호감도 +5를 적용한다. `cathy_result`의 `return_home`으로 기존 지미 장면에 이어진다. 응답 필드와 요청 JSON 형식은 그대로다.
 
 정육점의 `inspect_basement`는 기존처럼 지하실 **입장** 행동이다. `basement` 장면에서는 그림의 화로를 클릭할 때만 `view.available_actions`의 `inspect_brazier`를 `/api/action`에 보낸다. 성공 응답의 단서 사건을 표시한 뒤 서버가 제공하는 `go_upstairs`(“지하실에서 나온다”)를 보여준다. 입장만으로 단서를 표시하거나 조사 전 퇴장을 제공하지 않는다. 같은 행동을 반복 요청하면 기존 `invalid_action` 오류가 난다. 공개 API 필드와 토큰 전달 방식은 그대로다.
 
-캐런의 집에서 `inspect_room`을 실행하면 `photo_found`로 이동하지만, 이때는 사진 단서와 호감도 변화가 없다. 화면이 기존 사진 확대·앞뒷면 확인 흐름을 보여준 뒤 `view.available_actions`의 `recognize_photo`를 `/api/action`에 보내면, 서버가 사진 단서·호감도 −5·캐런의 고정 대사를 한 번 적용한다. 성공 응답에서만 `return_home`이 제공된다. 요청·응답 형식과 장면 ID는 그대로다.
+사색 지미가 있는 `butcher_search`에서는 대화 응답을 “...”로 고정하며, `approach_jimmy` 뒤에는 `empty_butcher`에서 퇴장 서술을 표시합니다. 사건과 점수 판정은 기존 서버 규칙을 유지합니다.
+
+캐런의 집에서 `inspect_room`을 실행하면 `photo_found`로 이동하지만, 이때는 사진 단서와 호감도 변화가 없다. 화면은 정면 방→‘주변을 둘러본다’→사진이 있는 옆면 순서를 보여주며, 정면에서는 사진 선택을 제공하지 않습니다. 사진 확대·앞뒷면 확인 흐름을 보여준 뒤 `view.available_actions`의 `recognize_photo`를 `/api/action`에 보내면, 서버가 사진 단서·호감도 −5·캐런의 고정 대사를 한 번 적용한다. 성공 응답에서만 `return_home`이 제공된다. 요청·응답 형식과 장면 ID는 그대로다.
 
 `photo_found`에서 액자 **뒷면을 열 때** 화면은 `view.available_actions`의 `inspect_photo_back`을 `/api/action`에 보낸다. 성공한 응답의 `view.photo_back_date`를 뒷면에 표시하고 날짜 단서를 기록한다. 요청 전에는 뒷면 날짜를 표시하거나 단서를 기록하지 않는다. 이 조사는 한 번만 가능하며 `recognize_photo`의 사진 인지·감점·캐런 대사는 변경하지 않는다. 뒤집기 요청이 실패하면 이전 토큰과 사진 상태를 유지한다.
 
@@ -89,3 +92,7 @@ select(reply_text: str, character_id: str, scene_id: str, visual_cue: str | None
 ## 변경 절차
 
 필드 이름, 자료형, 엔드포인트 또는 이미지 선택기 시그니처를 바꾸려면 두 개발자가 먼저 합의해 이 문서를 수정한다. 각자 브랜치에서 인터페이스를 추측해 늘리지 않는다.
+
+축제의 `inspect_food` 응답은 음식 독백→머리카락 발견→추리 순서의 사건을 보냅니다. 화면은 음식 독백을 모두 읽은 뒤 고기 윤곽을 누르면 머리카락 사진으로 바로 넘어갑니다. 손이 들어오는 연출은 제거합니다. 사진 사이 이동은 같은 응답 안의 표현이며 새 API 요청이나 점수를 만들지 않습니다.
+
+마지막 선택은 서버가 관리합니다. `hair_found`의 `begin_final_choice`를 머리카락 독백 여섯 문장을 모두 읽은 뒤 자동 요청하면 `final_choice`로 이동합니다. 이때만 `view.choice_deadline`에 서버가 정한 **10초 뒤 UTC Unix 밀리초**를 보냅니다(나머지 장면은 `null`). 화면은 주민 시선 사진 위에 어두운 배경의 중앙 선택창을 띄우고 `escape`(도망친다)·`stay`(남은 고기를 맛있게 먹는다)만 버튼으로 제공합니다. 시간 종료 시 `choice_timeout`을 요청합니다. 서버는 기한 전의 시간 종료 요청을 거절하고, 기한이 지난 `escape`·`stay`도 사망으로 처리합니다. 독백을 읽는 중에는 기한이 시작되지 않습니다. 요청 중 중복 클릭을 막고 실패 후에도 기한은 연장하지 않습니다.

@@ -38,6 +38,16 @@ test('leaving cancels pending Jimmy appearance',async()=>{
   const h=await setup();h.events.pagehide();assert.equal(h.timers.size,0);
 });
 
+test('the ad can be skipped during normal playback and continues with the post-ad monologue',async()=>{
+  const h=await setup();
+  h.get('entry-tv-hotspot').listeners.click();
+  assert.equal(h.get('entry-ad-continue').hidden,false);
+  await h.get('entry-ad-continue').listeners.click();
+  assert.equal(h.get('entry-ad-video').paused,true);
+  assert.equal(h.get('entry-ad-dialog').open,false);
+  assert.match(h.renders.at(-1).text,/좋아, 한번 가보자!/);
+});
+
 test('departure waits for the final TV monologue page to finish and has no truck emoji',async()=>{
   const h=await setup();
   h.get('entry-tv-hotspot').listeners.click();

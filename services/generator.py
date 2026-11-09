@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 
 from openai import OpenAI
 
@@ -150,4 +151,6 @@ class StoryGenerator:
                 raise ValueError("invalid visual cue")
         except (ValueError, KeyError, TypeError) as exc:
             raise RuntimeError("모델 응답 형식이 올바르지 않습니다.") from exc
+        if character["name"] == "캐런":
+            turn["reply"] = re.sub(r"[,，]?\s*후후[.…!~,，]*", "", turn["reply"]).strip() or "편하게 말씀해 주세요."
         return turn

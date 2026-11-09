@@ -68,7 +68,7 @@ window.PostMoveUI = class {
                 <radialGradient id="${heartId}-shine" cx="30%" cy="20%" r="85%"><stop stop-color="#fff4ce" stop-opacity=".48"/><stop offset=".42" stop-color="#fff4ce" stop-opacity="0"/><stop offset="1" stop-color="#100813" stop-opacity=".7"/></radialGradient>
               </defs>
               <path class="affinity-empty" d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/>
-              <g clip-path="url(#${heartId})"><rect class="affinity-fill" x="0" y="92" width="100" height="0"/><rect width="100" height="92" fill="url(#${heartId}-shine)"/><path d="M15 30C14 16 30 11 38 18" fill="none" stroke="#fff0cc" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/></g>
+              <g clip-path="url(#${heartId})"><rect class="affinity-fill" x="0" y="92" width="100" height="0"/><g class="affinity-liquid" transform="translate(0 92)"><path class="affinity-wave" d="M-100 0Q-75 -5-50 0T0 0T50 0T100 0T150 0T200 0V12H-100Z"/><path class="affinity-wave affinity-wave-light" d="M-100 0Q-75 4-50 0T0 0T50 0T100 0T150 0T200 0V7H-100Z"/></g><rect width="100" height="92" fill="url(#${heartId}-shine)"/><path d="M15 30C14 16 30 11 38 18" fill="none" stroke="#fff0cc" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/></g>
               <path class="affinity-outline" d="M50 85C42 78 6 54 6 29C6 5 36 0 50 20C64 0 94 5 94 29C94 54 58 78 50 85Z"/>
             </svg>
             <strong>— / 100</strong>
@@ -92,6 +92,7 @@ window.PostMoveUI = class {
     this.affinity = frame.querySelector('.move-affinity strong');
     this.affinityMeter = frame.querySelector('.move-affinity');
     this.affinityFill = frame.querySelector('.affinity-fill');
+    this.affinityLiquid = frame.querySelector('.affinity-liquid');
     this.heart = frame.querySelector('.affinity-heart');
     this.sparkle = frame.querySelector('.affinity-sparkle');
     this.previousAffinity = null;
@@ -140,6 +141,7 @@ window.PostMoveUI = class {
     this.affinity.textContent = value === null ? '— / 100' : `${value} / 100`;
     this.affinityFill.setAttribute('y', String(92 * (1 - (value || 0) / 100)));
     this.affinityFill.setAttribute('height', String(92 * (value || 0) / 100));
+    this.affinityLiquid.setAttribute('transform', `translate(0 ${92 * (1 - (value || 0) / 100)})`);
     this.affinityMeter.setAttribute('aria-valuetext', value === null ? '아직 알 수 없음' : `${value} / 100`);
     if (value === null) this.affinityMeter.removeAttribute('aria-valuenow');
     else this.affinityMeter.setAttribute('aria-valuenow', String(value));
