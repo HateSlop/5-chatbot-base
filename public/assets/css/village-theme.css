@@ -301,7 +301,13 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .post-move-stage .move-location { border: 3px double #c49a64aa; border-radius: 8px 8px 22px 22px; background: linear-gradient(#713c3277, #3b1c23bb), url('../images/ui-village-wallpaper.svg') center / 72px 96px repeat, #50272a; box-shadow: inset 0 0 0 3px #1b121d77, 0 3px 8px #100b1466; text-shadow: 0 1px 3px #100b14; }
 .post-move-stage .door-hotspot:hover, .post-move-stage .door-hotspot:focus-visible { opacity: 1; filter: brightness(1.32) saturate(1.1); }
 /* The same framed portrait follows the player from selection into the sidebar. */
-.entry-name-dialog #name-submit { min-height: 44px; padding: 8px 16px; }
+.entry-name-dialog #name-submit { flex: none; min-height: 48px; min-width: 72px; padding: 10px 18px; border: 1px solid #c99b61; border-radius: 8px; background: linear-gradient(#744337, #49271f); color: #fff0d2; font: 600 16px/1.5 "Malgun Gothic", sans-serif; box-shadow: inset 0 1px #ffe3ad30, 0 3px 8px #0004; cursor: pointer; }
+.entry-name-dialog #name-submit:hover:not(:disabled) { background: linear-gradient(#895240, #603328); }
+.entry-name-dialog #name-submit:focus-visible, .entry-name-dialog input:focus-visible { outline: 2px solid #f1be78; outline-offset: 3px; }
+.entry-name-dialog #name-submit:disabled { opacity: .55; cursor: wait; }
+.entry-name-dialog input { border: 1px solid #a77f5366; border-radius: 8px; background: #1d1411; color: #fff0d2; }
+.entry-name-dialog #name-status { flex-basis: 100%; margin: 0; font-size: 13px; }
+.entry-name-dialog #name-status:empty { display: none; }
 .player-profile { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 0; }
 .player-photo { flex: none; display: block; width: clamp(100px, 10vw, 140px); height: auto; padding: 0; border: 0; background: transparent; object-fit: contain; filter: drop-shadow(0 5px 8px #0006); }
 .player-photo[hidden] { display: none; }
