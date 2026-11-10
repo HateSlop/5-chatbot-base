@@ -70,7 +70,7 @@ window.endingCinema = new class {
     this.root.hidden = false;
     this.root.focus();
     this.room.hidden = false;
-    this.stage.render({background:'/assets/images/festival_stares.png', text:'어라.. 생각보다 맛이 괜찮네?'});
+    this.stage.render({background:'/assets/images/festival_stares.png', text:'(고기를 우걱우걱 먹으며) 하하.. 고기가 참 맛있네요..ㅎ'});
     await this.read(run);
     if (run !== this.version) return;
     await this.fade(async () => {

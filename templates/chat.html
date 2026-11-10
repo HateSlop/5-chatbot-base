@@ -136,10 +136,6 @@
       </nav>
     </main>
     </div>
-    <section id="butcher-scare" class="butcher-scare" role="dialog" aria-modal="true" aria-label="정육점에서 다가오는 밥" tabindex="-1" hidden>
-      <img class="scare-background" src="{{ asset_url('assets/images/butcher_shop.svg') }}" alt="정육점 내부">
-      <img class="scare-standing" src="{{ asset_url('assets/images/bob_knife_blood.png') }}" alt="피 묻은 칼을 들고 어둠 속에 서 있는 밥">
-      <img class="scare-attack" src="{{ asset_url('assets/images/bob_lunge.png') }}" alt="칼을 들고 바로 앞으로 달려드는 밥">
     <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden>
       <p id="scene-date-transition" class="scene-date-transition" hidden><span id="scene-date-base"></span><span class="date-wheel"><span id="scene-date-old"></span><span id="scene-date-new"></span></span></p>
     </div>
@@ -147,6 +143,11 @@
       <img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="Welcome to The New Village">
       <span class="start-letter-button assimilation-start">START</span>
       <span class="assimilation-cursor" aria-hidden="true">➤</span>
+    </section>
+    <section id="butcher-scare" class="butcher-scare" role="dialog" aria-modal="true" aria-label="정육점에서 다가오는 밥" tabindex="-1" hidden>
+      <img class="scare-background" src="{{ asset_url('assets/images/butcher_shop.svg') }}" alt="정육점 내부">
+      <img class="scare-standing" src="{{ asset_url('assets/images/bob_knife_blood.png') }}" alt="피 묻은 칼을 들고 어둠 속에 서 있는 밥">
+      <img class="scare-attack" src="{{ asset_url('assets/images/bob_lunge.png') }}" alt="칼을 들고 바로 앞으로 달려드는 밥">
     </section>
     <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
       <video id="death-video" playsinline preload="none" aria-label="사망 엔딩 영상" data-male-src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}" data-female-src="{{ asset_url('assets/videos/video_ending_die_girl.mp4') }}"></video>

@@ -34,6 +34,17 @@ class SmokeTest(unittest.TestCase):
         self.assertIn("assets/js/name-entry.js", chat_page)
         self.assertNotIn('data-player-name="이전이름"', chat_page)
 
+    def test_merged_ending_surfaces_remain_separate(self):
+        html = self.client.get("/chat").get_data(as_text=True)
+        curtain = html.index('id="scene-curtain"')
+        assimilation = html.index('id="assimilation-screen"')
+        butcher = html.index('id="butcher-scare"')
+        death = html.index('id="death-screen"')
+        self.assertEqual(html.count('id="scene-curtain"'), 1)
+        self.assertLess(html.index('</div>', curtain), assimilation)
+        self.assertLess(html.index('</section>', assimilation), butcher)
+        self.assertLess(html.index('</section>', butcher), death)
+
     def test_session_and_resume(self):
         token = self.start()
         response = self.client.post("/api/session/resume", json={"state_token": token})
