@@ -35,7 +35,7 @@ const sceneGuide = {
   cathy_result: '집으로 돌아가 보세요.',
   wait_dinner: '혼자 캐런의 집으로 가 보세요.',
   karen_dinner: '화면의 문을 살펴보세요.',
-  photo_found: '화면의 사진을 살펴보세요.',
+  photo_found: '두 사진 액자를 눌러 각각 뒷면까지 살펴보세요.',
 };
 let affinitySequence = 0;
 window.PostMoveUI = class {

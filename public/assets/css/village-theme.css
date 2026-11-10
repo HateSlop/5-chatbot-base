@@ -174,10 +174,10 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 #name-screen .move-composer { display: none; }
 .dialogue-stage[data-simultaneous="true"][data-loading="true"] :is(.dialogue-background, .dialogue-figure) { visibility: hidden; }
 
-.post-move-stage .photo-hotspot { background-image: url('../images/karen_secret_room_angle2.png'); clip-path: polygon(37.3% 19.7%, 45.4% 19.7%, 45.4% 33.4%, 37.3% 33.4%); }
+.post-move-stage .photo-hotspot { background-image: url('../images/karen_secret_room_angle2.png'); clip-path: polygon(46% 20.3%, 54.2% 20.3%, 54.2% 34.5%, 46% 34.5%); }
 .photo-dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 24px; border: 0; background: #000; color: #fff0d2; }
 .photo-dialog::backdrop { background: #000; }
-.photo-dialog[open] { display: grid; place-items: center; grid-template-rows: minmax(0, 1fr) auto; }
+.photo-dialog[open] { display: grid; place-items: center; grid-template-rows: minmax(0, 1fr) auto auto; }
 .photo-dialog .photo-close, .wallet-dialog .photo-close { position: absolute; z-index: 2; top: 16px; right: 16px; padding: 8px 14px; box-shadow: none; background: #18151a; }
 .photo-dialog .photo-flip { width: min(82vw, 72dvh); height: min(82dvh, 104vw); padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; perspective: 1400px; }
 .photo-dialog .photo-flip:hover, .photo-dialog .photo-flip:active { filter: none; transform: none; }
@@ -427,3 +427,10 @@ body, body.chat-page { background-color: #140e0b; }
   .move-sidebar .move-hints button { min-height: 36px; padding: 4px 6px; font-size: 12px; }
   .move-sidebar .move-hint-caption { font-size: 12px; line-height: 1.4; }
 }
+
+.post-move-stage .charles-photo-hotspot { clip-path: polygon(36.8% 20.3%, 45.3% 20.3%, 45.3% 34.5%, 36.8% 34.5%); }
+.photo-dialog[data-photo="charles"] .photo-back { clip-path: inset(2.3% 2.4% round .6%); }
+.photo-dialog[data-photo="charles"] .photo-flip { width: min(82vw, calc(82dvh * 1107 / 1421)); height: min(82dvh, calc(82vw * 1421 / 1107)); }
+
+.photo-thought { margin: 8px 0 0; color: #fff0d2; text-align: center; font: 18px/1.5 "Malgun Gothic", sans-serif; }
+.photo-thought:empty { display: none; }

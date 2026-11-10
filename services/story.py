@@ -190,9 +190,16 @@ def available_actions(state: dict) -> list[dict]:
     if scene == "photo_found":
         if state.get("photo_recognized"):
             return [_action("return_home", "집으로 돌아간다", "move")]
-        actions = [_action("recognize_photo", "사진을 알아본다", "inspect")]
+        actions = []
         if "photo_back_date" not in state["clues"]:
-            actions.insert(0, _action("inspect_photo_back", "액자 뒷면을 확인한다", "inspect"))
+            actions.append(_action("inspect_photo_back", "지미 액자 뒷면을 확인한다", "inspect"))
+        elif "jimmy_photo" not in state["clues"]:
+            actions.append(_action("recognize_photo", "지미 액자 조사를 마친다", "inspect"))
+        actions.append(_action("inspect_charles_photo", "옆 액자를 살핀다", "inspect"))
+        if "charles_photo_front" in state["clues"] and "charles_photo_back" not in state["clues"]:
+            actions.append(_action("inspect_charles_photo_back", "옆 액자 뒷면을 확인한다", "inspect"))
+        elif "charles_photo_back" in state["clues"] and "charles_photo" not in state["clues"]:
+            actions.append(_action("recognize_charles_photo", "찰스 액자 조사를 마친다", "inspect"))
         return actions
     if scene == "checkpoint":
         if state.get("job_offered", state["affinity"] >= JOB_THRESHOLD):
@@ -368,23 +375,35 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state["clues"].append("photo_back_date")
             next_state["journal"].append(f"캐런의 방에 있는 지미 액자 뒷면에 {date_text}이 적혀 있었다.")
             events.append(event("thought", f"액자 뒷면에 {date_text}이 적혀 있다."))
+        elif action_id == "inspect_charles_photo":
+            if "charles_photo_front" not in next_state["clues"]:
+                next_state["clues"].append("charles_photo_front")
+            events.append(event("thought", "사진 속에서 지미 옆에 있던 사람이잖아…?"))
+        elif action_id == "inspect_charles_photo_back":
+            next_state["clues"].append("charles_photo_back")
+            next_state["journal"].append("옆 액자 뒷면에는 Charles라는 이름이 적혀 있었다.")
+            events.append(event("thought", "찰스…? 지미가 마을을 떠났다고 했던 친구잖아."))
         elif action_id == "recognize_photo":
-            next_state["photo_recognized"] = True
             next_state["clues"].append("jimmy_photo")
             next_state["journal"].append("캐런의 수상한 방에서 지미의 사진을 발견했다.")
-            next_state["affinity"] = max(0, next_state["affinity"] - 5)
-            events += [
-                event("thought", "벽에 지미의 사진이 걸려 있었다."),
-                event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
-                event("karen", "이제 그만 나가 주세요."),
-            ]
-        else:
+        elif action_id == "recognize_charles_photo":
+            next_state["clues"].append("charles_photo")
+            next_state["journal"].append("캐런의 수상한 방에서 찰스의 사진도 발견했다.")
+        elif action_id == "return_home":
             next_state.update(scene_id="checkpoint", location_id="player_house")
             next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
             if next_state["job_offered"]:
                 events.append(event("karen", "이웃들과 잘 지내시는 것 같아 마음이 놓이네요. 이곳 생활도 이제 조금 익숙해지셨지요?\n\n마침 여쭤보고 싶은 게 있었어요. 마을에서 작은 일 하나 맡아보시는 건 어떨까요? 저희는 각자 맡은 자리에서 서로를 돕고 있거든요. 자연스럽게 이웃들과 가까워지는 기회도 될 거예요."))
             else:
                 events.append(event("karen", "정육점으로 와 주시겠어요?"))
+        if not next_state["photo_recognized"] and {"jimmy_photo", "charles_photo"}.issubset(next_state["clues"]):
+            next_state["photo_recognized"] = True
+            next_state["affinity"] = max(0, next_state["affinity"] - 5)
+            events += [
+                event("thought", "벽에 지미와 찰스의 사진이 나란히 걸려 있었다."),
+                event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
+                event("karen", "이제 그만 나가 주세요."),
+            ]
     elif scene == "checkpoint":
         if action_id == "go_butcher":
             next_state.update(scene_id="ending", location_id="butcher_shop", ending="death")
