@@ -251,7 +251,7 @@ def view(state: dict) -> dict:
             {
                 "id": character_id,
                 "name": CHARACTERS[character_id],
-                "portrait": f"/assets/images/{character_id}_neutral.svg",
+                "portrait": f"/assets/images/{character_id}_basic.png",
             }
             for character_id in characters
         ],
@@ -417,7 +417,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state["photo_recognized"] = True
             next_state["affinity"] = max(0, next_state["affinity"] - 5)
             events += [
-                event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
+                event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_angry.png"),
                 event("karen", "이제 그만 나가 주세요."),
             ]
     elif scene == "checkpoint":
@@ -425,7 +425,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state.update(scene_id="ending", location_id="butcher_shop", ending="death")
             death = "캐런의 부름을 따라 정육점에 들어서자 이웃들이 출구를 막았다. 그곳에서 목숨을 잃었다. 조금 더 이웃들과 가까워졌더라면 달라졌을까."
             next_state["journal"].append(death)
-            events.append(event("narrator", death, "/assets/images/ending_death.svg"))
+            events.append(event("narrator", death))
             return next_state, events
         if action_id == "accept_job":
             next_state["scene_id"] = "job_choice"
@@ -474,7 +474,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             text = ("망설이는 사이 이웃들이 다가와 출구를 막았다. 더는 도망칠 수 없었다." if expired
                     else "(고기를 우걱우걱 먹으며) 하하.. 고기가 참 맛있네요..ㅎ")
             next_state["journal"].append(text)
-            events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
+            events.append(event("narrator", text))
     elif scene == "truck_escape":
         if action_id == "begin_truck_escape":
             next_state["truck_deadline"] = int(time.time() * 1000) + 10000
@@ -494,6 +494,6 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         text = ("차 키를 움켜쥐고 마을 경계를 빠져나왔다. 더뉴빌리지는 뒤로 멀어졌다." if ending == "escape"
                 else "이웃들이 따라잡았다. 곧 지미와 찰스의 사진 옆에 내 사진이 걸렸다.")
         next_state["journal"].append(text)
-        events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
+        events.append(event("narrator", text))
 
     return next_state, events

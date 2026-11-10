@@ -11,10 +11,10 @@ const scenes = {
   secret: {speaker:'', background:'/assets/images/karen_secret_room.png', image:null},
   secret_angle: {speaker:'', background:'/assets/images/karen_secret_room_angle2.png', image:null},
   basement: {speaker:'', background:'/assets/images/basement.svg', image:null},
-  jimmy: { speaker: '지미', background: '/assets/images/player_house.svg', image: '/assets/images/jimmy_neutral.svg' },
-  karen: { speaker: '캐런', background: '/assets/images/karen_house.svg', image: '/assets/images/karen_neutral.svg' },
-  bob: { speaker: '밥', background: '/assets/images/butcher_shop.svg', image: '/assets/images/bob_neutral.svg' },
-  cathy: { speaker: '캐시', background: '/assets/images/salon.svg', image: '/assets/images/cathy_neutral.svg' },
+  jimmy: { speaker: '지미', background: '/assets/images/player_house.svg', image: '/assets/images/jimmy_basic.png' },
+  karen: { speaker: '캐런', background: '/assets/images/karen_house.svg', image: '/assets/images/karen_basic.png' },
+  bob: { speaker: '밥', background: '/assets/images/butcher_shop.svg', image: '/assets/images/bob_basic.png' },
+  cathy: { speaker: '캐시', background: '/assets/images/salon.svg', image: '/assets/images/cathy_basic.png' },
   square: { speaker: '', background: '/assets/images/square.svg', image: null },
 };
 function renderPreview() {

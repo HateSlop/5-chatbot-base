@@ -97,22 +97,22 @@ test('job explanation and reward keep Karen visible without asking for another c
   const h = setup();
   h.context.window.startStory(response('checkpoint', 'player_house', 'karen', []), '테스트');
   h.context.applyResponse(response('job_choice', 'player_house', 'karen', [
-    {speaker_id:'karen', text:'어떤 일이 더 자신 있으세요?', image:'/assets/images/karen_smile.svg'},
+    {speaker_id:'karen', text:'어떤 일이 더 자신 있으세요?', image:'/assets/images/karen_smile.png'},
   ]), 'scene');
   assert.equal(h.stage().selectCharacter, false);
   assert.match(h.stage().text, /어떤 일/);
   h.context.applyResponse(response('job_result', 'player_house', null, [
-    {speaker_id:'karen', text:'여기, 트럭 차 키예요.', image:'/assets/images/karen_smile.svg'},
+    {speaker_id:'karen', text:'여기, 트럭 차 키예요.', image:'/assets/images/karen_smile.png'},
   ]), 'scene');
   assert.equal(h.stage().selectCharacter, false);
-  assert.equal(h.stage().image, '/assets/images/karen_smile.svg');
+  assert.equal(h.stage().image, '/assets/images/karen_smile.png');
   assert.match(h.stage().text, /차 키/);
   assert.equal(h.nodes.get('user-message').disabled, true);
 });
 
 test('job result waits for reading, fades once and automatically requests the next scene', async () => {
   const h = setup();
-  const result = response('job_result', 'player_house', null, [{speaker_id:'karen',text:'축하드려요.',image:'/assets/images/karen_smile.svg'}]);
+  const result = response('job_result', 'player_house', null, [{speaker_id:'karen',text:'축하드려요.',image:'/assets/images/karen_smile.png'}]);
   result.view.available_actions = [{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
   let fades = 0, requests = 0;
   vm.runInContext('dialogueStage.depart = async () => { window.faded(); }',h.context);
@@ -133,7 +133,7 @@ test('job result waits for reading, fades once and automatically requests the ne
 
 test('failed automatic departure offers continue instead of repeated automatic requests', async () => {
   const h = setup();
-  const result = response('job_result','player_house',null,[{speaker_id:'karen',text:'괜찮아요.',image:'/assets/images/karen_smile.svg'}]);
+  const result = response('job_result','player_house',null,[{speaker_id:'karen',text:'괜찮아요.',image:'/assets/images/karen_smile.png'}]);
   result.view.available_actions=[{id:'see_karen_off',label:'캐런을 배웅한다',kind:'choice'}];
   h.context.fetch=async()=>{throw Error('연결 오류');};
   h.context.window.startStory(result,'테스트');
@@ -147,7 +147,7 @@ test('failed automatic departure offers continue instead of repeated automatic r
 
 test('a long final job page stays visible for the reading delay before Karen leaves', async () => {
   const h=setup();let calls=0;
-  h.context.window.startStory(response('job_result','player_house',null,[{speaker_id:'karen',text:'트럭 차 키를 잘 챙겨두세요.',image:'/assets/images/karen_smile.svg'}]),'확인');
+  h.context.window.startStory(response('job_result','player_house',null,[{speaker_id:'karen',text:'트럭 차 키를 잘 챙겨두세요.',image:'/assets/images/karen_smile.png'}]),'확인');
   vm.runInContext("dialogueStage.pages=['긴 마지막 대사'.repeat(20)];dialogueStage.pageIndex=0",h.context);
   h.context.fetch=async()=>{calls++;return {ok:true,json:async()=>response('festival_invite','player_house','bob',[])};};
   await new Promise(r=>setImmediate(r));

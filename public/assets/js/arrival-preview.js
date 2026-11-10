@@ -41,7 +41,7 @@ async function replayArrival() {
   await arrivalRoot.querySelector('.dialogue-background').decode().catch(() => {});
   if (run !== arrivalRun) return;
   arrivalTimer = setTimeout(async () => {
-    arrivalStage.render({background:arrivalBackground, image:'/assets/images/jimmy_smile.svg', speaker:'지미', text:jimmyQuestion});
+    arrivalStage.render({background:arrivalBackground, image:'/assets/images/jimmy_smile.png', speaker:'지미', text:jimmyQuestion});
     if (arrivalStage.ready) await arrivalStage.ready;
     if (run !== arrivalRun) return;
     arrivalChat.hidden = false;
@@ -72,7 +72,7 @@ document.getElementById('arrival-name-form').addEventListener('submit', event =>
   arrivalAnswer.hidden = true;
   arrivalDialog.close();
   arrivalMessage.disabled = arrivalSend.disabled = false;
-  arrivalStage.render({background:arrivalBackground, image:'/assets/images/jimmy_smile.svg', speaker:'지미', text:`그래 ${name}이구나! 반가워! 잘 지내보자.`});
+  arrivalStage.render({background:arrivalBackground, image:'/assets/images/jimmy_smile.png', speaker:'지미', text:`그래 ${name}이구나! 반가워! 잘 지내보자.`});
   renderArrivalUI(name);
   arrivalStatus.textContent = '개발용 이름 입력 완료 · 실제 게임에 저장하지 않았습니다.';
   arrivalMessage.focus();

@@ -143,7 +143,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual(decode_state(self.token)["story_day"], 4)
         self.assertEqual(result["view"]["today"], checkpoint["view"]["today"])
         self.assertEqual(result["view"]["location_id"], "butcher_shop")
-        self.assertEqual(result["events"][0]["image"], "/assets/images/ending_death.svg")
+        self.assertIsNone(result["events"][0]["image"])
         self.assertIn("캐런의 부름", result["events"][0]["text"])
         self.assertEqual(decode_state(self.token)["journal"][-1], result["events"][0]["text"])
         self.assertFalse(decode_state(self.token)["has_car_key"])
@@ -372,12 +372,12 @@ class StoryTest(unittest.TestCase):
         state = decode_state(self.token)
         state["affinity"] = 35
         self.token = encode_state(state)
-        with patch.object(chatbot.generator, "classify", return_value="hostile"), patch.object(chatbot.generator, "generate", return_value={"reply": "어서 오세요.", "visual_cue": "smile"}) as generate, patch.object(chatbot.image_selector, "select", return_value="/assets/images/karen_smile.svg") as select:
+        with patch.object(chatbot.generator, "classify", return_value="hostile"), patch.object(chatbot.generator, "generate", return_value={"reply": "어서 오세요.", "visual_cue": "smile"}) as generate, patch.object(chatbot.image_selector, "select", return_value="/assets/images/karen_smile.png") as select:
             result = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "협박하겠어요"}).get_json()
         self.assertEqual(result["view"]["affinity"], 33)
         self.assertEqual(generate.call_args.args[6], 33)
         self.assertEqual(select.call_args.args, ("어서 오세요.", "karen", "neighbors", "smile"))
-        self.assertEqual(result["events"][0]["image"], "/assets/images/karen_smile.svg")
+        self.assertEqual(result["events"][0]["image"], "/assets/images/karen_smile.png")
 
     def test_revisiting_neighbor_does_not_repeat_fixed_greeting(self):
         self.action("visit_neighbors")

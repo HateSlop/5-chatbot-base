@@ -22,7 +22,7 @@ class SmokeTest(unittest.TestCase):
         return response.get_json()["state_token"]
 
     def test_pages_and_assets(self):
-        for path in ("/", "/detail", "/chat?username=알렉스", "/health", "/assets/js/chatbot.js", "/assets/css/style.css", "/assets/images/village-cover.svg", "/assets/images/jimmy_smile.svg"):
+        for path in ("/", "/detail", "/chat?username=알렉스", "/health", "/assets/js/chatbot.js", "/assets/css/style.css", "/assets/images/start/opening-background.png", "/assets/images/jimmy_smile.png"):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
