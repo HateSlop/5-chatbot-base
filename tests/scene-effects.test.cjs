@@ -38,9 +38,10 @@ test('death plays once, other endings do not, replay and new game remain availab
   h.get('death-video').listeners.error();assert.match(h.get('death-status').textContent,/불러오지/);
 });
 
-test('female death keeps male film hidden until a matching film is supplied',()=>{
+test('female death uses the supplied female film, and a missing source retains the fallback',()=>{
   const template=fs.readFileSync('templates/chat.html','utf8');
   assert.match(template,/<video id="death-video"[^>]*data-male-src=/);
+  assert.match(template,/<video id="death-video"[^>]*data-female-src="[^\n]*video_ending_die_girl\.mp4/);
   assert.doesNotMatch(template,/<video id="death-video"[^>]*\ssrc=/);
   const h=setup();h.effects.ending('death','사망','female');
   assert.equal(h.plays(),0);
@@ -50,8 +51,8 @@ test('female death keeps male film hidden until a matching film is supplied',()=
   assert.equal(h.get('death-controls').hidden,false);
   assert.match(h.get('death-status').textContent,/준비 중/);
   assert.equal(h.get('death-description').textContent,'사망');
-  const ready=setup();ready.get('death-video').dataset.femaleSrc='/assets/videos/female-ready.mp4';
+  const ready=setup();ready.get('death-video').dataset.femaleSrc='/assets/videos/video_ending_die_girl.mp4';
   ready.effects.ending('death','사망','female');
   assert.equal(ready.plays(),1);
-  assert.equal(ready.get('death-video').src,'/assets/videos/female-ready.mp4');
+  assert.equal(ready.get('death-video').src,'/assets/videos/video_ending_die_girl.mp4');
 });
