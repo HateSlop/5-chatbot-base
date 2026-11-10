@@ -1,6 +1,6 @@
 {
   "name": "더뉴빌리지로 오세요",
-  "description": "1960년대 미국의 작은 마을. 친절한 이웃들과 대화하고 지미의 행방을 따라가세요.",
+  "description": "1955년 미국의 작은 마을. 친절한 이웃들과 대화하고 지미의 행방을 따라가세요.",
   "tags": ["#미스터리", "#대화형챗봇", "#더뉴빌리지"],
   "thumbnail": "assets/images/start/opening-background.png",
   "greeting": "새집 앞에 누군가 서 있습니다.",

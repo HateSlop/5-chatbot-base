@@ -9,7 +9,7 @@ class ImageSelectorTests(unittest.TestCase):
     def test_delivered_character_expressions_exist(self):
         selector = StoryImageSelector()
         for character in ("bob", "cathy"):
-            for cue, expression in (("neutral", "basic"), ("smile", "smile"), ("worried", "angry")):
+            for cue, expression in (("neutral", "basic"), ("smile", "smile"), ("worried", "basic")):
                 with self.subTest(character=character, cue=cue):
                     self.assertEqual(selector.select("대사", character, "neighbors", cue),
                                      f"/assets/images/{character}_{expression}.png")

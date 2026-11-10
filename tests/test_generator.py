@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from services.generator import StoryGenerator
+from services.story import SCENE_CONTEXT
 
 
 class GeneratorTest(unittest.TestCase):
@@ -95,6 +96,27 @@ class GeneratorTest(unittest.TestCase):
         self.assertIn("근거 있는 추궁만으로 hostile이라 하지 마세요", request["instructions"])
         self.assertEqual(request["text"]["format"]["schema"]["properties"]["category"]["enum"],
                          ["friendly", "cooperative", "neutral", "hostile"])
+
+    def test_destination_classification_requires_boolean_and_same_call(self):
+        with patch("services.generator.OpenAI") as client:
+            create = client.return_value.responses.create
+            create.return_value = SimpleNamespace(status="completed", output_text='{"category":"neutral","destination_disclosed":false}')
+            self.assertEqual(StoryGenerator().classify("지미가 정육점에 갔다고요?", [], [], True), ("neutral", False))
+            self.assertIn("부정문, 질문, 추측", create.call_args.kwargs["instructions"])
+            self.assertEqual(create.call_args.kwargs["text"]["format"]["schema"]["required"], ["category", "destination_disclosed"])
+            self.assertEqual(create.call_count, 1)
+            create.return_value = SimpleNamespace(status="completed", output_text='{"category":"neutral","destination_disclosed":"true"}')
+            with self.assertRaises(RuntimeError):
+                StoryGenerator().classify("지미가 정육점에 갔다고 했어요", [], [], True)
+
+    def test_dinner_prompt_has_no_unrevealed_secret(self):
+        with patch("services.generator.OpenAI") as client:
+            client.return_value.responses.create.return_value = SimpleNamespace(status="completed", output_text='{"reply":"내일 보자.","visual_cue":"worried"}')
+            StoryGenerator().generate("왜 무서워?", "확인", {"name":"지미", "persona":{}}, [], [], "새집", 50, [], SCENE_CONTEXT["dinner_invite"])
+        instructions = client.return_value.responses.create.call_args.kwargs["instructions"]
+        self.assertIn("두려워", instructions)
+        self.assertNotIn("식인", instructions)
+        self.assertNotIn("사이비", instructions)
 
 
 if __name__ == "__main__":

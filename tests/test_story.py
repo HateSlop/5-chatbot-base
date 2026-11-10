@@ -71,7 +71,8 @@ class StoryTest(unittest.TestCase):
 
     def chat(self, character, message, attitude="cooperative"):
         turn = {"reply": "알겠습니다.", "visual_cue": "neutral"}
-        with patch.object(chatbot.generator, "classify", return_value=attitude), patch.object(chatbot.generator, "generate", return_value=turn):
+        classification = (attitude, False) if decode_state(self.token)["scene_id"] == "karen_search" else attitude
+        with patch.object(chatbot.generator, "classify", return_value=classification), patch.object(chatbot.generator, "generate", return_value=turn):
             response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": character, "message": message})
         self.assertEqual(response.status_code, 200)
         self.token = response.get_json()["state_token"]
@@ -82,7 +83,9 @@ class StoryTest(unittest.TestCase):
         if checkpoint_action == "accept_job":
             self.action("choose_driver")
         self.action("see_karen_off")
-        self.action("go_festival")
+        festival = self.action("go_festival")
+        self.assertEqual(festival["view"]["available_characters"], [])
+        self.assertEqual(self.client.post("/api/chat", json={"state_token": self.token, "character_id": "bob", "message": "안녕하세요"}).status_code, 409)
         self.action("inspect_food")
         self.assertEqual(decode_state(self.token)["scene_id"], "hair_found")
         self.action("begin_final_choice")
@@ -485,7 +488,7 @@ class StoryTest(unittest.TestCase):
         self.assertIn("아직 지하실의 비밀을 모른다", generate.call_args.args[-1][1])
         self.assertNotIn("식인", " ".join(generate.call_args.args[-1]))
         self.action("see_jimmy_off")
-        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "지미에게 전할 말이 있어요.", "visual_cue": "neutral"}) as generate:
+        with patch.object(chatbot.generator, "classify", return_value=("neutral", False)), patch.object(chatbot.generator, "generate", return_value={"reply": "지미에게 전할 말이 있어요.", "visual_cue": "neutral"}) as generate:
             unseen = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "무슨 용건이세요?"})
         self.assertEqual(unseen.status_code, 200)
         self.token = unseen.get_json()["state_token"]
@@ -493,7 +496,13 @@ class StoryTest(unittest.TestCase):
         self.assertNotIn("정육점", generate.call_args.args[-1][0])
         self.assertIn("행선지를 아직 모른다", generate.call_args.args[-1][1])
         self.assertEqual(generate.call_args.args[-2][0]["speaker_id"], "karen")
-        with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "알려주셔서 고마워요. 그쪽에서 찾아봐 주시겠어요?", "visual_cue": "smile"}) as generate:
+        for question in ("지미가 정육점에 갔다고요?", "지미가 정육점에 갔다는 건 몰라요.", "혹시 지미가 정육점에 갔을까요?"):
+            with self.subTest(question=question), patch.object(chatbot.generator, "classify", return_value=("neutral", False)), patch.object(chatbot.generator, "generate", return_value={"reply": "저도 모르겠어요.", "visual_cue": "neutral"}):
+                response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": question})
+            self.assertEqual(response.status_code, 200)
+            self.token = response.get_json()["state_token"]
+            self.assertFalse(decode_state(self.token)["jimmy_destination_told"])
+        with patch.object(chatbot.generator, "classify", return_value=("neutral", True)), patch.object(chatbot.generator, "generate", return_value={"reply": "알려주셔서 고마워요. 그쪽에서 찾아봐 주시겠어요?", "visual_cue": "smile"}) as generate:
             informed = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "지미가 정육점에 간다고 했어요."})
         self.assertEqual(informed.status_code, 200)
         self.token = informed.get_json()["state_token"]
@@ -763,7 +772,8 @@ class StoryTest(unittest.TestCase):
             result = self.action(action_id)
             if character:
                 self.assertTrue(result["view"]["available_actions"], action_id)
-                with patch.object(chatbot.generator, "classify", return_value="neutral"), patch.object(chatbot.generator, "generate", return_value={"reply": "글쎄요.", "visual_cue": "neutral"}) as generate:
+                classification = ("neutral", False) if decode_state(self.token)["scene_id"] == "karen_search" else "neutral"
+                with patch.object(chatbot.generator, "classify", return_value=classification), patch.object(chatbot.generator, "generate", return_value={"reply": "글쎄요.", "visual_cue": "neutral"}) as generate:
                     response = self.client.post("/api/chat", json={"state_token": self.token, "character_id": character, "message": "무슨 일이에요?"})
                     self.assertEqual(response.status_code, 200)
                     self.token = response.get_json()["state_token"]

@@ -1,7 +1,7 @@
 [
   {
     "title": "새 주민을 환영하는 마을",
-    "content": "더뉴빌리지는 새 주민을 가족처럼 맞는 1960년대 미국의 작은 마을이다. 친절하지만 지나치게 사적인 질문을 한다.",
+    "content": "더뉴빌리지는 새 주민을 가족처럼 맞는 1955년 미국의 작은 마을이다. 친절하지만 지나치게 사적인 질문을 한다.",
     "characters": ["jimmy", "karen", "bob", "cathy"],
     "scenes": ["arrival", "neighbors", "cathy_task", "cathy_help", "jimmy_butcher", "karen_search", "butcher_search", "bob_caught", "dinner_invite", "karen_dinner", "photo_found", "checkpoint", "festival_invite", "festival", "hair_found"],
     "keywords": ["마을", "이웃", "여기", "안녕", "소개"]
