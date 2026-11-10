@@ -332,7 +332,7 @@ test('current scene events and current character chat never mix other scenes or 
   assert.equal(h.transcript().length, 5);
 });
 
-test('residents keep server-selected expressions and keep anger after a score decrease', () => {
+test('residents keep server-selected expressions even after a score decrease', () => {
   for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
     const h = setup();
     h.context.window.startStory(response('neighbors', 'salon', id, []), '알렉스');
@@ -343,26 +343,26 @@ test('residents keep server-selected expressions and keep anger after a score de
     h.context.applyResponse(response('neighbors', 'salon', id,
       [{speaker_id:id, text:'불쾌한 답변', image:null}], 48), 'chat', id);
     h.context.renderView(vm.runInContext('currentView', h.context));
-    assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
+    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
     assert.equal(h.timers.size, 0);
     h.context.renderView(vm.runInContext('currentView', h.context));
-    assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
+    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
     h.context.applyResponse(response('neighbors', 'salon', id, [], 55), 'chat', id);
     assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
   }
 });
 
-test('anger stays during a pending reply and clears on movement and exit', async () => {
+test('prior expression stays during a pending reply and clears on movement and exit', async () => {
   const h = setup();
   h.context.window.startStory(response('neighbors', 'salon', 'cathy', []), '알렉스');
   h.context.applyResponse(response('neighbors', 'salon', 'cathy', [], 48), 'chat', 'cathy');
-  assert.equal(h.stage().image, '/assets/images/cathy_angry.png');
+  assert.equal(h.stage().image, '/cathy.svg');
   assert.equal(h.timers.size, 0);
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 48), 'scene');
   assert.equal(h.timers.size, 0);
   assert.equal(h.stage().image, '/bob.svg');
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 46), 'chat', 'bob');
-  assert.equal(h.stage().image, '/assets/images/bob_angry.png');
+  assert.equal(h.stage().image, '/bob.svg');
   h.listeners.pagehide();
   h.context.renderView(vm.runInContext('currentView', h.context));
   assert.equal(h.stage().image, '/bob.svg');

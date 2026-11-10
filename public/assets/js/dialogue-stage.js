@@ -212,7 +212,13 @@ window.DialogueStage = class {
           resolve(true);
         };
         pending.onerror = () => {
-          if (this.paths.get(node) === path && !node.getAttribute('src')) node.hidden = true;
+          if (this.paths.get(node) === path) {
+            node.hidden = true;
+            node.removeAttribute('src');
+            this.paths.delete(node);
+            this.requests.delete(node);
+            if (node === this.background) this.root.dataset.backgroundReady = 'false';
+          }
           resolve(false);
         };
         pending.src = path;

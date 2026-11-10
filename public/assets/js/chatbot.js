@@ -119,7 +119,6 @@ for (const button of document.querySelectorAll('#cathy-tool-list button')) {
 document.getElementById('cathy-deliver')?.addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 let selectedPhoto = 'jimmy';
-let charlesPhotoDate = '';
 let photoOpenVersion = 0;
 let photoThoughtTimer;
 function clearPhotoThought() {
@@ -180,10 +179,6 @@ photoFlip.addEventListener('click', async () => {
   if (currentView.available_actions.some(a => a.id === action) && !await performAction(action)) {
     document.getElementById('photo-hint').textContent = statusMessage.textContent;
     return;
-  }
-  if (selectedPhoto === 'charles') {
-    const thought = transcript.findLast(item => item.scene_id === 'photo_found' && item.speaker === 'thought')?.text || '';
-    charlesPhotoDate = thought.match(/\d{1,2}월\s*\d{1,2}일/)?.[0] || '';
   }
   showPhotoSide(true);
 });
@@ -319,10 +314,6 @@ function greetingLocked(view) {
   return ['arrival', 'neighbors'].includes(view.scene_id) && view.available_characters.length > 0 &&
     (greetingChats.get(`${view.scene_id}:${view.location_id}`) || 0) < 2;
 }
-let angryReaction = null;
-function clearReaction() {
-  angryReaction = null;
-}
 // Presentation only: hide completed greeting destinations, without changing server actions.
 const greetedPlaces = new Set();
 const greetingDestinations = {visit_karen:'karen_house',visit_bob:'butcher_shop',visit_cathy:'salon'};
@@ -383,7 +374,7 @@ function renderMessages() {
   dialogueStage.render({
     background: currentView.scene_id === 'wait_dinner' ? '/assets/images/player_house_evening.png' : festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : currentView.scene_id === 'final_choice' ? 'stares' : festivalFrame === 0 ? 'meat' : festivalStares ? 'stares' : 'hair'}.png` : currentView.scene_id === 'photo_found' ? (secretFrame < 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
-    image: festivalScene ? null : angryReaction === selectedCharacter && selectedCharacter ? `/assets/images/${selectedCharacter}_angry.png` : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
+    image: festivalScene ? null : cathyBasketScene ? (basketGreetingDone ? null : '/assets/images/cathy_smile.png') : currentView.scene_id === 'photo_found' && secretFrame < 2 ? null : currentView.scene_id === "karen_dinner" && (!selectedCharacter || selectedCharacter === 'karen') ? (karenDinnerDismissed ? null : line?.image || "/assets/images/karen_smile.png") : (selectedCharacter
       ? conversation.findLast(item => item.speaker === selectedCharacter && item.image)?.image || currentView.available_characters[0]?.portrait
       : line?.image) || null,
     speaker: currentView.scene_id === 'photo_found' && secretFrame < 2 ? '' : (currentView.scene_id === "empty_butcher" || currentView.scene_id === "karen_dinner" && karenDinnerDismissed) ? "" : line ? speakerName(line.speaker) : "",
@@ -595,15 +586,11 @@ function renderView(view) {
 
 function applyResponse(data, kind, characterId = null) {
   const changedScene = currentView?.scene_id !== data.view.scene_id || currentView?.location_id !== data.view.location_id;
-  const decreased = kind === 'chat' && !changedScene && data.view.affinity < currentView.affinity;
   if (kind === 'chat' && !changedScene) {
     const key = `${data.view.scene_id}:${data.view.location_id}`;
     greetingChats.set(key, (greetingChats.get(key) || 0) + 1);
   }
-  clearReaction();
-  if (decreased) angryReaction = characterId;
   if (changedScene) {
-    charlesPhotoDate = '';
     clearTimeout(jobDepartureTimer);
     jobDeparturePending = false;
     jobDepartureFailed = false;
@@ -656,7 +643,6 @@ window.startStory = (data, name) => {
   festivalStares = false;
   secretFrame = -1;
   karenDinnerDismissed = false;
-  clearReaction();
   transcript = [];
   walletInspection?.close();
   greetedPlaces.clear();
@@ -772,7 +758,6 @@ window.addEventListener("pagehide", () => {
   clearTimeout(jobDepartureTimer);
   jobDeparturePending = true;
   dialogueStage.resetSelection?.();
-  clearReaction();
   greetedPlaces.clear();
   greetingChats.clear();
   if (photoDialog.open) photoDialog.close();
