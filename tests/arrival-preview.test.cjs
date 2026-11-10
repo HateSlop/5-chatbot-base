@@ -32,7 +32,7 @@ test('Jimmy appears at 3 seconds; question stays in dialogue until the user open
   assert.equal(h.get('.dialogue-box').hidden,true);
   h.advance(1);assert.equal(h.renders.at(-1).speaker,'지미');
   assert.equal(h.renders.at(-1).text,'더뉴빌리지에 온 걸 환영해. 여기 진짜 끝내주는 곳이거든! 아 참, 너의 이름은 뭐야?');
-  assert.equal(h.renders.at(-1).image,'/assets/images/jimmy_smile.svg');
+  assert.equal(h.renders.at(-1).image,'/assets/images/jimmy_smile.png');
   for(const id of ['.dialogue-box','.move-composer','arrival-chat'])assert.equal(h.get(id).hidden,false);
   assert.equal(h.get('arrival-name-dialog').open,false);
   assert.equal(h.get('arrival-answer').hidden,false);

@@ -17,7 +17,7 @@ const moveUI = new PostMoveUI(moveRoot, demoForm, document.getElementById('demo-
 });
 function renderMoveDemo() {
   const [label, background, character, speaker] = demoPlaces[demoLocation];
-  moveStage.render({background:`/assets/images/${background}.svg`,image:character ? `/assets/images/${character}_neutral.svg` : null,speaker,text:'[개발용 배치 확인 문구 · 실제 스토리 대사 아님]'});
+  moveStage.render({background:`/assets/images/${background}.svg`,image:character ? `/assets/images/${character}_basic.png` : null,speaker,text:'[개발용 배치 확인 문구 · 실제 스토리 대사 아님]'});
   moveUI.render({locationId:demoLocation,locationName:label,registeredName:demoName.value.trim(),affinity:demoAffinity,
     actions:Object.keys(demoTargets).map(id=>({id,kind:'move',label:'개발용 장소 전환'}))});
 }

@@ -18,18 +18,18 @@ function setup(extra = {}) {
 test('disclosed frightened Jimmy and caught Karen scenes keep their incident portraits', async () => {
   const {nodes, stage} = setup();
   for (const sceneId of ['butcher_search']) {
-    stage.render({sceneId, background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
+    stage.render({sceneId, background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_basic.png'});
     await stage.ready;
     assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_scared.png');
   }
-  stage.render({sceneId:'photo_found', background:'/assets/images/karen_house.svg', image:'/assets/images/karen_worried.svg'});
+  stage.render({sceneId:'photo_found', background:'/assets/images/karen_house.svg', image:'/assets/images/karen_angry.png'});
   await stage.ready;
   assert.equal(nodes['.dialogue-figure'].src, '/assets/images/karen_angry.png');
 });
 
 test('Jimmy keeps the anxious cutout throughout the dinner invitation', async () => {
   const {nodes, stage} = setup();
-  for (const image of ['jimmy_neutral.svg', 'jimmy_smile.png', 'jimmy_angry.png', 'jimmy_anxiety.png']) {
+  for (const image of ['jimmy_basic.png', 'jimmy_smile.png', 'jimmy_angry.png', 'jimmy_anxiety.png']) {
     stage.render({sceneId:'dinner_invite', background:'/assets/images/player_house.svg', image:`/assets/images/${image}`, visitorId:'jimmy'});
     await stage.ready;
     assert.equal(nodes['.dialogue-figure'].src, '/assets/images/jimmy_anxiety.png');
@@ -39,10 +39,10 @@ test('Jimmy keeps the anxious cutout throughout the dinner invitation', async ()
 
 test('Jimmy leaves the empty butcher scene while his farewell and background remain', async () => {
   const {nodes, stage} = setup();
-  stage.render({sceneId:'butcher_search', background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_neutral.svg'});
+  stage.render({sceneId:'butcher_search', background:'/assets/images/butcher_shop.svg', image:'/assets/images/jimmy_basic.png'});
   await stage.ready;
   const farewell = {sceneId:'empty_butcher', background:'/assets/images/butcher_shop.svg',
-    image:'/assets/images/jimmy_worried.svg', speaker:'지미', text:'지금은 말할 수 없어. 나중에 보자.'};
+    image:'/assets/images/jimmy_scared.png', speaker:'지미', text:'지금은 말할 수 없어. 나중에 보자.'};
   for (let i = 0; i < 2; i++) {
     stage.render(farewell);
     await stage.ready;
@@ -99,7 +99,7 @@ test('home visit shows open door, then Jimmy, then dialogue; replies do not repl
   stage.pause=ms=>new Promise(resolve=>pauses.push({ms,resolve}));
   const settle=()=>new Promise(resolve=>setImmediate(resolve));
   stage.render({background:'/assets/images/player_house.svg',dialogue:false});await stage.ready;
-  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.svg',speaker:'지미',text:'질문'});
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_smile.png',speaker:'지미',text:'질문'});
   await settle();
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house_open.png');
   assert.equal(nodes['.dialogue-figure'].hidden,true);
@@ -111,7 +111,7 @@ test('home visit shows open door, then Jimmy, then dialogue; replies do not repl
   assert.equal(pauses[0].ms,400);pauses.shift().resolve();await stage.ready;
   assert.equal(nodes['.dialogue-box'].hidden,false);
   assert.equal(nodes['.move-composer'].hidden,false);
-  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_worried.svg',speaker:'지미',text:'답변'});
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_scared.png',speaker:'지미',text:'답변'});
   assert.equal(nodes['.dialogue-box'].hidden,false);
   assert.equal(nodes['.move-composer'].hidden,false);
   await stage.ready;
@@ -204,7 +204,7 @@ test('leaving during door opening cannot reveal Jimmy or dialogue over another s
   const {nodes,stage}=setup();let release;
   stage.pause=()=>new Promise(resolve=>release=resolve);
   stage.render({background:'/assets/images/player_house.svg',dialogue:false});await stage.ready;
-  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_neutral.svg'});const previous=stage.ready;
+  stage.render({background:'/assets/images/player_house.svg',image:'/assets/images/jimmy_basic.png'});const previous=stage.ready;
   await new Promise(resolve=>setImmediate(resolve));
   stage.render({background:'/square.svg',dialogue:false});await stage.ready;
   release();await previous;
@@ -221,7 +221,7 @@ test('leaving home resets the visit; both Jimmy and later characters enter throu
   assert.deepEqual(pauses,[1500,1000,400]);pauses.length=0;
   stage.render({background:home,image:'/assets/images/jimmy_smile.png',visitorId:'jimmy'});await stage.ready;
   assert.deepEqual(pauses,[]);
-  stage.render({background:'/assets/images/butcher_shop.svg',image:'/assets/images/bob_neutral.svg',visitorId:'bob'});await stage.ready;
+  stage.render({background:'/assets/images/butcher_shop.svg',image:'/assets/images/bob_basic.png',visitorId:'bob'});await stage.ready;
   assert.equal(stage.homeVisitor,null);
   pauses.length=0;
   stage.render({background:home,image:'/assets/images/jimmy_basic.png',visitorId:'jimmy',text:'새 방문'});
@@ -231,7 +231,7 @@ test('leaving home resets the visit; both Jimmy and later characters enter throu
   await stage.ready;assert.deepEqual(pauses,[1500,1000,400]);pauses.length=0;
   stage.render({background:'/square.svg'});await stage.ready;
   pauses.length=0;
-  stage.render({background:home,image:'/assets/images/karen_neutral.svg',visitorId:'karen',speaker:'캐런'});await stage.ready;
+  stage.render({background:home,image:'/assets/images/karen_basic.png',visitorId:'karen',speaker:'캐런'});await stage.ready;
   assert.deepEqual(pauses,[1500,1000,400]);
   assert.equal(nodes['.dialogue-background'].src,'/assets/images/player_house_open.png');
   assert.equal(nodes['.dialogue-figure'].src,'/assets/images/karen_basic.png');

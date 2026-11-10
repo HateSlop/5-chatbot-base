@@ -253,12 +253,9 @@ window.DialogueStage = class {
     if (partial === null) this.finishTyping();
     // Visual selection for an already disclosed server scene, never a progression rule.
     if (sceneId === 'photo_found' && background === '/assets/images/karen_house.svg') background = '/assets/images/karen_secret_room.png';
-    const legacyKaren = /\/karen_(neutral|smile|worried)\.svg$/.exec(image || '');
-    if (legacyKaren) image = legacyKaren[1] === 'smile' ? '/assets/images/karen_smile.png' : '/assets/images/karen_basic.png';
     if (sceneId === 'photo_found' && /\/karen_/.test(image || '')) image = '/assets/images/karen_angry.png';
     const isHome = background === '/assets/images/player_house.svg';
-    const legacyJimmy = /\/jimmy_(neutral|smile|worried)\.svg$/.exec(image || '');
-    const isJimmy = !!legacyJimmy || /\/jimmy(?:_(basic|smile|scared|angry|anxiety))?\.png$/.test(image || '');
+    const isJimmy = /\/jimmy_(basic|smile|scared|angry|anxiety)\.png$/.test(image || '');
     this.root.dataset.figure = isJimmy ? 'jimmy' : '';
     const visitor = isHome && image && object !== 'tv' ?
       (visitorId || (isJimmy ? 'jimmy' : /\/([a-z]+)[_.-]/.exec(image)?.[1]) || image) : null;
@@ -272,7 +269,6 @@ window.DialogueStage = class {
     this.homeVisitor = visitor;
     if (!visitor || arriving) this.visitorVisible = false;
     if (!isHome) this.root.removeAttribute?.('data-continuing');
-    if (legacyJimmy) image = `/assets/images/jimmy_${({neutral:'basic',smile:'smile',worried:'scared'})[legacyJimmy[1]]}.png`;
     if (sceneId === 'arrival' && isJimmy && !/\/jimmy_angry\.png$/.test(image || '')) image = '/assets/images/jimmy_smile.png';
     if (['butcher_search', 'empty_butcher'].includes(sceneId) && isJimmy) image = '/assets/images/jimmy_scared.png';
     if (sceneId === 'dinner_invite' && isJimmy) image = '/assets/images/jimmy_anxiety.png';
