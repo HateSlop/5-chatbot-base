@@ -115,4 +115,3 @@
 | `public/assets/videos/video_ending_die_boy.mp4` | 남성 주인공 사망 엔딩 영상 |
 | `public/assets/videos/video_ending_die_girl.mp4` | 여성 주인공 사망 엔딩 영상 |
 | `public/assets/videos/village-ad.mp4` | 이사 전 TV 광고 영상 |
-
