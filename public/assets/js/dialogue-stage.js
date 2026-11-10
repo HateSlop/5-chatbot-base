@@ -1,4 +1,3 @@
-// 장면 배경, 인물 그림, 대사창과 방문 애니메이션을 그린다.
 /* Presentation only: no story decisions, API calls or persistent state. */
 window.DialogueStage = class {
   constructor(root) {
@@ -212,13 +211,7 @@ window.DialogueStage = class {
           resolve(true);
         };
         pending.onerror = () => {
-          if (this.paths.get(node) === path) {
-            node.hidden = true;
-            node.removeAttribute('src');
-            this.paths.delete(node);
-            this.requests.delete(node);
-            if (node === this.background) this.root.dataset.backgroundReady = 'false';
-          }
+          if (this.paths.get(node) === path && !node.getAttribute('src')) node.hidden = true;
           resolve(false);
         };
         pending.src = path;

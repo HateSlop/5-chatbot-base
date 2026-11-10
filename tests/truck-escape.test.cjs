@@ -1,4 +1,3 @@
-// truck escape 기능의 화면 동작을 확인하는 회귀 검사다.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');

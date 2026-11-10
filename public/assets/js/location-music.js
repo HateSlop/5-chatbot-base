@@ -1,4 +1,3 @@
-// 장소와 사건에 맞는 배경음악을 선택하고 전환한다.
 // Uses only the location and ending already disclosed by the server.
 window.locationMusic = new class {
   constructor() {

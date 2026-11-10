@@ -1,4 +1,3 @@
-// 화면 클릭과 타자 입력의 효과음을 재생한다.
 // Capture the click before a story action disables or removes its button.
 (() => {
   if (typeof Audio === 'undefined') return;

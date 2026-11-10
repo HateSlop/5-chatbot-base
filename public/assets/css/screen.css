@@ -1,4 +1,3 @@
-/* 페이지의 기본 크기와 화면 틀을 정한다. */
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 .game-screen { width: 100%; height: 100dvh; min-width: 0; margin: 0; box-sizing: border-box; }
 img { -webkit-user-drag: none; user-select: none; }

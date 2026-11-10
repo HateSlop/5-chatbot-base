@@ -1,5 +1,3 @@
-"""대사 표정 단서가 실제 인물 그림으로 연결되는지 확인한다."""
-
 import unittest
 
 from services.image_selector import StoryImageSelector
@@ -9,7 +7,7 @@ class ImageSelectorTests(unittest.TestCase):
     def test_delivered_character_expressions_exist(self):
         selector = StoryImageSelector()
         for character in ("bob", "cathy"):
-            for cue, expression in (("neutral", "basic"), ("smile", "smile"), ("worried", "basic")):
+            for cue, expression in (("neutral", "basic"), ("smile", "smile"), ("worried", "angry")):
                 with self.subTest(character=character, cue=cue):
                     self.assertEqual(selector.select("대사", character, "neighbors", cue),
                                      f"/assets/images/{character}_{expression}.png")

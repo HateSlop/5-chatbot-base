@@ -1,4 +1,3 @@
-/* 앱 전체의 기본 색상·글꼴·공통 요소를 정한다. */
 :root {
   font-family: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   color: #333;

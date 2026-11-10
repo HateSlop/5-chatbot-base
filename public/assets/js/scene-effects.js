@@ -1,4 +1,3 @@
-// 날짜 전환과 결말 등 장면 사이 화면 효과를 재생한다.
 // Presentation only: ending type and location changes come from the server.
 window.sceneEffects = new class {
   constructor() {

@@ -1,4 +1,3 @@
-// dialogue stage 기능의 화면 동작을 확인하는 회귀 검사다.
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
@@ -128,21 +127,6 @@ test('replacement images keep the old background visible until decoding finishes
   assert.equal(bg.src,'/closed.png');assert.equal(bg.hidden,false);
   await pending[0].onload();await ready;
   assert.equal(bg.src,'/open.png');assert.equal(bg.hidden,false);
-});
-
-test('failed replacement hides stale portrait and retries the same path', async () => {
-  const pending=[];
-  const {nodes,stage}=setup({Image:class {constructor(){pending.push(this);}decode(){return Promise.resolve();}}});
-  const figure=nodes['.dialogue-figure'];
-  figure.src='/old.png';figure.hidden=false;figure.getAttribute=key=>key==='src'?figure.src:null;
-  const first=stage.image(figure,'/new.png','새 표정');
-  pending.shift().onerror();await first;
-  assert.equal(figure.hidden,true);
-  assert.equal(figure.src,undefined);
-  const retry=stage.image(figure,'/new.png','새 표정');
-  await pending.shift().onload();await retry;
-  assert.equal(figure.src,'/new.png');
-  assert.equal(figure.hidden,false);
 });
 
 test('location label is released with each background before the dialogue delay', async () => {

@@ -1,4 +1,3 @@
-# Flask 앱을 로컬 컨테이너로 실행하는 설정.
 services:
   chatbot:
     build: .

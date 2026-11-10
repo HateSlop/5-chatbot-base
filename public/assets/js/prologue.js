@@ -1,4 +1,3 @@
-// 첫 화면에서 이사 전 독백과 광고 재생 순서를 관리한다.
 // Pre-session narration only. Leaving the page cancels every pending line.
 window.Prologue = class {
   constructor(root) {

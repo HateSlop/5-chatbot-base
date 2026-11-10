@@ -1,4 +1,3 @@
-// 장소와 인물의 대화 화면을 개발용으로 미리 보여 준다.
 const previewStage = new DialogueStage(document.getElementById('preview-stage'));
 let previewMode = 'tv';
 const previewForm = document.getElementById('preview-form');

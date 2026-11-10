@@ -29,20 +29,12 @@ CLASSIFICATION_SCHEMA = {
 
 
 class StoryGenerator:
-    def classify(self, question: str, history: list[dict], scene_events: list[dict], detect_destination: bool = False) -> str | tuple[str, bool]:
+    def classify(self, question: str, history: list[dict], scene_events: list[dict]) -> str:
         effort = os.getenv("OPENAI_REASONING_EFFORT", "none")
         if effort not in ALLOWED_REASONING_EFFORTS:
             raise ValueError("OPENAI_REASONING_EFFORT must be none, low, or medium.")
         recent = [{"role": item["role"], "content": item["content"]} for item in history[-6:]]
         scene_lines = "\n".join(item["text"] for item in scene_events)
-        schema = CLASSIFICATION_SCHEMA
-        if detect_destination:
-            schema = {
-                "type": "object",
-                "properties": {**CLASSIFICATION_SCHEMA["properties"], "destination_disclosed": {"type": "boolean"}},
-                "required": ["category", "destination_disclosed"],
-                "additionalProperties": False,
-            }
         response = OpenAI(timeout=20.0, max_retries=0).responses.create(
             model=os.getenv("OPENAI_MODEL", "gpt-6-luna"),
             reasoning={"effort": effort},
@@ -55,26 +47,20 @@ class StoryGenerator:
                 "위협·모욕, 분명한 적대 행동, 상대가 거절한 뒤에도 계속하는 압박만 hostile입니다. "
                 "사건을 이해하려는 첫 질문이나 근거 있는 추궁만으로 hostile이라 하지 마세요. '지미는 어디 있죠?', '사진은 왜 여기 있나요?'는 적대가 아닙니다. "
                 f"현재 공개된 대사:\n{scene_lines}"
-                + ("\ndestination_disclosed는 플레이어가 지미가 정육점에 간다는 정보를 캐런에게 사실로 알린 경우만 true입니다. "
-                   "부정문, 질문, 추측, 다른 사람의 주장 인용, 모르겠다는 말은 false입니다. "
-                   "분류와 별개로 판단하세요." if detect_destination else "")
             ),
             input=recent + [{"role": "user", "content": question}],
-            text={"format": {"type": "json_schema", "name": "player_action", "strict": True, "schema": schema}},
+            text={"format": {"type": "json_schema", "name": "player_action", "strict": True, "schema": CLASSIFICATION_SCHEMA}},
             max_output_tokens=100,
         )
         if response.status == "incomplete":
             raise RuntimeError("모델 분류가 완료되지 않았습니다.")
         try:
-            result = json.loads(response.output_text)
-            category = result["category"]
+            category = json.loads(response.output_text)["category"]
             if category not in CHAT_DELTAS:
                 raise ValueError("invalid category")
-            if detect_destination and type(result["destination_disclosed"]) is not bool:
-                raise ValueError("invalid destination disclosure")
         except (ValueError, KeyError, TypeError) as exc:
             raise RuntimeError("모델 분류 형식이 올바르지 않습니다.") from exc
-        return (category, result["destination_disclosed"]) if detect_destination else category
+        return category
 
     def generate(
         self,
@@ -101,7 +87,7 @@ class StoryGenerator:
             "평소: 원래의 성격과 말투를 유지하며 자연스럽게 대하세요"
         )
         instructions = (
-            f"당신은 1955년 미국 마을 더뉴빌리지의 {character['name']}입니다. 한국어로 자연스럽게 말하세요.\n"
+            f"당신은 1960년대 미국 마을 더뉴빌리지의 {character['name']}입니다. 한국어로 자연스럽게 말하세요.\n"
             f"현재 장소: {place_name}. 마을 전체의 태도: {village_attitude}. 이 태도는 모든 주민에게 공유됩니다. 점수 자체를 대사에서 말하지 마세요.\n"
             f"성격: {persona.get('personality', '')}\n"
             f"말투: {persona.get('speaking_style', '')}\n"

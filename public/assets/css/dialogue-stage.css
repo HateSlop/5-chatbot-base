@@ -1,4 +1,3 @@
-/* 장면 배경, 인물, 대사창의 공통 배치를 정한다. */
 .dialogue-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; isolation: isolate; background: linear-gradient(#49473e 0 72%, #302b25 72%); color: #fff5df; }
 .dialogue-stage * { box-sizing: border-box; }
 .dialogue-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }

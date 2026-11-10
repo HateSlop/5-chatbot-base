@@ -1,4 +1,3 @@
-// 탈출 엔딩의 성별별 만화 컷을 순서대로 보여 준다.
 // The server selects the ending; this component presents its four supplied panels.
 window.escapeComic = new class {
   constructor() {

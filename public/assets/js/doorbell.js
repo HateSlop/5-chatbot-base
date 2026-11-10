@@ -1,4 +1,3 @@
-// 집 방문 장면의 초인종 소리를 재생한다.
 // Open soon after the last ring starts; let the sound's tail finish naturally.
 window.Doorbell = class {
   constructor() {

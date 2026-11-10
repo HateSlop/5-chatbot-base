@@ -1,4 +1,3 @@
-// 이사 뒤 장소 이동 화면을 개발용으로 미리 보여 준다.
 const moveRoot = document.getElementById('move-preview');
 const moveStage = new DialogueStage(moveRoot);
 const demoForm = document.getElementById('demo-form');

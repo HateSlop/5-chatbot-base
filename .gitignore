@@ -1,4 +1,3 @@
-# Git에 기록하지 않는 비밀·임시 파일을 지정한다.
 .env
 .env.*
 !.env.example

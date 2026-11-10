@@ -1,4 +1,3 @@
-// 시작 화면에서 주인공 그림 선택을 처리한다.
 const startAction = document.getElementById('start-action');
 const genderDialog = document.getElementById('gender-dialog');
 

@@ -1,4 +1,3 @@
-// 지하실 지갑의 열기·사진 조사 화면을 관리한다.
 // Each reveal is confirmed by the server; closing never advances the story.
 window.WalletInspection = class {
   constructor(dialog, onAction) {

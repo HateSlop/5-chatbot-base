@@ -17,13 +17,13 @@
   "bob": {
     "neutral": "/assets/images/bob_basic.png",
     "smile": "/assets/images/bob_smile.png",
-    "worried": "/assets/images/bob_basic.png",
+    "worried": "/assets/images/bob_angry.png",
     "angry": "/assets/images/bob_angry.png"
   },
   "cathy": {
     "neutral": "/assets/images/cathy_basic.png",
     "smile": "/assets/images/cathy_smile.png",
-    "worried": "/assets/images/cathy_basic.png",
+    "worried": "/assets/images/cathy_angry.png",
     "angry": "/assets/images/cathy_angry.png"
   }
 }

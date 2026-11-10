@@ -59,13 +59,14 @@ class ChatbotService:
                         if item["speaker_id"] in {character_id, "narrator"}]
         started = perf_counter()
         try:
-            detect_destination = state["scene_id"] == "karen_search" and not state.get("jimmy_destination_told")
-            classification = (self.generator.classify(message, history, scene_events, True)
-                              if detect_destination else self.generator.classify(message, history, scene_events))
-            attitude, just_told_destination = classification if detect_destination else (classification, False)
+            attitude = self.generator.classify(message, history, scene_events)
         finally:
             getLogger(__name__).info("chat classification %.1f ms", (perf_counter() - started) * 1000)
         next_state = deepcopy(state)
+        just_told_destination = (
+            state["scene_id"] == "karen_search" and not state.get("jimmy_destination_told")
+            and "정육점" in message and any(word in message for word in ("지미", "갔", "간다", "간다고", "가겠", "간대"))
+        )
         if just_told_destination:
             next_state["jimmy_destination_told"] = True
         score_key = f"{state['scene_id']}:{character_id}"
