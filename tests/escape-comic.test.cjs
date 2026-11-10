@@ -7,9 +7,11 @@ function setup(load=()=>Promise.resolve()) {
   const images=Array.from({length:4},(_,i)=>({dataset:{maleSrc:`male-${i+1}.png`,femaleSrc:`female-${i+1}.png`},decode(){decodes++;return load();}}));
   const root={hidden:true,dataset:{},classList:{add:c=>classes.add(c),remove:c=>classes.delete(c)},querySelectorAll:()=>images,focus(){this.focused=true;}};
   const description={};
-  const context={window:{addEventListener:(k,fn)=>events[k]=fn},document:{getElementById:id=>id==='escape-screen'?root:description}};
+  const timers=new Map();let timerId=0;
+  const context={window:{addEventListener:(k,fn)=>events[k]=fn},document:{getElementById:id=>id==='escape-screen'?root:description},
+    setTimeout:(fn,ms)=>{timers.set(++timerId,{fn,ms});return timerId;},clearTimeout:id=>timers.delete(id)};
   vm.runInNewContext(fs.readFileSync('public/assets/js/escape-comic.js','utf8'),context);
-  return {ui:context.window.escapeComic,images,root,description,classes,events,decodes:()=>decodes};
+  return {ui:context.window.escapeComic,window:context.window,timers,images,root,description,classes,events,decodes:()=>decodes};
 }
 test('four panels load once, repeated escape renders do not replay, other endings hide the comic',async()=>{
   const h=setup();await h.ui.show(true,'마을을 벗어났다.');
@@ -18,6 +20,17 @@ test('four panels load once, repeated escape renders do not replay, other ending
   await h.ui.show(true);assert.equal(h.decodes(),4);
   await h.ui.show(false);assert.equal(h.root.hidden,true);assert.equal(h.classes.size,0);
   await h.ui.show(true);assert.equal(h.decodes(),8);
+});
+
+test('the finale waits for panel loading and reading time; leaving cancels the pending finish',async()=>{
+  let ready,finishes=0;const h=setup();
+  h.window.endingCinema={finish:()=>finishes++};
+  // All panels share the same readiness promise.
+  const wait=new Promise(resolve=>ready=resolve);for(const image of h.images) image.decode=()=>wait;
+  const playing=h.ui.show(true);assert.equal(h.timers.size,0);ready();await playing;
+  assert.equal(h.timers.size,1);const timer=[...h.timers.values()][0];assert.equal(timer.ms,12000);
+  timer.fn();assert.equal(finishes,1);
+  await h.ui.show(false);assert.equal(h.timers.size,0);timer.fn();assert.equal(finishes,1);
 });
 test('leaving while images load cancels the reveal; a missing image does not block the other panels',async()=>{
   let finish;const pending=new Promise(resolve=>finish=resolve);const h=setup(()=>pending);
