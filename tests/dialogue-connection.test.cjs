@@ -692,6 +692,7 @@ test('switching frames hides the old photo until both new images decode and rese
   h.nodes.get('.photo-back').decode=()=>new Promise(resolve=>backReady=resolve);
   const opening=h.context.openRoomPhoto('charles');await new Promise(setImmediate);
   assert.equal(dialog.attrs['data-opening'],'true');assert.equal(flip.attrs['data-back'],'false');
+  assert.match(fs.readFileSync('public/assets/css/village-theme.css','utf8'),/\.photo-dialog\[data-opening="true"\] \.photo-flip \{ visibility: hidden; \}/);
   assert.match(h.nodes.get('.photo-front').src,/props_charles_front/);
   frontReady();await new Promise(setImmediate);assert.equal(dialog.attrs['data-opening'],'true');
   backReady();await opening;assert.equal(dialog.attrs['data-opening'],'false');
