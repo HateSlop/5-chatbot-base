@@ -35,13 +35,5 @@
 .gender-option:hover { filter: brightness(1.12); transform: translateY(-3px); }
 .gender-option:focus-visible { outline: 2px solid #ffe4a1; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) { .gender-option { transition: none; } .gender-option:hover { transform: none; } }
-.village-start #start-action.start-letter-button, .start-letter-button {
-  display: grid; place-items: center; min-height: 74px; padding: 12px 36px;
-  border: 3px double #e7c98c; border-radius: 12px;
-  background: linear-gradient(145deg, #31503d, #092717 68%);
-  box-shadow: inset 0 0 0 5px #133620, inset 0 0 0 7px #b58e52, 0 10px 24px #09080699;
-  color: #fff0c6; font: 800 clamp(27px, 4vw, 42px)/1 Georgia, serif;
-  letter-spacing: .16em; text-shadow: 0 2px 2px #0a1a10;
-}
 .gender-dialog h2 { font-family: "Malgun Gothic", sans-serif; font-weight: 600; letter-spacing: .02em; }
 .gender-option { gap: 0; }
