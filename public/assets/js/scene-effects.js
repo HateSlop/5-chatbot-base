@@ -10,7 +10,10 @@ window.sceneEffects = new class {
     this.game = document.getElementById('game-screen');
     this.replay.addEventListener('click', () => { this.video.currentTime = 0; this.play(); });
     document.getElementById('death-restart').addEventListener('click', () => window.location.reload());
-    this.video.addEventListener('ended', () => { this.controls.hidden = false; this.status.textContent = '이야기가 끝났습니다.'; this.replay.focus(); });
+    this.video.addEventListener('ended', () => {
+      if (window.endingCinema) { window.endingCinema.finish(); return; }
+      this.controls.hidden = false; this.status.textContent = '이야기가 끝났습니다.'; this.replay.focus();
+    });
     this.video.addEventListener('error', () => { this.controls.hidden = false; this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 새로 시작해 주세요.'; });
     window.addEventListener('pagehide', () => { this.video.pause(); });
   }
@@ -37,13 +40,15 @@ window.sceneEffects = new class {
     catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
   ending(type, text = '', gender = null) {
+    if (!type) window.endingCinema?.reset();
+    window.endingCinema?.show(type === 'assimilation', gender);
     window.escapeComic?.show(type === 'escape', text, gender);
     const death = type === 'death';
     if (!death) {
       if (this.active) { this.video.pause(); this.video.currentTime = 0; }
       this.active = false;
       this.screen.hidden = true;
-      this.game.inert = type === 'escape' && !!window.escapeComic;
+      this.game.inert = type === 'assimilation' || type === 'escape' && !!window.escapeComic;
       return;
     }
     document.getElementById('death-description').textContent = text;

@@ -118,6 +118,8 @@ for (const button of document.querySelectorAll('#cathy-tool-list button')) {
 document.getElementById('cathy-deliver')?.addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 let selectedPhoto = 'jimmy';
+let charlesPhotoDate = '';
+let photoOpenVersion = 0;
 let photoThoughtTimer;
 function clearPhotoThought() {
   clearTimeout(photoThoughtTimer);
@@ -138,19 +140,28 @@ function showPhotoSide(back) {
   photoFlip.setAttribute('aria-label', back ? '액자 뒤집어 앞면 보기' : '액자 뒤집어 뒷면 보기');
   document.querySelector('.photo-front').setAttribute('aria-hidden', String(back));
   document.querySelector('.photo-back').setAttribute('aria-hidden', String(!back));
-  document.getElementById('photo-back-date').textContent = back && !charles ? currentView?.photo_back_date || '' : '';
+  const date = back ? (charles ? charlesPhotoDate : currentView?.photo_back_date || '') : '';
+  document.getElementById('photo-back-date').textContent = date.replace(/^(\d{1,2})월\s*(\d{1,2})일$/, '$1/$2');
   document.getElementById('photo-hint').textContent = back ? `${charles ? 'Charles' : 'Jimmy'}… 사진을 누르면 앞면으로 돌아갑니다.` : '사진을 누르면 뒷면을 볼 수 있습니다.';
 }
 async function openRoomPhoto(person) {
   if (busy || currentView?.scene_id !== 'photo_found' || secretFrame < 0 || secretFrame === 2) return;
   if (person === 'charles' && !await performAction('inspect_charles_photo')) return;
   if (currentView?.scene_id !== 'photo_found') return;
+  const opening = ++photoOpenVersion;
+  const scene = currentView;
   selectedPhoto = person;
   clearPhotoThought();
   secretFrame = 1;
   renderView(currentView);
+  // Keep the previous frame hidden until its replacement is decoded and its flip is reset.
+  photoDialog.setAttribute('data-opening', 'true');
   showPhotoSide(false);
   photoDialog.showModal();
+  await Promise.all(['.photo-front', '.photo-back'].map(selector => document.querySelector(selector).decode?.().catch(() => {})));
+  if (opening !== photoOpenVersion || !photoDialog.open || currentView !== scene) return;
+  void document.querySelector('.photo-card').offsetWidth;
+  photoDialog.setAttribute('data-opening', 'false');
   if (person === 'charles') {
     const text = transcript.findLast(item => item.scene_id === 'photo_found' && item.speaker === 'thought')?.text || '';
     let length = 0;
@@ -170,10 +181,15 @@ photoFlip.addEventListener('click', async () => {
     document.getElementById('photo-hint').textContent = statusMessage.textContent;
     return;
   }
+  if (selectedPhoto === 'charles') {
+    const thought = transcript.findLast(item => item.scene_id === 'photo_found' && item.speaker === 'thought')?.text || '';
+    charlesPhotoDate = thought.match(/\d{1,2}월\s*\d{1,2}일/)?.[0] || '';
+  }
   showPhotoSide(true);
 });
 async function closePhoto() {
   if (busy || !photoDialog.open) return;
+  ++photoOpenVersion;
   photoDialog.close();
   clearPhotoThought();
   const action = selectedPhoto === 'charles' ? 'recognize_charles_photo' : 'recognize_photo';
@@ -586,6 +602,7 @@ function applyResponse(data, kind, characterId = null) {
   clearReaction();
   if (decreased) angryReaction = characterId;
   if (changedScene) {
+    charlesPhotoDate = '';
     clearTimeout(jobDepartureTimer);
     jobDeparturePending = false;
     jobDepartureFailed = false;
@@ -614,6 +631,7 @@ function applyResponse(data, kind, characterId = null) {
 }
 
 window.startStory = (data, name) => {
+  ++photoOpenVersion;
   festivalChoice?.reset();
   dialogueStage.resetSelection?.();
   const continuingVisit = window.entryVisitReady && data.view.location_id === 'player_house' &&
@@ -739,6 +757,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  ++photoOpenVersion;
   truckEscape?.reset();
   walletInspection?.close();
   clearTimeout(jobDepartureTimer);

@@ -14,11 +14,14 @@
     <link rel="stylesheet" href="{{ asset_url('assets/css/cathy-basket.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/prologue.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/css/escape-comic.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/ending-cinema.css') }}">
     <link rel="preload" href="{{ asset_url('assets/fonts/NanumBrushScript-Regular.ttf') }}" as="font" type="font/ttf" crossorigin>
     <script src="{{ asset_url('assets/js/doorbell.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/dialogue-stage.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/post-move-ui.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/escape-comic.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/ending-cinema.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/scene-effects.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/interaction-sound.js') }}" defer></script>
@@ -37,6 +40,7 @@
   </head>
   <body class="chat-page">
     <audio id="location-music" loop preload="none"></audio>
+    <audio id="festival-ambience" loop preload="none" src="{{ asset_url('assets/audio/festival-ambience-web.wav') }}"></audio>
     <button id="location-music-toggle" class="location-music-toggle" type="button" aria-label="배경음악 음소거" title="배경음악 음소거" aria-pressed="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
     </button>
@@ -76,7 +80,7 @@
         <form id="name-form" novalidate>
           <label for="username">이름:</label>
           <input id="username" type="text" placeholder="이름을 입력하세요" autocomplete="off" enterkeyhint="done" aria-describedby="name-status" autofocus required>
-          <button id="name-submit" type="submit">이야기 시작</button>
+          <button id="name-submit" type="submit">확인</button>
           <p id="name-status" role="status" aria-live="polite"></p>
         </form>
       </dialog>
@@ -208,6 +212,45 @@
         <div class="escape-panel" style="--delay: 3150ms"><img src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-male-src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-female-src="{{ asset_url('assets/images/escape_female_4.png') }}" alt="넷째 컷: 마을에서 멀어지는 트럭과 노을"></div>
       </div>
       <footer class="escape-comic-footer"><a class="escape-return" href="{{ url_for('index') }}" aria-label="첫 화면으로 돌아가기" title="첫 화면으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></a></footer>
+    </section>
+    <section id="ending-cinema" class="ending-cinema" role="dialog" aria-modal="true" aria-label="엔딩 연출" tabindex="-1" hidden>
+      <div class="cinema-opening village-start" hidden>
+        <div class="start-scene game-screen">
+          <video class="start-video" muted loop playsinline preload="none" poster="{{ asset_url('assets/images/start/opening-background.png') }}" aria-hidden="true"><source src="{{ asset_url('assets/videos/opening-loop.mp4') }}" type="video/mp4"></video>
+          <h1 class="start-title"><img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="더뉴빌리지로 오세요"></h1>
+          <div class="cover-slot"></div>
+          <div class="start-panel"><div class="start-actions"><div class="image-action cinema-start"><img src="{{ asset_url('assets/images/start/start-button.png') }}" alt="START"></div></div></div>
+        </div>
+      </div>
+      <div class="cinema-room" hidden>
+        <div class="cinema-sidebar" aria-hidden="true"></div>
+        <section class="dialogue-stage post-move-stage cinema-stage" aria-label="새 이웃의 집">
+          <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden><div class="dialogue-tv" hidden></div>
+          <div class="dialogue-box" role="status" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
+        </section>
+      </div>
+      <div class="cinema-dim" aria-hidden="true"></div>
+      <svg class="cinema-cursor" viewBox="0 0 32 44" aria-hidden="true" hidden><path d="M2 2v31l8-8 7 16 7-3-7-15h12Z" fill="#fff4d9" stroke="#34242d" stroke-width="2" stroke-linejoin="round"/></svg>
+      <div class="cinema-black" aria-hidden="true"></div>
+      <div class="cinema-finale" hidden>
+        <div class="cinema-spotlights" aria-hidden="true"></div>
+        <svg class="cinema-title" viewBox="0 0 1536 1024" role="img" aria-label="The End">
+          <defs><mask id="ending-letter-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024">
+            <g class="cinema-pen" fill="none" stroke="white" stroke-width="100" stroke-linecap="round" stroke-linejoin="round">
+              <path pathLength="100" style="--stroke-delay:1800ms;--stroke-time:1000ms" d="M352 353 C452 488 164 565 123 459 C40 243 487 196 633 163 Q728 139 706 98"/>
+              <path pathLength="100" style="--stroke-delay:2800ms;--stroke-time:800ms" d="M582 211 C459 285 440 574 327 716 C216 851 113 773 156 701 Q205 646 222 686"/>
+              <path pathLength="100" style="--stroke-delay:3600ms;--stroke-time:650ms" d="M433 655 C472 489 538 307 598 295 C555 348 471 550 438 661 Q575 406 561 524 C549 564 502 670 556 632 L624 564"/>
+              <path pathLength="100" style="--stroke-delay:4250ms;--stroke-time:450ms" d="M616 560 Q718 517 696 482 C640 470 575 650 660 624 L730 578"/>
+              <path pathLength="100" style="--stroke-delay:4700ms;--stroke-time:1100ms" d="M974 346 C1031 423 1103 303 1020 273 C889 215 800 344 873 414 L920 440 C755 453 647 615 716 773 C792 949 1097 837 1001 686 C912 548 763 587 803 696 Q859 800 899 712"/>
+              <path pathLength="100" style="--stroke-delay:5800ms;--stroke-time:600ms" d="M978 546 Q1068 392 1033 499 L1006 554 Q1138 366 1119 462 C1104 516 1066 588 1173 495"/>
+              <path pathLength="100" style="--stroke-delay:6400ms;--stroke-time:800ms" d="M1270 407 C1186 355 1120 567 1199 527 C1300 450 1308 250 1388 171 C1318 282 1246 470 1289 571 C1330 675 1459 639 1402 557 Q1373 533 1370 558"/>
+            </g>
+            <rect class="cinema-ink-complete" width="1536" height="1024" fill="white"/>
+          </mask></defs>
+          <image href="{{ asset_url('assets/images/the_end_cutout.png') }}" width="1536" height="1024" mask="url(#ending-letter-mask)"/>
+        </svg>
+        <a class="cinema-return" href="{{ url_for('index') }}" hidden>첫 화면으로</a>
+      </div>
     </section>
   </body>
 </html>

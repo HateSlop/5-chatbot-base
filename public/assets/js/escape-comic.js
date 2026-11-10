@@ -9,6 +9,7 @@ window.escapeComic = new class {
   }
   async show(active, text = '', gender = null) {
     if (!active) {
+      if (this.finishTimer) clearTimeout(this.finishTimer);
       ++this.version;
       this.active = false;
       this.gender = null;
@@ -31,5 +32,8 @@ window.escapeComic = new class {
     this.root.dataset.loading = 'false';
     this.root.classList.add('is-playing');
     this.root.focus();
+    if (window.endingCinema) this.finishTimer = setTimeout(() => {
+      if (this.active && version === this.version) window.endingCinema.finish();
+    }, 12000);
   }
 }();

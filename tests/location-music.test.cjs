@@ -5,10 +5,11 @@ const fs=require('node:fs');
 function setup(){
   const events={},windowEvents={},button={attrs:{},setAttribute(k,v){this.attrs[k]=v;},addEventListener(k,f){this[k]=f;}};
   const audio={paused:true,currentTime:0,plays:0,pause(){this.paused=true;},play(){this.plays++;this.paused=false;return Promise.resolve();},removeAttribute(k){delete this[k];}};
-  const document={hidden:false,getElementById:id=>id==='location-music'?audio:button,addEventListener:(k,f)=>events[k]=f};
+  const ambience={...audio};
+  const document={hidden:false,getElementById:id=>id==='location-music'?audio:id==='festival-ambience'?ambience:button,addEventListener:(k,f)=>events[k]=f};
   const window={addEventListener:(k,f)=>windowEvents[k]=f};
   vm.runInNewContext(fs.readFileSync('public/assets/js/location-music.js','utf8'),{document,window});
-  return {music:window.locationMusic,audio,button,document,events,windowEvents};
+  return {music:window.locationMusic,audio,ambience,button,document,events,windowEvents};
 }
 test('five locations use their tracks; dialogue renders never restart the same music',()=>{
   const h=setup();
@@ -55,7 +56,7 @@ test('the dark butcher and basement share one track, later scenes share aftermat
     h.audio.currentTime=9;
   }
   assert.equal(h.audio.currentTime,9);
-  for (const scene of ['dinner_invite','wait_dinner','karen_dinner','checkpoint','job_choice','job_result','festival_invite','festival','hair_found','final_choice']) {
+  for (const scene of ['dinner_invite','wait_dinner','karen_dinner','checkpoint','job_choice','job_result','festival_invite']) {
     h.music.enter('square',null,scene);assert.equal(h.audio.src,'/assets/audio/after-basement-bgm.mp3');
     h.audio.currentTime=12;
   }
@@ -65,4 +66,26 @@ test('the dark butcher and basement share one track, later scenes share aftermat
   assert.equal(h.audio.src,'/assets/audio/after-basement-bgm.mp3');
   h.music.enter('square','death','ending');assert.equal(h.audio.src,undefined);
   h.music.enter('player_house',null,'arrival');assert.equal(h.audio.src,'/assets/audio/home-bgm.mp3');
+});
+
+test('festival layers ambience over square music without restarting, and both obey mute, visibility and exit',async()=>{
+  const h=setup();
+  for(const scene of ['festival','hair_found','final_choice']) {
+    h.music.enter('square',null,scene);
+    assert.equal(h.audio.src,'/assets/audio/square-bgm.mp3');
+    assert.equal(h.ambience.paused,false);
+    h.ambience.currentTime=20;
+  }
+  assert.equal(h.ambience.currentTime,20);assert.equal(h.ambience.plays,1);
+  h.button.click();assert.equal(h.ambience.paused,true);assert.equal(h.audio.paused,true);
+  h.button.click();assert.equal(h.ambience.paused,false);
+  h.document.hidden=true;h.events.visibilitychange();assert.equal(h.ambience.paused,true);
+  h.document.hidden=false;h.events.visibilitychange();assert.equal(h.ambience.paused,false);
+  h.music.enter('truck',null,'truck_escape');assert.equal(h.ambience.paused,true);assert.equal(h.ambience.currentTime,0);
+  h.music.enter('square',null,'festival');h.music.enter('square','assimilation','ending');assert.equal(h.ambience.paused,true);
+  h.music.enter('square',null,'festival');h.windowEvents.pagehide();assert.equal(h.ambience.paused,true);assert.equal(h.ambience.currentTime,0);
+  const blocked=setup();blocked.ambience.play=()=>Promise.reject(Error('blocked'));
+  blocked.music.enter('square',null,'festival');await Promise.resolve();
+  blocked.ambience.play=()=>{blocked.ambience.paused=false;return Promise.resolve();};
+  blocked.events.pointerdown({target:{closest:()=>false}});assert.equal(blocked.ambience.paused,false);
 });
