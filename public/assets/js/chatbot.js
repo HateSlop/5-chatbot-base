@@ -118,6 +118,7 @@ for (const button of document.querySelectorAll('#cathy-tool-list button')) {
 document.getElementById('cathy-deliver')?.addEventListener('click', () => performAction('help_cathy'));
 let photoBack = false;
 let selectedPhoto = 'jimmy';
+let charlesPhotoDate = '';
 let photoThoughtTimer;
 function clearPhotoThought() {
   clearTimeout(photoThoughtTimer);
@@ -138,7 +139,7 @@ function showPhotoSide(back) {
   photoFlip.setAttribute('aria-label', back ? '액자 뒤집어 앞면 보기' : '액자 뒤집어 뒷면 보기');
   document.querySelector('.photo-front').setAttribute('aria-hidden', String(back));
   document.querySelector('.photo-back').setAttribute('aria-hidden', String(!back));
-  document.getElementById('photo-back-date').textContent = back && !charles ? currentView?.photo_back_date || '' : '';
+  document.getElementById('photo-back-date').textContent = back ? (charles ? charlesPhotoDate : currentView?.photo_back_date || '') : '';
   document.getElementById('photo-hint').textContent = back ? `${charles ? 'Charles' : 'Jimmy'}… 사진을 누르면 앞면으로 돌아갑니다.` : '사진을 누르면 뒷면을 볼 수 있습니다.';
 }
 async function openRoomPhoto(person) {
@@ -169,6 +170,10 @@ photoFlip.addEventListener('click', async () => {
   if (currentView.available_actions.some(a => a.id === action) && !await performAction(action)) {
     document.getElementById('photo-hint').textContent = statusMessage.textContent;
     return;
+  }
+  if (selectedPhoto === 'charles') {
+    const thought = transcript.findLast(item => item.scene_id === 'photo_found' && item.speaker === 'thought')?.text || '';
+    charlesPhotoDate = thought.match(/\d{1,2}월\s*\d{1,2}일/)?.[0] || '';
   }
   showPhotoSide(true);
 });
@@ -586,6 +591,7 @@ function applyResponse(data, kind, characterId = null) {
   clearReaction();
   if (decreased) angryReaction = characterId;
   if (changedScene) {
+    charlesPhotoDate = '';
     clearTimeout(jobDepartureTimer);
     jobDeparturePending = false;
     jobDepartureFailed = false;
