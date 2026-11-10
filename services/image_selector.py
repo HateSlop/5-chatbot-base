@@ -30,5 +30,4 @@ class StoryImageSelector:
         url = images.get(cue) or images.get("neutral")
         if not isinstance(url, str) or not url.startswith("/assets/images/"):
             return None
-        path = PUBLIC_PATH / url.lstrip("/")
-        return url if path.is_file() else None
+        return url

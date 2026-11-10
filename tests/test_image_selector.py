@@ -1,9 +1,27 @@
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
-from services.image_selector import StoryImageSelector
+from services.image_selector import PUBLIC_PATH, StoryImageSelector
 
 
 class ImageSelectorTests(unittest.TestCase):
+    def test_catalog_images_exist_before_deployment(self):
+        selector = StoryImageSelector()
+        for character, images in selector.catalog.items():
+            for cue, url in images.items():
+                with self.subTest(character=character, cue=cue):
+                    self.assertTrue(url.startswith("/assets/images/"))
+                    self.assertTrue((PUBLIC_PATH / url.lstrip("/")).is_file(), url)
+
+    def test_runtime_selection_does_not_depend_on_public_directory(self):
+        selector = StoryImageSelector()
+        selector.catalog = {"bob": {"neutral": "/assets/images/bob_basic.png"}}
+        with patch.object(Path, "is_file", return_value=False):
+            self.assertEqual(selector.select("대사", "bob", "neighbors"), "/assets/images/bob_basic.png")
+        selector.catalog["bob"]["neutral"] = "https://example.com/bob.png"
+        self.assertIsNone(selector.select("대사", "bob", "neighbors"))
+
     def test_delivered_character_expressions_exist(self):
         selector = StoryImageSelector()
         for character in ("bob", "cathy"):
