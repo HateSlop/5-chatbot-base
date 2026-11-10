@@ -410,7 +410,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state.update(scene_id="checkpoint", location_id="player_house")
             next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
             if next_state["job_offered"]:
-                events.append(event("karen", "이웃들과 잘 지내시는 것 같아 마음이 놓이네요. 이곳 생활도 이제 조금 익숙해지셨지요?\n마침 여쭤보고 싶은 게 있었어요. 마을에서 작은 일 하나 맡아보시는 건 어떨까요? 저희는 각자 맡은 자리에서 서로를 돕고 있거든요. 자연스럽게 이웃들과 가까워지는 기회도 될 거예요."))
+                events.append(event("karen", "이웃들과 잘 지내시는 것 같아 마음이 놓이네요. 이곳 생활도 이제 조금 익숙해지셨지요? 마침 여쭤보고 싶은 게 있었어요. 마을에서 작은 일 하나 맡아보시는 건 어떨까요? 저희는 각자 맡은 자리에서 서로를 돕고 있거든요. 자연스럽게 이웃들과 가까워지는 기회도 될 거예요."))
             else:
                 events.append(event("karen", "정육점으로 와 주시겠어요?"))
         if not next_state["photo_recognized"] and {"jimmy_photo", "charles_photo"}.issubset(next_state["clues"]):
