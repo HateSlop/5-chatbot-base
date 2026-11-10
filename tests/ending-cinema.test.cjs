@@ -26,7 +26,7 @@ function setup() {
 for(const [gender,asset] of [['male','boy'],['female','girl']]) test(`${gender} assimilation automatically repeats the arrival and finishes once`,async()=>{
   const h=setup();await h.ui.show(true,gender);
   assert.equal(h.renders.length,3);
-  assert.equal(h.renders[0].text,'어라.. 생각보다 맛이 괜찮네?');
+  assert.equal(h.renders[0].text,'(고기를 우걱우걱 먹으며) 하하.. 고기가 참 맛있네요..ㅎ');
   assert.equal(h.renders[1].text,'드디어 이사를 왔네, 여기 사람들은 어떨까?');
   assert.equal(h.renders[1].image,undefined);
   assert.equal(h.renders[2].background,'/assets/images/player_house.svg');
