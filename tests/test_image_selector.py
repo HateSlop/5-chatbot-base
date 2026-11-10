@@ -39,6 +39,18 @@ class ImageSelectorTests(unittest.TestCase):
         self.assertEqual(selector.select("괜찮아요", "karen", "photo_found", "smile"),
                          "/assets/images/karen_angry.png")
 
+    def test_first_welcome_smiles_without_using_affinity_as_an_expression(self):
+        selector = StoryImageSelector()
+        for character, greeting in (("karen", "어서 오세요. 마을이 낯설진 않으신가요?"),
+                                    ("cathy", "반가워요. 미용실에도 편히 들러 주세요.")):
+            with self.subTest(character=character):
+                self.assertEqual(selector.select(greeting, character, "neighbors"),
+                                 f"/assets/images/{character}_smile.png")
+                self.assertEqual(selector.select("고마워요.", character, "neighbors", "smile"),
+                                 f"/assets/images/{character}_smile.png")
+        self.assertEqual(selector.select("제 방에서 무엇을 보고 계신 거죠?", "karen", "photo_found"),
+                         "/assets/images/karen_angry.png")
+
     def test_jimmy_stays_scared_after_butcher_discovery(self):
         selector = StoryImageSelector()
         for scene in ("butcher_search", "empty_butcher"):
