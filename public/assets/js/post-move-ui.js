@@ -35,7 +35,9 @@ const sceneGuide = {
   cathy_result: '집으로 돌아가 보세요.',
   wait_dinner: '혼자 캐런의 집으로 가 보세요.',
   karen_dinner: '화면의 문을 살펴보세요.',
-  photo_found: '화면의 사진을 살펴보세요.',
+  truck_escape: '남은 시간 안에 트럭 차문을 눌러보세요.',
+  truck_escape_result: '잠시 뒤 결말로 이어집니다.',
+  photo_found: '두 사진 액자를 눌러 각각 뒷면까지 살펴보세요.',
 };
 let affinitySequence = 0;
 window.PostMoveUI = class {
@@ -54,12 +56,6 @@ window.PostMoveUI = class {
     const heartId = `affinity-heart-${++affinitySequence}`;
     frame.insertAdjacentHTML('beforeend', `
       <aside class="move-sidebar" aria-label="주인공 정보와 입력 도움말">
-        <section class="player-profile" aria-label="주인공 정보">
-          <div class="player-photo" role="img" aria-label="주인공 사진 준비 중"><span>사진 준비 중</span></div>
-          <dl><div><dt>이름</dt><dd class="player-name"></dd></div>
-            <div><dt>오늘</dt><dd class="player-today"></dd></div>
-            <div><dt>직업</dt><dd class="player-job"></dd></div></dl>
-        </section>
         <div class="move-affinity" role="progressbar" aria-label="호감도" aria-valuemin="0" aria-valuemax="100" aria-valuetext="아직 알 수 없음">
           <span class="affinity-caption">호감도</span>
           <div class="affinity-heart">
@@ -76,6 +72,12 @@ window.PostMoveUI = class {
             <span class="affinity-sparkle" aria-hidden="true">✦</span>
           </div>
         </div>
+        <section class="player-profile" aria-label="주인공 정보">
+          <img class="player-photo" alt="주인공 액자" hidden>
+          <dl><div><dt>이름:</dt><dd class="player-name"></dd></div>
+            <div><dt>직업:</dt><dd class="player-job"></dd></div></dl>
+        </section>
+        <p class="player-date">오늘 <span class="player-today"></span></p>
         <div class="move-help"><p class="move-hint-caption" aria-live="polite">대화가 막힐 땐, 이 말들을 참고해 보세요.</p><div class="move-hints" aria-label="입력 도움말"></div></div>
       </aside>`);
     frame.append(stage);
@@ -118,6 +120,10 @@ window.PostMoveUI = class {
     this.title.textContent = locationId === 'player_house' && registeredName ? `${registeredName} 하우스` : locationName;
     this.title.title = this.title.textContent;
     this.photo.setAttribute('data-gender', gender || '');
+    const portrait = {male: '/assets/images/player_male.png', female: '/assets/images/player_female.png'}[gender];
+    this.photo.hidden = !portrait;
+    if (portrait) this.photo.src = portrait;
+    else this.photo.removeAttribute('src');
     this.playerName.textContent = registeredName || '—';
     this.playerToday.textContent = today || '—';
     this.playerJob.textContent = {gardener:'정원사', driver:'트럭 운전수'}[job] || '미정';

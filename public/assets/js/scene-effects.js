@@ -37,12 +37,13 @@ window.sceneEffects = new class {
     catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
   ending(type, text = '', gender = null) {
+    window.escapeComic?.show(type === 'escape', text, gender);
     const death = type === 'death';
     if (!death) {
       if (this.active) { this.video.pause(); this.video.currentTime = 0; }
       this.active = false;
       this.screen.hidden = true;
-      this.game.inert = false;
+      this.game.inert = type === 'escape' && !!window.escapeComic;
       return;
     }
     document.getElementById('death-description').textContent = text;
