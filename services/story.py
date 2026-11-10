@@ -1,5 +1,6 @@
 """더뉴빌리지의 고정 사건과 공개 가능한 화면 상태."""
 
+from calendar import monthrange
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -74,10 +75,11 @@ def story_date(state: dict) -> date:
 
 
 def display_date(day: date) -> str:
-    return f"{day.month}월 {day.day}일"
+    return f"{day.year}.{day.month}.{day.day}"
 
 
 def new_state(player_name: str, gender: str) -> dict:
+    today = datetime.now(ZoneInfo("Asia/Seoul")).date()
     return {
         "version": 1,
         "player_name": player_name,
@@ -101,7 +103,7 @@ def new_state(player_name: str, gender: str) -> dict:
         "cathy_tools": [],
         "photo_recognized": False,
         "jimmy_destination_told": False,
-        "start_date": datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat(),
+        "start_date": date(1955, today.month, min(today.day, monthrange(1955, today.month)[1])).isoformat(),
         "story_day": 0,
     }
 
@@ -306,6 +308,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
                 events.append(event(destination[1], greetings[destination[1]]))
         else:
             next_state.update(scene_id="cathy_task", location_id="player_house")
+            next_state["story_day"] = 1
             events.append(event("jimmy", "캐시가 바빠 보이더라. 도와줄 사람이 필요한 것 같던데, 미용실로 가볼래?"))
     elif scene == "cathy_task":
         next_state.update(scene_id="cathy_help", location_id="salon")
@@ -330,6 +333,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
                 events.append(event("cathy", "그냥 내가 할게요. 집에 가세요."))
     elif scene == "cathy_result":
         next_state.update(scene_id="jimmy_butcher", location_id="player_house")
+        next_state["story_day"] = 2
         events += [
             event("thought", "미용실을 나와 집으로 돌아왔다. 캐시는 끝까지 내 반응을 살피는 듯했다."),
             event("jimmy", "고기 좀 사러 정육점에 다녀올게."),
@@ -372,11 +376,14 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 오후 6시에 네 집으로 데리러 올게."))
     elif scene == "dinner_invite":
         next_state["scene_id"] = "wait_dinner"
-        next_state["story_day"] = 1
+        next_state["story_day"] = 3
         events.append(event("thought", "다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다."))
     elif scene == "wait_dinner":
         next_state.update(scene_id="karen_dinner", location_id="karen_house")
-        events.append(event("karen", "와 주셨네요. 식사 준비가 조금 남았어요. 여기서 잠깐 기다려 주시겠어요?"))
+        events.extend([
+            event("karen", "와 주셨네요. 식사 준비가 조금 남았어요. 여기서 잠깐 기다려 주시겠어요?"),
+            event("karen", "지미요..? 저도 잘 모르겠네요."),
+        ])
     elif scene == "karen_dinner":
         next_state["scene_id"] = "photo_found"
     elif scene == "photo_found":
@@ -388,7 +395,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         elif action_id == "inspect_charles_photo":
             if "charles_photo_front" not in next_state["clues"]:
                 next_state["clues"].append("charles_photo_front")
-            events.append(event("thought", "사진 속에서 지미 옆에 있던 사람이잖아…?"))
+            events.append(event("thought", "이 사람은 어제 지갑 속 사진에 있던 사람이잖아..?"))
         elif action_id == "inspect_charles_photo_back":
             next_state["clues"].append("charles_photo_back")
             next_state["journal"].append("옆 액자 뒷면에는 Charles라는 이름이 적혀 있었다.")
@@ -403,14 +410,13 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state.update(scene_id="checkpoint", location_id="player_house")
             next_state["job_offered"] = next_state["affinity"] >= JOB_THRESHOLD
             if next_state["job_offered"]:
-                events.append(event("karen", "이웃들과 잘 지내시는 것 같아 마음이 놓이네요. 이곳 생활도 이제 조금 익숙해지셨지요?\n\n마침 여쭤보고 싶은 게 있었어요. 마을에서 작은 일 하나 맡아보시는 건 어떨까요? 저희는 각자 맡은 자리에서 서로를 돕고 있거든요. 자연스럽게 이웃들과 가까워지는 기회도 될 거예요."))
+                events.append(event("karen", "이웃들과 잘 지내시는 것 같아 마음이 놓이네요. 이곳 생활도 이제 조금 익숙해지셨지요? 마침 여쭤보고 싶은 게 있었어요. 마을에서 작은 일 하나 맡아보시는 건 어떨까요? 저희는 각자 맡은 자리에서 서로를 돕고 있거든요. 자연스럽게 이웃들과 가까워지는 기회도 될 거예요."))
             else:
                 events.append(event("karen", "정육점으로 와 주시겠어요?"))
         if not next_state["photo_recognized"] and {"jimmy_photo", "charles_photo"}.issubset(next_state["clues"]):
             next_state["photo_recognized"] = True
             next_state["affinity"] = max(0, next_state["affinity"] - 5)
             events += [
-                event("thought", "벽에 지미와 찰스의 사진이 나란히 걸려 있었다."),
                 event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
                 event("karen", "이제 그만 나가 주세요."),
             ]
@@ -443,7 +449,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("bob", "고기 좋아한다고 했지? 내일 마을 축제가 있으니, 꼭 오시오."))
     elif scene == "festival_invite":
         next_state.update(scene_id="festival", location_id="square")
-        next_state["story_day"] = 2
+        next_state["story_day"] = 4
         events.append(event("narrator", "광장에 축제 음식이 차려졌다. 주민들이 자리에 앉기를 권한다."))
     elif scene == "festival":
         next_state["scene_id"] = "hair_found"
@@ -466,7 +472,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             ending = "death" if expired else "assimilation"
             next_state.update(scene_id="ending", ending=ending)
             text = ("망설이는 사이 이웃들이 다가와 출구를 막았다. 더는 도망칠 수 없었다." if expired
-                    else "새 이웃이 도착했다. 나는 캐런처럼 웃으며 말했다. ‘더뉴빌리지에 오신 걸 환영해요.’")
+                    else "(고기를 우걱우걱 먹으며) 하하.. 고기가 참 맛있네요..ㅎ")
             next_state["journal"].append(text)
             events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
     elif scene == "truck_escape":

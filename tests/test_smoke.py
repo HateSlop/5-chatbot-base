@@ -92,7 +92,11 @@ class SmokeTest(unittest.TestCase):
 
     def test_undated_or_invalid_day_token_asks_for_new_play(self):
         state = decode_state(self.start())
-        for change in ({"start_date": None}, {"start_date": "2024-02-30"}, {"story_day": 3}):
+        for day in range(5):
+            with self.subTest(valid_day=day):
+                response = self.client.post("/api/session/resume", json={"state_token": encode_state({**state, "story_day": day})})
+                self.assertEqual(response.status_code, 200)
+        for change in ({"start_date": None}, {"start_date": "2024-02-30"}, {"story_day": 5}, {"story_day": -1}):
             with self.subTest(change=change):
                 response = self.client.post("/api/session/resume", json={"state_token": encode_state({**state, **change})})
                 self.assertEqual(response.status_code, 400)

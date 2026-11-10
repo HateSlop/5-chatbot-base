@@ -53,7 +53,11 @@ window.DialogueStage = class {
       this.next.setAttribute('aria-label', '다음 대사');
       this.pageLabel.className = 'visually-hidden';
       this.previous.addEventListener('click', () => { --this.pageIndex; this.showPage(); });
-      this.next.addEventListener('click', () => { ++this.pageIndex; this.showPage(); });
+      this.next.addEventListener('click', () => {
+        if (this.typingTimer) return this.finishTyping();
+        if (this.pageIndex < this.pages.length - 1) { ++this.pageIndex; this.showPage(); }
+        else if (this.root.dataset.dialogueComplete === 'true') this.nextLine?.();
+      });
       this.pager.append(this.previous, this.pageLabel, this.next);
       this.controls.append(this.pager);
       this.box.append(this.controls);
@@ -134,7 +138,7 @@ window.DialogueStage = class {
     this.text.textContent = this.displayText(this.pages[this.pageIndex]);
     this.pageLabel.textContent = `${this.pageIndex + 1} / ${this.pages.length}`;
     this.previous.disabled = this.pageIndex === 0;
-    this.next.disabled = this.pageIndex === this.pages.length - 1;
+    this.next.disabled = this.pageIndex === this.pages.length - 1 && !this.nextLine;
     if (animate) this.typeCurrentPage();
   }
   layoutPages() {
@@ -161,7 +165,7 @@ window.DialogueStage = class {
     };
     reserve();
     this.text.textContent = this.displayText(this.fullText);
-    if (fit()) { this.pages = [this.fullText || '']; this.pageIndex = 0; this.showPage(false); return; }
+    if (fit()) { this.pages = [this.fullText || '']; this.pageIndex = 0; this.pager.hidden = !this.nextLine; this.showPage(false); return; }
     this.box.classList.add('is-paged');
     this.pager.hidden = false;
     reserve();
@@ -238,7 +242,8 @@ window.DialogueStage = class {
     this.figure.hidden = true;
     animation.cancel();
   }
-  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1 }) {
+  render({ background = null, image = null, object = null, speaker = '', text = '', dialogue = true, visitorId = null, sceneId = null, selectCharacter = false, dialogueKey = null, doorbellCount = 1, nextLine = null }) {
+    this.nextLine = nextLine;
     if (this.dialogueKey !== dialogueKey) {
       this.finishTyping();
       this.lastTypedText = null;

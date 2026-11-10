@@ -6,3 +6,7 @@ startAction.addEventListener('click', () => {
   genderDialog.querySelector('.gender-option').focus();
 });
 genderDialog.addEventListener('close', () => startAction.focus());
+if (typeof URLSearchParams !== 'undefined' && window.location?.search && new URLSearchParams(window.location.search).has('autostart')) {
+  window.history.replaceState(null, '', '/');
+  startAction.click();
+}
