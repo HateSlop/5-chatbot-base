@@ -7,7 +7,7 @@ function setup(reduced=false) {
   const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,style:{},dataset:{maleSrc:'/assets/videos/video_ending_die_boy.mp4'},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeAttribute(k){delete this[k];},focus(){this.focused=true;},pause(){this.paused=true;},play(){plays++;return Promise.resolve();},animate(frames,options){steps.push(frames.map(f=>f.opacity));durations.push(options.duration);return {finished:Promise.resolve()};}});return nodes.get(id);};
   const window={matchMedia:()=>({matches:reduced}),addEventListener:(k,f)=>events[k]=f,location:{reload(){steps.push('reload');}}};
   vm.runInNewContext(fs.readFileSync('public/assets/js/scene-effects.js','utf8'),{window,document:{getElementById:get}});
-  return {effects:window.sceneEffects,get,steps,events,durations,plays:()=>plays};
+  return {effects:window.sceneEffects,get,steps,events,durations,window,plays:()=>plays};
 }
 test('scene changes happen under black, then fade back; failures never leave a curtain',async()=>{
   const h=setup();await h.effects.transition(async()=>{assert.equal(h.get('scene-curtain').style.opacity,'1');h.steps.push('scene');});
@@ -16,6 +16,13 @@ test('scene changes happen under black, then fade back; failures never leave a c
   await assert.rejects(h.effects.transition(async()=>{throw Error('failed');}));assert.equal(h.get('scene-curtain').hidden,true);
   const quiet=setup(true);await quiet.effects.transition(async()=>{});assert.equal(quiet.steps.length,0);
 });
+test('escape uses the comic and disables the game underneath, returning clears it',()=>{
+  const h=setup();const calls=[];h.window.escapeComic={show:(...args)=>calls.push(args)};
+  h.effects.ending('escape','탈출','female');assert.deepEqual(calls[0],[true,'탈출','female']);
+  assert.equal(h.get('game-screen').inert,true);assert.equal(h.plays(),0);
+  h.effects.ending(null);assert.deepEqual(calls[1],[false,'',null]);assert.equal(h.get('game-screen').inert,false);
+});
+
 test('death plays once, other endings do not, replay and new game remain available',async()=>{
   const h=setup();h.effects.ending('escape');assert.equal(h.plays(),0);
   h.effects.ending('death','사망','male');h.effects.ending('death','사망','male');assert.equal(h.plays(),1);assert.equal(h.get('game-screen').inert,true);
@@ -31,9 +38,10 @@ test('death plays once, other endings do not, replay and new game remain availab
   h.get('death-video').listeners.error();assert.match(h.get('death-status').textContent,/불러오지/);
 });
 
-test('female death keeps male film hidden until a matching film is supplied',()=>{
+test('female death uses the supplied female film, and a missing source retains the fallback',()=>{
   const template=fs.readFileSync('templates/chat.html','utf8');
   assert.match(template,/<video id="death-video"[^>]*data-male-src=/);
+  assert.match(template,/<video id="death-video"[^>]*data-female-src="[^\n]*video_ending_die_girl\.mp4/);
   assert.doesNotMatch(template,/<video id="death-video"[^>]*\ssrc=/);
   const h=setup();h.effects.ending('death','사망','female');
   assert.equal(h.plays(),0);
@@ -43,8 +51,8 @@ test('female death keeps male film hidden until a matching film is supplied',()=
   assert.equal(h.get('death-controls').hidden,false);
   assert.match(h.get('death-status').textContent,/준비 중/);
   assert.equal(h.get('death-description').textContent,'사망');
-  const ready=setup();ready.get('death-video').dataset.femaleSrc='/assets/videos/female-ready.mp4';
+  const ready=setup();ready.get('death-video').dataset.femaleSrc='/assets/videos/video_ending_die_girl.mp4';
   ready.effects.ending('death','사망','female');
   assert.equal(ready.plays(),1);
-  assert.equal(ready.get('death-video').src,'/assets/videos/female-ready.mp4');
+  assert.equal(ready.get('death-video').src,'/assets/videos/video_ending_die_girl.mp4');
 });

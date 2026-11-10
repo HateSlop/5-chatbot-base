@@ -106,14 +106,14 @@ test('leaving during the notebook never opens the TV dialogue afterwards',async(
 
 test('the TV cutout stays aligned with the background cover crop when the screen resizes',async()=>{
   const h=await setup();const root=h.get('entry-stage'),tv=h.get('entry-tv-hotspot');
-  root.clientWidth=728;root.clientHeight=408;h.resizeTV();
-  assert.equal(tv.style.width,'728px');assert.equal(tv.style.left,'0px');assert.equal(tv.style.top,'0px');
-  assert.equal(h.get('entry-tv-tutorial').style.left,'360px');
-  assert.equal(h.get('entry-tv-tutorial').style.top,'202px');
-  root.clientWidth=400;root.clientHeight=816;h.resizeTV();
-  assert.equal(tv.style.width,'1456px');assert.equal(tv.style.left,'-528px');assert.equal(tv.style.top,'0px');
-  root.clientWidth=1456;root.clientHeight=400;h.resizeTV();
-  assert.equal(tv.style.height,'816px');assert.equal(tv.style.top,'-208px');
+  root.clientWidth=837.5;root.clientHeight=469.5;h.resizeTV();
+  assert.equal(tv.style.width,'837.5px');assert.equal(tv.style.left,'0px');assert.equal(tv.style.top,'0px');
+  assert.equal(h.get('entry-tv-tutorial').style.left,'416.5px');
+  assert.equal(h.get('entry-tv-tutorial').style.top,'232.5px');
+  root.clientWidth=400;root.clientHeight=939;h.resizeTV();
+  assert.equal(tv.style.width,'1675px');assert.equal(tv.style.left,'-637.5px');assert.equal(tv.style.top,'0px');
+  root.clientWidth=1675;root.clientHeight=400;h.resizeTV();
+  assert.equal(tv.style.height,'939px');assert.equal(tv.style.top,'-269.5px');
 });
 
 test('the TV repeats its click demonstration until the real click without opening the ad automatically',async()=>{

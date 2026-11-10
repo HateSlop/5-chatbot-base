@@ -13,15 +13,25 @@ function setup(){
   const tick=async()=>{const [key,timer]=timers.entries().next().value;timers.delete(key);await timer.fn();await Promise.resolve();};
   return {ui,dialog,count,status,buttons,events,calls,timers,tick,clock:value=>now=value};
 }
-test('the choice clock starts after the final dialogue page, never while reading',async()=>{
-  const h=setup();let ready=false;
-  h.ui.update({reading:true,ready:()=>ready});
-  h.clock(10000);await h.tick();assert.deepEqual(h.calls,[]);
-  ready=true;await h.tick();h.clock(11499);await h.tick();assert.deepEqual(h.calls,[]);
-  h.clock(11500);await h.tick();assert.deepEqual(h.calls,['begin_final_choice']);
-  h.ui.update({deadline:21500});assert.equal(h.dialog.open,true);assert.equal(h.count.textContent,'10');
-  h.clock(14500);await h.tick();assert.equal(h.count.textContent,'7');
+test('text rests two seconds, then loaded stares rest four seconds before the choice',async()=>{
+  const h=setup();let ready=false,loaded,switches=0;
+  h.ui.update({reading:true,ready:()=>ready,onRead:()=>{switches++;return new Promise(resolve=>loaded=resolve);}});
+  h.clock(10000);await h.tick();assert.equal(switches,0);
+  ready=true;await h.tick();h.clock(11999);await h.tick();assert.equal(switches,0);
+  h.clock(12000);const waiting=h.tick();assert.equal(switches,1);
+  h.clock(20000);assert.deepEqual(h.calls,[]);loaded();await waiting;
+  h.clock(23999);await h.tick();assert.deepEqual(h.calls,[]);
+  h.clock(24000);await h.tick();assert.deepEqual(h.calls,['begin_final_choice']);
+  h.ui.update({deadline:34000});assert.equal(h.dialog.open,true);assert.equal(h.count.textContent,'10');
 });
+
+test('leaving while the image loads cancels the pending choice',async()=>{
+  const h=setup();let finish;
+  h.ui.update({reading:true,ready:()=>true,onRead:()=>new Promise(resolve=>finish=resolve)});
+  h.clock(2000);const waiting=h.tick();h.events.pagehide();finish();await waiting;
+  assert.equal(h.timers.size,0);assert.deepEqual(h.calls,[]);
+});
+
 test('choice is submitted once, timer cannot change it during the request, and Escape is blocked',async()=>{
   const h=setup();h.ui.update({deadline:10000});
   const event={preventDefault(){this.prevented=true;}};h.dialog.cancel(event);assert.equal(event.prevented,true);

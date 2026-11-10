@@ -28,21 +28,24 @@ function setup({missingBasket = false} = {}) {
   let stage;
   let move;
   let split;
+  let choice;
   let clock = 0;
   const context = vm.createContext({
     document: {
-      querySelector: () => node(),
+      querySelector: selector => { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); },
       querySelectorAll: selector => !missingBasket && selector === '#cathy-tool-list button' ? basketTools : [],
       getElementById: id => { if (missingBasket && id.startsWith('cathy-')) return null; if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); },
       createElement: node,
     },
     window: {
       addEventListener: (name, callback) => { listeners[name] = callback; },
+      FestivalChoice: class {update(data){choice=data;} reset(){}},
+      WalletInspection: class {constructor(dialog,action){this.action=action;} open(){return this.action('inspect_wallet');} close(){}},
       location: {reload() { this.reloaded = true; }, assign(path) { this.assigned = path; }},
     },
     localStorage: new Proxy({}, {get() { throw Error('persistent storage forbidden'); }}),
     sessionStorage: new Proxy({}, {get() { throw Error('session storage forbidden'); }}),
-    DialogueStage: class {render(data) { stage = data; }},
+    DialogueStage: class {render(data) { stage = data; } replaceBackground(path) {stage.background=path; return Promise.resolve(true);}},
     PostMoveUI: class {render(data) { move = data; } setSplit(enabled) { split = enabled; }},
     fetch: async () => { throw Error('not expected'); },
     Date: {now:()=>clock},
@@ -50,7 +53,7 @@ function setup({missingBasket = false} = {}) {
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/assets/js/chatbot.js'), 'utf8'), context);
-  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split,
+  return {context, nodes, listeners, timers, basketTools, stage: () => stage, move: () => move, split: () => split, choice:()=>choice,
     setClock:value=>clock=value,
     transcript: () => vm.runInContext('transcript', context)};
 }
@@ -253,7 +256,12 @@ test('meat goes directly to the hair photo, shakes once and changes to stares fo
   assert.equal(h.stage().background,'/assets/images/festival_hair.png');
   assert.equal(shakes,1);
   assert.equal(root.children.some(n=>n.className==='festival-hand-motion'),false);
-  assert.equal(h.stage().backgroundForPage(lines.slice(4).join('\n'),2,[lines.slice(0,2).join('\n'),lines.slice(2,4).join('\n'),lines.slice(4).join('\n')]),'/assets/images/festival_stares.png');
+  root.dataset.dialogueComplete='false';
+  assert.equal(h.choice().ready(),false);
+  assert.equal(h.stage().background,'/assets/images/festival_hair.png');
+  root.dataset.dialogueComplete='true';
+  assert.equal(h.choice().ready(),true);
+  await h.choice().onRead();
   h.context.renderView(data.view);assert.equal(h.stage().background,'/assets/images/festival_stares.png');
   h.context.window.startStory(data,'다시');h.context.window.matchMedia=()=>({matches:true});
   await meat.listeners.click();assert.equal(shakes,1);
@@ -523,39 +531,24 @@ test('frightened Jimmy, the empty shop and caught Bob all keep the incident shop
   assert.equal(h.stage().background,'/assets/images/butcher_shop.svg');
 });
 
-test('basement brazier click alone requests its clue and then reveals the exit', async () => {
-  const h = setup();
-  const basement = response('basement', 'basement', null, []);
-  basement.view.available_actions = [{id:'inspect_brazier', label:'화로를 조사한다', kind:'inspect'}];
-  h.context.window.startStory(basement, '테스트');
-  const hotspot = h.nodes.get('dialogue-stage').children.find(item => item.className === 'door-hotspot brazier-hotspot');
-  assert.equal(h.stage().background, '/assets/images/basement.svg');
-  assert.equal(hotspot.hidden, false);
-  assert.equal(hotspot.attrs['aria-label'], '지하실 화로 조사하기');
-  assert.equal(h.nodes.get('action-list').children.length, 0);
-  h.context.renderView(basement.view);
-  assert.equal(hotspot.hidden, false);
-  let sent;
-  h.context.fetch = async (_, options) => {
-    sent = JSON.parse(options.body).action_id;
-    return {ok:false, json:async()=>({error:{message:'잠시 후 다시 시도해 주세요.'}})};
-  };
-  await hotspot.listeners.click();
-  assert.equal(sent, 'inspect_brazier');
-  assert.equal(hotspot.hidden, false);
-  assert.equal(h.nodes.get('action-list').children.length, 0);
-  h.context.fetch = async () => {
-    const inspected = response('basement', 'basement', null, [{speaker_id:'thought', text:'불탄 생활 소품', image:null}]);
-    inspected.view.available_actions = [{id:'go_upstairs', label:'지하실에서 나온다', kind:'move'}];
-    return {ok:true, json:async()=>inspected};
-  };
-  await hotspot.listeners.click();
-  assert.equal(hotspot.hidden, true);
-  assert.equal(h.stage().text, '불탄 생활 소품');
-  assert.equal(h.nodes.get('action-list').children[0].textContent, '지하실에서 나온다');
-  h.context.renderView(vm.runInContext('currentView', h.context));
-  assert.equal(hotspot.hidden, true);
-  assert.equal(h.nodes.get('action-list').children.length, 1);
+test('only the wallet is clickable in the basement and the server reveals the exit after its photo', async()=>{
+  const h=setup();
+  const basement=response('basement','basement',null,[]);
+  basement.view.background='/assets/images/basement_wallet.png';
+  basement.view.available_actions=[{id:'inspect_wallet',label:'지갑을 살핀다',kind:'inspect'}];
+  h.context.window.startStory(basement,'테스트');
+  const children=h.nodes.get('dialogue-stage').children;
+  assert.equal(children.some(n=>n.className==='door-hotspot brazier-hotspot'),false);
+  const wallet=children.find(n=>n.className==='door-hotspot wallet-hotspot');
+  assert.equal(wallet.hidden,false);assert.equal(h.nodes.get('action-list').children.length,0);
+  let sent;h.context.fetch=async(_,options)=>{sent=JSON.parse(options.body).action_id;return {ok:true,json:async()=>basement};};
+  await wallet.listeners.click();assert.equal(sent,'inspect_wallet');
+  const inspected=response('basement','basement',null,[{speaker_id:'thought',text:'지미…랑 옆에는 누구지…?'}]);
+  inspected.view.available_actions=[{id:'go_upstairs',label:'지하실에서 나온다',kind:'move'},{id:'inspect_wallet',label:'지갑',kind:'inspect'}];
+  h.context.applyResponse(inspected,'scene');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'지하실에서 나온다');
+  h.context.applyResponse(response('bob_caught','butcher_shop',null,[]),'scene');
+  assert.equal(wallet.hidden,true);
 });
 
 test('each first greeting requires two successful replies and resets on a new game', async () => {
@@ -579,7 +572,7 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   const h=setup();
   const data=response('photo_found','karen_house',null,[]);
   data.view.photo_back_date=null;
-  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'inspect_charles_photo',label:'옆 액자',kind:'inspect'}];
   h.context.window.startStory(data,'테스트');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
   assert.equal(h.nodes.get('dialogue-stage').children[1].hidden,true);
@@ -597,7 +590,7 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   assert.equal(dialog.open,true);
   h.nodes.get('photo-close').listeners.click();
   assert.equal(dialog.open,false);
-  assert.equal(h.stage().text,'지미??????');
+  assert.equal(h.stage().text,'두 액자의 뒷면까지 살펴보자.');
   hotspot.listeners.click();
   assert.equal(h.nodes.get('affinity-value').textContent,'50 / 100');
   const requested=[];
@@ -633,11 +626,42 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   assert.equal(h.nodes.get('photo-back-date').textContent,'');
 });
 
+test('Charles uses his own front and back, keeps Jimmy date separate and does not summon Karen alone',async()=>{
+  const h=setup();
+  const data=response('photo_found','karen_house',null,[]);
+  const actions=ids=>ids.map(id=>({id,label:id,kind:'inspect'}));
+  data.view.available_actions=actions(['inspect_photo_back','inspect_charles_photo']);
+  h.context.window.startStory(data,'이름');
+  await h.nodes.get('action-list').children[0].listeners.click();
+  const charles=h.nodes.get('dialogue-stage').children.find(n=>n.className==='door-hotspot photo-hotspot charles-photo-hotspot');
+  assert.equal(charles.hidden,false);
+  const calls=[];
+  h.context.fetch=async(_,options)=>{
+    const action=JSON.parse(options.body).action_id;calls.push(action);
+    const next=response('photo_found','karen_house',null,action==='inspect_charles_photo'?[{speaker_id:'thought',text:'사진 속에서 지미 옆에 있던 사람이잖아…?'}]:[]);
+    next.view.photo_back_date='11월 8일';
+    next.view.available_actions=actions(action==='inspect_charles_photo'?['inspect_photo_back','inspect_charles_photo','inspect_charles_photo_back']:action==='inspect_charles_photo_back'?['inspect_photo_back','inspect_charles_photo','recognize_charles_photo']:['inspect_photo_back','inspect_charles_photo']);
+    return {ok:true,json:async()=>next};
+  };
+  await charles.listeners.click();
+  assert.match(h.nodes.get('.photo-front').src,/props_charles_front/);
+  assert.equal(h.nodes.get('photo-thought').textContent,'사');
+  await h.nodes.get('photo-flip').listeners.click();
+  assert.match(h.nodes.get('.photo-back').src,/props_charles_back/);
+  assert.equal(h.nodes.get('photo-back-date').textContent,'');
+  await h.nodes.get('photo-close').listeners.click();
+  assert.deepEqual(calls,['inspect_charles_photo','inspect_charles_photo_back','recognize_charles_photo']);
+  assert.equal(h.nodes.get('photo-dialog').open,false);
+  assert.equal(h.stage().image,null);
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  assert.equal(h.nodes.get('photo-thought').textContent,'');
+});
+
 test('photo back failure stays on front, retries, and Escape follows the same close rule', async () => {
   const h=setup();
   const data=response('photo_found','karen_house',null,[]);
   data.view.photo_back_date=null;
-  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  data.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'inspect_charles_photo',label:'옆 액자',kind:'inspect'}];
   h.context.window.startStory(data,'테스트');
   await h.nodes.get('action-list').children[0].listeners.click();
   const hotspot=h.nodes.get('dialogue-stage').children[1];
@@ -724,7 +748,7 @@ test('both festival endings expose a title return and a new play drops old state
 test('the room starts front-on and reveals its photo only after looking around', async () => {
   const h=setup();
   const photo=response('photo_found','karen_house',null,[]);
-  photo.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
+  photo.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'inspect_charles_photo',label:'옆 액자',kind:'inspect'}];
   h.context.window.startStory(photo,'이름');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'주변을 둘러본다');
   await h.nodes.get('action-list').children[0].listeners.click();

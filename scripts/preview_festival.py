@@ -1,0 +1,67 @@
+"""로컬 축제 시연 서버. 일반 app.py 실행·공개 배포에는 이 경로가 없다."""
+
+import os
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from flask import make_response, render_template, request  # noqa: E402
+from app import app, bot_view, chatbot, load_config  # noqa: E402
+from services.story import apply_action, event, new_state  # noqa: E402
+
+
+@app.get('/preview/festival')
+def preview_festival():
+    state = new_state('축제 체험', 'male')
+    state.update(scene_id='festival', location_id='square', story_day=2,
+                 affinity=70, job='driver', has_car_key=True,
+                 clues=['brazier', 'jimmy_photo', 'photo_back_date'])
+    state['journal'].append('트럭 운전수를 맡아 트럭 차 키를 가지고 있다.')
+    data = chatbot._response(state, [event('narrator', '광장에 축제 음식이 차려졌다. 주민들이 자리에 앉기를 권한다.')])
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
+    response.cache_control.no_store = True
+    return response
+
+
+@app.get('/preview/basement')
+def preview_basement():
+    state = new_state('지하실 체험', 'male')
+    state.update(scene_id='empty_butcher', location_id='butcher_shop', affinity=70)
+    data = chatbot._response(state, [event('thought', '(지미가 급하게 나갔다)')])
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
+    response.cache_control.no_store = True
+    return response
+
+
+@app.get('/preview/escape')
+def preview_escape():
+    gender = 'female' if request.args.get('gender') == 'female' else 'male'
+    state = new_state('탈출 체험', gender)
+    state.update(scene_id='final_choice', location_id='square', job='driver', has_car_key=True,
+                 choice_deadline=int(time.time() * 1000) + 10000)
+    state, events = apply_action(state, 'escape')
+    for action in ('begin_truck_escape', 'open_truck_door', 'finish_truck_escape'):
+        state, events = apply_action(state, action)
+    data = chatbot._response(state, events)
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
+    response.cache_control.no_store = True
+    return response
+
+
+@app.get('/preview/truck')
+def preview_truck():
+    gender = 'female' if request.args.get('gender') == 'female' else 'male'
+    state = new_state('트럭 탈출 체험', gender)
+    driver = request.args.get('job', 'driver') == 'driver'
+    state.update(scene_id='final_choice', location_id='square', job='driver' if driver else 'gardener',
+                 has_car_key=driver, choice_deadline=int(time.time() * 1000) + 10000)
+    state, events = apply_action(state, 'escape')
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=chatbot._response(state, events)))
+    response.cache_control.no_store = True
+    return response
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', '5050')), debug=False)

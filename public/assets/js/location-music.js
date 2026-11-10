@@ -23,8 +23,8 @@ window.locationMusic = new class {
     this.button.title = label;
   }
   enter(location, ending = null, sceneId = null) {
-    const darkButcher = ['butcher_search', 'empty_butcher', 'basement', 'bob_caught'].includes(sceneId);
-    const afterBasement = ['dinner_invite', 'wait_dinner', 'karen_dinner', 'checkpoint', 'job_choice', 'job_result', 'festival_invite', 'festival', 'hair_found', 'final_choice'].includes(sceneId);
+    const darkButcher = ['butcher_search', 'empty_butcher', 'basement_entry', 'basement', 'bob_caught'].includes(sceneId);
+    const afterBasement = ['dinner_invite', 'wait_dinner', 'karen_dinner', 'checkpoint', 'job_choice', 'job_result', 'festival_invite', 'festival', 'hair_found', 'final_choice', 'truck_escape', 'truck_escape_result'].includes(sceneId);
     const track = ending ? null : darkButcher ? 'frightened-jimmy' : sceneId === 'photo_found' ? 'urgent' : afterBasement ? 'after-basement' : sceneId === 'cathy_help' ? 'cathy-minigame' : this.tracks[location] || null;
     this.button.hidden = !!ending;
     if (track !== this.track) {

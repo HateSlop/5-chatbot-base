@@ -12,12 +12,14 @@ window.FestivalChoice = class {
   }
   reset() {
     clearTimeout(this.timer);
+    this.version = (this.version || 0) + 1;
     this.phase = null;
     this.readAt = null;
+    this.stareAt = null;
     this.locked = false;
     if (this.dialog.open) this.dialog.close();
   }
-  update({reading, ready, deadline, busy = false}) {
+  update({reading, ready, onRead, deadline, busy = false}) {
     this.busy = busy;
     if (Number.isFinite(deadline)) {
       if (this.phase === 'choice' && this.deadline === deadline) {
@@ -35,19 +37,27 @@ window.FestivalChoice = class {
     }
     if (!reading) { this.reset(); return; }
     this.ready = ready;
+    this.onRead = onRead;
     if (this.phase === 'reading') return;
     this.reset();
     this.phase = 'reading';
     this.poll();
   }
-  poll() {
+  async poll() {
     if (this.phase !== 'reading') return;
-    if (this.ready()) this.readAt ??= Date.now();
-    else this.readAt = null;
-    if (this.readAt !== null && Date.now() - this.readAt >= 1500) {
+    const version = this.version;
+    if (!this.ready()) this.readAt = null;
+    else this.readAt ??= Date.now();
+    // Rest on the thought before the reveal, then give the gaze its own pause.
+    if (this.readAt !== null && Date.now() - this.readAt >= 2000 && this.stareAt === null) {
+      await this.onRead?.();
+      if (this.phase !== 'reading' || version !== this.version) return;
+      this.stareAt = Date.now();
+    }
+    if (this.stareAt !== null && Date.now() - this.stareAt >= 4000 && this.ready()) {
       const run = this.phase;
       this.onAction('begin_final_choice').then(() => {
-        if (this.phase === run) { this.readAt = null; this.timer = setTimeout(() => this.poll(), 1000); }
+        if (this.phase === run && version === this.version) { this.stareAt = Date.now(); this.timer = setTimeout(() => this.poll(), 1000); }
       });
       return;
     }

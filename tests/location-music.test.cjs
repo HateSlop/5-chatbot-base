@@ -49,7 +49,7 @@ test('the salon mission uses its own track, preserves mute and returns to salon 
 test('the dark butcher and basement share one track, later scenes share aftermath except the secret room',()=>{
   const h=setup();
   h.music.enter('butcher_shop',null,'neighbors');assert.equal(h.audio.src,'/assets/audio/butcher-bgm.mp3');
-  for (const scene of ['butcher_search','empty_butcher','basement','bob_caught']) {
+  for (const scene of ['butcher_search','empty_butcher','basement_entry','basement','bob_caught']) {
     h.music.enter(scene==='basement'?'basement':'butcher_shop',null,scene);
     assert.equal(h.audio.src,'/assets/audio/frightened-jimmy-bgm.mp3');
     h.audio.currentTime=9;
