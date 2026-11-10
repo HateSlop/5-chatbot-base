@@ -434,3 +434,13 @@ body, body.chat-page { background-color: #140e0b; }
 
 .photo-thought { margin: 8px 0 0; color: #fff0d2; text-align: center; font: 18px/1.5 "Malgun Gothic", sans-serif; }
 .photo-thought:empty { display: none; }
+
+.post-move-stage .truck-door-hotspot { background-image: url('../images/ending_truck.png'); clip-path: polygon(45.5% 54%, 51.8% 54%, 53% 63%, 54.5% 65%, 54.3% 77%, 45.3% 77.6%, 44.8% 63%); cursor: pointer; }
+.truck-escape-timer { position: absolute; z-index: 6; top: 65px; left: 50%; margin: 0; transform: translateX(-50%); min-width: 72px; padding: 8px 14px; border: 1px solid #c6a16b88; border-radius: 10px; background: #1b120dcc; color: #f5ddb7; text-align: center; box-shadow: 0 3px 14px #0008; }
+.truck-escape-timer span { display: block; font: 11px/1.5 'Malgun Gothic', sans-serif; }
+.truck-escape-timer strong { display: block; font: 600 38px/1.1 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: no-preference) {
+  .dialogue-stage:is([data-scene="truck_escape"], [data-scene="truck_escape_result"]) .dialogue-background,
+  .dialogue-stage[data-scene="truck_escape"] .truck-door-hotspot { animation: truck-panic 240ms linear infinite; }
+  @keyframes truck-panic { 0%,100% { transform: translate(0, 0) scale(1.015); } 20% { transform: translate(-3px, 2px) scale(1.015); } 40% { transform: translate(2px, -2px) scale(1.015); } 60% { transform: translate(-2px, -1px) scale(1.015); } 80% { transform: translate(3px, 1px) scale(1.015); } }
+}

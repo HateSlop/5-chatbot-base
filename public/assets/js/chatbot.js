@@ -184,6 +184,7 @@ document.getElementById('photo-close').addEventListener('click', closePhoto);
 photoDialog.addEventListener('cancel', event => { event.preventDefault(); return closePhoto(); });
 // Match the clickable doorway to the background's cover crop at any window size.
 const shopStage = document.getElementById('dialogue-stage');
+const truckEscape = window.TruckEscape ? new window.TruckEscape(shopStage, performAction, dialogueStage) : null;
 const exploreHint = document.createElement('p');
 exploreHint.className = 'scene-explore-hint';
 exploreHint.hidden = true;
@@ -484,6 +485,7 @@ function renderView(view) {
   if (!meatHotspot.hidden) positionDoor();
   exploreHint.textContent = !meatHotspot.hidden ? '음식을 살펴보자. 고기를 눌러 확인해 보세요.' : !basketHotspot.hidden ? '바구니를 눌러보자.' : !doorHotspot.hidden ? '주변을 둘러보자. 열린 문을 살펴볼까?' : !photoHotspot.hidden ? '나란히 걸린 두 액자를 눌러 뒷면까지 확인해 보자.' : '';
   if (view.scene_id === 'basement') exploreHint.textContent = '옷 주머니의 지갑을 눌러 살펴보자.';
+  if (view.scene_id === 'truck_escape') exploreHint.textContent = '시간이 없어! 트럭 차문을 눌러보자.';
   exploreHint.hidden = !exploreHint.textContent;
   postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');
   if (enteringRoom) {
@@ -514,6 +516,7 @@ function renderView(view) {
     greetedPlaces.add(view.location_id);
   }
   for (const action of view.available_actions) {
+    if (['truck_escape', 'truck_escape_result'].includes(view.scene_id)) continue;
     if (view.scene_id === 'job_result' && action.id === 'see_karen_off' && !jobDepartureFailed) continue;
     if (showingDiscovery || secretDiscovery || karenGreeting || emptyShop && !doorExamined || greetingLocked(view) && action.kind === 'move') continue;
     if (view.scene_id === 'cathy_help' || view.scene_id === 'basement' && action.id.includes('wallet')) continue;
@@ -561,6 +564,7 @@ function renderView(view) {
     gender: view.gender, today: view.today, job: view.job,
     affinity: view.affinity, actions: greetingLocked(view) || showingDiscovery || secretDiscovery || view.scene_id === 'cathy_help' ? [] : view.available_actions, busy});
   renderMessages();
+  truckEscape?.update(view, busy);
   festivalChoice?.update({reading: view.scene_id === 'hair_found' && festivalFrame === 1,
     ready: () => !busy && shopStage.dataset.dialogueComplete === 'true',
     onRead: () => {
@@ -680,8 +684,9 @@ async function request(path, payload) {
 }
 
 async function performAction(actionId) {
+  const truckAction = ['truck_escape', 'truck_escape_result'].includes(currentView?.scene_id) && ['begin_truck_escape', 'open_truck_door', 'truck_timeout', 'finish_truck_escape'].includes(actionId);
   const photoAction = currentView?.scene_id === 'photo_found' && ['inspect_photo_back', 'recognize_photo', 'inspect_charles_photo', 'inspect_charles_photo_back', 'recognize_charles_photo'].includes(actionId);
-  if (!photoAction && shopStage.dataset?.dialogueComplete === 'false' && dialogueStage.box && !dialogueStage.box.hidden) return;
+  if (!photoAction && !truckAction && shopStage.dataset?.dialogueComplete === 'false' && dialogueStage.box && !dialogueStage.box.hidden) return;
   if (busy || !stateToken) return false;
   if (greetingLocked(currentView) && currentView.available_actions.some(a => a.id === actionId && a.kind === 'move')) return;
   if (currentView.scene_id === 'photo_found' && secretFrame < 2 &&
@@ -729,6 +734,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("pagehide", () => {
+  truckEscape?.reset();
   walletInspection?.close();
   clearTimeout(jobDepartureTimer);
   jobDeparturePending = true;

@@ -47,6 +47,15 @@ class StoryTest(unittest.TestCase):
                 result = self.action(action)
         return result
 
+    def escape_through_truck(self):
+        for action in ["escape", "begin_truck_escape", "open_truck_door"]:
+            result = self.action(action)
+        if result["view"]["scene_id"] == "truck_escape":
+            state = decode_state(self.token)
+            with patch("services.story.time.time", return_value=state["truck_deadline"] / 1000):
+                self.action("truck_timeout")
+        return self.action("finish_truck_escape")
+
     def checkpoint(self):
         for action_id in TO_CHECKPOINT:
             self.action(action_id)
@@ -146,7 +155,7 @@ class StoryTest(unittest.TestCase):
             self.assertEqual(response.status_code, 409)
 
     def test_final_choice_deadline_is_server_owned_and_late_choices_die_even_with_key(self):
-        for action, moment, ending in (("escape", 1009.999, "escape"), ("stay",1009.999,"assimilation"),
+        for action, moment, ending in (("escape", 1009.999, None), ("stay",1009.999,"assimilation"),
                                        ("escape",1010,"death"), ("stay",1010,"death"), ("choice_timeout",1010,"death")):
             with self.subTest(action=action,moment=moment):
                 state=decode_state(self.token)
@@ -160,6 +169,45 @@ class StoryTest(unittest.TestCase):
                 with patch('services.story.time.time',return_value=moment):
                     self.assertEqual(self.action(action)['view']['ending'],ending)
                 self.assertIsNone(self.client.post('/api/session/resume',json={"state_token":self.token}).get_json()['view']['choice_deadline'])
+
+    def test_truck_deadline_job_key_and_locked_retries_are_server_owned(self):
+        for gender in ("male", "female"):
+            for job, key, moment, success in (("driver", True, 1011.999, True), ("driver", True, 1012, False),
+                                             ("gardener", False, 1005, False), (None, False, 1005, False),
+                                             ("gardener", True, 1005, False), ("driver", False, 1005, False)):
+                with self.subTest(gender=gender, job=job, moment=moment):
+                    state = decode_state(self.token)
+                    state.update(scene_id="final_choice", ending=None, gender=gender, job=job, has_car_key=key, choice_deadline=1010000)
+                    self.token = encode_state(state)
+                    with patch("services.story.time.time", return_value=1000):
+                        truck = self.action("escape")
+                    self.assertEqual(truck["view"]["scene_id"], "truck_escape")
+                    self.assertIsNone(truck["view"]["truck_deadline"])
+                    self.assertIsNone(truck["view"]["ending"])
+                    self.assertTrue(truck["view"]["background"].endswith("ending_truck.png"))
+                    with patch("services.story.time.time", return_value=1002):
+                        armed = self.action("begin_truck_escape")
+                        self.assertEqual(armed["view"]["truck_deadline"], 1012000)
+                        for action in ("begin_truck_escape", "truck_timeout"):
+                            self.assertEqual(self.client.post("/api/action", json={"state_token": self.token,"action_id": action}).status_code,409)
+                    with patch("services.story.time.time", return_value=moment):
+                        opened = self.action("open_truck_door")
+                        if not success and moment < 1012:
+                            self.assertEqual(opened["view"]["scene_id"], "truck_escape")
+                            self.assertIn("잠겨", opened["events"][0]["text"])
+                            for _ in range(2):
+                                retried = self.action("open_truck_door")
+                                self.assertEqual(retried["view"]["truck_deadline"], 1012000)
+                                self.assertIsNone(retried["view"]["ending"])
+                    if opened["view"]["scene_id"] == "truck_escape":
+                        with patch("services.story.time.time", return_value=1012):
+                            self.action("truck_timeout")
+                    elif success:
+                        self.assertIn("차 키로 열었다", opened["events"][0]["text"])
+                    with patch("services.story.time.time", return_value=2000):
+                        ending = self.action("finish_truck_escape")
+                    self.assertEqual(ending["view"]["ending"], "escape" if success else "death")
+                    self.assertEqual(ending["view"]["gender"], gender)
 
     def test_timeout_cannot_be_submitted_early_and_decision_cannot_be_started_twice(self):
         state=decode_state(self.token);state.update(scene_id='hair_found',location_id='square')
@@ -180,7 +228,7 @@ class StoryTest(unittest.TestCase):
         self.action("inspect_food")
         self.action("begin_final_choice")
         self.assertFalse(decode_state(self.token)["has_car_key"])
-        self.assertEqual(self.action("escape")["view"]["ending"], "death")
+        self.assertEqual(self.escape_through_truck()["view"]["ending"], "death")
 
     def test_cooperative_chat_unlocks_job_and_key_then_escape(self):
         self.chat("jimmy", "마을을 안내해 줘. 나도 도울게")
@@ -194,7 +242,7 @@ class StoryTest(unittest.TestCase):
         self.assertTrue(decode_state(self.token)["job_offered"])
         self.festival("accept_job")
         self.assertTrue(decode_state(self.token)["has_car_key"])
-        self.assertEqual(self.action("escape")["view"]["ending"], "escape")
+        self.assertEqual(self.escape_through_truck()["view"]["ending"], "escape")
 
     def test_gardener_has_profession_without_truck_key(self):
         self.checkpoint_at(65)
@@ -218,7 +266,7 @@ class StoryTest(unittest.TestCase):
         self.action("go_festival")
         self.action("inspect_food")
         self.action("begin_final_choice")
-        self.assertEqual(self.action("escape")["view"]["ending"], "death")
+        self.assertEqual(self.escape_through_truck()["view"]["ending"], "death")
 
     def test_declining_keeps_profession_and_key_empty(self):
         self.checkpoint_at(65)

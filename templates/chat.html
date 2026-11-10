@@ -23,6 +23,7 @@
     <script src="{{ asset_url('assets/js/location-music.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/interaction-sound.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/festival-choice.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/truck-escape.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/wallet-inspection.js') }}" defer></script>
     <script src="{{ asset_url('assets/js/chatbot.js') }}" defer></script>
     {% if festival_preview %}
@@ -85,6 +86,8 @@
       <img class="dialogue-background" alt="" hidden>
       <img class="dialogue-figure" alt="" hidden>
       <div class="dialogue-tv" role="img" aria-label="TV" hidden></div>
+      <button id="truck-door-hotspot" class="door-hotspot truck-door-hotspot" type="button" aria-label="트럭 차문 열기" hidden></button>
+      <p id="truck-escape-timer" class="truck-escape-timer" aria-label="남은 탈출 시간" hidden><span>남은 시간</span><strong>10</strong></p>
       <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite"><span class="dialogue-speaker"></span><span class="dialogue-text"></span></div>
       <button id="ending-restart" type="button" hidden>첫 화면으로 돌아가기</button>
     </section>

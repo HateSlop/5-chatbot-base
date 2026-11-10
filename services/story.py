@@ -225,6 +225,13 @@ def available_actions(state: dict) -> list[dict]:
             _action("stay", "모른척 참고 먹는다", "choice"),
             _action("choice_timeout", "선택 시간 종료", "choice"),
         ]
+    if scene == "truck_escape":
+        if state.get("truck_deadline") is None:
+            return [_action("begin_truck_escape", "차문을 향해 달려간다", "choice")]
+        return [_action("open_truck_door", "트럭 차문을 연다", "inspect"),
+                _action("truck_timeout", "추격 시간 종료", "choice")]
+    if scene == "truck_escape_result":
+        return [_action("finish_truck_escape", "결말로 이어간다", "choice")]
     return []
 
 
@@ -233,8 +240,10 @@ def view(state: dict) -> dict:
     return {
         "scene_id": state["scene_id"],
         "location_id": state["location_id"],
-        "location_name": LOCATIONS[state["location_id"]],
-        "background": ("/assets/images/basement_wallet.png" if state["scene_id"] == "basement"
+        "location_name": ("트럭 앞" if state["scene_id"] in {"truck_escape", "truck_escape_result"}
+                          else LOCATIONS[state["location_id"]]),
+        "background": ("/assets/images/ending_truck.png" if state["scene_id"] in {"truck_escape", "truck_escape_result"}
+                       else "/assets/images/basement_wallet.png" if state["scene_id"] == "basement"
                        else f"/assets/images/{state['location_id']}.svg"),
         "available_characters": [
             {
@@ -254,6 +263,7 @@ def view(state: dict) -> dict:
                             if state["scene_id"] == "photo_found" and "photo_back_date" in state["clues"] else None),
         "ending": state["ending"],
         "choice_deadline": state.get("choice_deadline") if state["scene_id"] == "final_choice" else None,
+        "truck_deadline": state.get("truck_deadline") if state["scene_id"] == "truck_escape" else None,
     }
 
 
@@ -449,14 +459,34 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         expired = time.time() * 1000 >= state["choice_deadline"]
         if action_id == "choice_timeout" and not expired:
             raise ValueError("invalid_action")
-        ending = "death" if expired else "assimilation" if action_id == "stay" else "escape" if state["has_car_key"] else "death"
+        if not expired and action_id == "escape":
+            next_state.update(scene_id="truck_escape", truck_deadline=None, truck_escape_success=None)
+            events.append(event("thought", "쫓아오는 속도가 너무 빨라… 이러다간 잡히겠어…!"))
+        else:
+            ending = "death" if expired else "assimilation"
+            next_state.update(scene_id="ending", ending=ending)
+            text = ("망설이는 사이 이웃들이 다가와 출구를 막았다. 더는 도망칠 수 없었다." if expired
+                    else "새 이웃이 도착했다. 나는 캐런처럼 웃으며 말했다. ‘더뉴빌리지에 오신 걸 환영해요.’")
+            next_state["journal"].append(text)
+            events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
+    elif scene == "truck_escape":
+        if action_id == "begin_truck_escape":
+            next_state["truck_deadline"] = int(time.time() * 1000) + 10000
+        else:
+            expired = time.time() * 1000 >= state["truck_deadline"]
+            if action_id == "truck_timeout" and not expired:
+                raise ValueError("invalid_action")
+            success = not expired and state.get("job") == "driver" and state["has_car_key"]
+            if success or expired:
+                next_state.update(scene_id="truck_escape_result", truck_escape_success=success)
+            text = ("주머니 속 차 키로 열었다!" if success else "늦었어… 이웃들이 따라잡았어!" if expired
+                    else "차가 잠겨 있다. 차 문이 열리지 않는다.")
+            events.append(event("thought", text))
+    elif scene == "truck_escape_result":
+        ending = "escape" if state["truck_escape_success"] else "death"
         next_state.update(scene_id="ending", ending=ending)
-        endings = {
-            "escape": "차 키를 움켜쥐고 마을 경계를 빠져나왔다. 더뉴빌리지는 뒤로 멀어졌다.",
-            "death": "차가 없었다. 이웃들이 길을 막았고, 곧 지미의 사진 옆에 내 사진이 걸렸다.",
-            "assimilation": "새 이웃이 도착했다. 나는 캐런처럼 웃으며 말했다. ‘더뉴빌리지에 오신 걸 환영해요.’",
-        }
-        text = "망설이는 사이 이웃들이 다가와 출구를 막았다. 더는 도망칠 수 없었다." if expired else endings[ending]
+        text = ("차 키를 움켜쥐고 마을 경계를 빠져나왔다. 더뉴빌리지는 뒤로 멀어졌다." if ending == "escape"
+                else "이웃들이 따라잡았다. 곧 지미와 찰스의 사진 옆에 내 사진이 걸렸다.")
         next_state["journal"].append(text)
         events.append(event("narrator", text, f"/assets/images/ending_{ending}.svg"))
 

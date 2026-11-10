@@ -35,6 +35,8 @@ const sceneGuide = {
   cathy_result: '집으로 돌아가 보세요.',
   wait_dinner: '혼자 캐런의 집으로 가 보세요.',
   karen_dinner: '화면의 문을 살펴보세요.',
+  truck_escape: '남은 시간 안에 트럭 차문을 눌러보세요.',
+  truck_escape_result: '잠시 뒤 결말로 이어집니다.',
   photo_found: '두 사진 액자를 눌러 각각 뒷면까지 살펴보세요.',
 };
 let affinitySequence = 0;

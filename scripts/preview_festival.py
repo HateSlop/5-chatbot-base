@@ -42,8 +42,23 @@ def preview_escape():
     state.update(scene_id='final_choice', location_id='square', job='driver', has_car_key=True,
                  choice_deadline=int(time.time() * 1000) + 10000)
     state, events = apply_action(state, 'escape')
+    for action in ('begin_truck_escape', 'open_truck_door', 'finish_truck_escape'):
+        state, events = apply_action(state, action)
     data = chatbot._response(state, events)
     response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
+    response.cache_control.no_store = True
+    return response
+
+
+@app.get('/preview/truck')
+def preview_truck():
+    gender = 'female' if request.args.get('gender') == 'female' else 'male'
+    state = new_state('트럭 탈출 체험', gender)
+    driver = request.args.get('job', 'driver') == 'driver'
+    state.update(scene_id='final_choice', location_id='square', job='driver' if driver else 'gardener',
+                 has_car_key=driver, choice_deadline=int(time.time() * 1000) + 10000)
+    state, events = apply_action(state, 'escape')
+    response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=chatbot._response(state, events)))
     response.cache_control.no_store = True
     return response
 
