@@ -363,10 +363,11 @@ test('Karen leaves after her greeting, then the door reveals the existing room a
   assert.equal(h.nodes.get('send-btn').disabled,true);
   assert.equal(h.stage().text,'와 주셨네요.');
   assert.equal(h.stage().image,'/assets/images/karen_smile.png');
-  assert.equal(h.nodes.get('action-list').children[0].textContent,'다음 대사 ›');
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  assert.equal(typeof h.stage().nextLine,'function');
   await Promise.resolve();
   assert.equal([...h.timers.values()].some(t => t.ms === 3300),false);
-  h.nodes.get('action-list').children[0].listeners.click();
+  h.stage().nextLine();
   assert.equal(h.stage().text,'지미요..? 저도 잘 모르겠네요.');
   await Promise.resolve();
   const timer = [...h.timers.values()].find(t => t.ms === 3300);
@@ -608,7 +609,8 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
       back.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
       return {ok:true,json:async()=>back};
     }
-    const found=response('photo_found','karen_house',null,[{speaker_id:'thought',text:'벽에 두 사진이 있었다.',image:null}, {speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}, {speaker_id:'karen',text:'이제 나가 주세요.',image:null}],45);
+    assert.equal(dialog.open,true);
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}, {speaker_id:'karen',text:'이제 나가 주세요.',image:null}],45);
     found.view.photo_back_date='1955.11.8';
     found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
     return {ok:true,json:async()=>found};
@@ -619,12 +621,11 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   assert.equal(h.nodes.get('photo-back-date').textContent,'1955.11.8');
   await h.nodes.get('photo-close').listeners.click();
   assert.deepEqual(requested,['inspect_photo_back','recognize_photo']);
-  assert.equal(h.stage().text,'벽에 두 사진이 있었다.');
-  assert.equal(h.nodes.get('action-list').children[0].textContent,'다음 대사 ›');
-  h.nodes.get('action-list').children[0].listeners.click();
   assert.equal(h.stage().image,'/assets/images/karen_angry.png');
   assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
-  h.nodes.get('action-list').children[0].listeners.click();
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  assert.equal(dialog.open,false);
+  h.stage().nextLine();
   assert.equal(h.stage().text,'이제 나가 주세요.');
   assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
@@ -868,7 +869,7 @@ test('Karen departure countdown waits until the character is selected', async ()
   assert.equal([...h.timers.values()].some(t=>t.ms===3300),false);
   select(true);await new Promise(resolve=>setImmediate(resolve));
   assert.equal([...h.timers.values()].some(t=>t.ms===3300),false);
-  h.nodes.get('action-list').children[0].listeners.click();
+  h.stage().nextLine();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal([...h.timers.values()].some(t=>t.ms===3300),true);
 });

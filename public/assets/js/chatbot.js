@@ -174,11 +174,14 @@ photoFlip.addEventListener('click', async () => {
 });
 async function closePhoto() {
   if (busy || !photoDialog.open) return;
-  photoDialog.close();
-  clearPhotoThought();
   const action = selectedPhoto === 'charles' ? 'recognize_charles_photo' : 'recognize_photo';
   if (currentView?.scene_id === 'photo_found' && secretFrame < 2 &&
-      currentView.available_actions.some(a => a.id === action)) await performAction(action);
+      currentView.available_actions.some(a => a.id === action) && !await performAction(action)) {
+    document.getElementById('photo-hint').textContent = statusMessage.textContent;
+    return;
+  }
+  if (photoDialog.open) photoDialog.close();
+  clearPhotoThought();
 }
 document.getElementById('photo-close').addEventListener('click', closePhoto);
 photoDialog.addEventListener('cancel', event => { event.preventDefault(); return closePhoto(); });
@@ -360,9 +363,12 @@ function renderMessages() {
     line = lines[Math.min(karenDinnerLine, lines.length - 1)] || line;
   }
   if (currentView.scene_id === 'photo_found' && photoReactionEvents) {
-    const item = photoReactionEvents[photoReactionLine];
-    line = {speaker: item.speaker_id, text: item.text, image: item.image};
+    line = photoReactionEvents[photoReactionLine];
   }
+  const nextLine = currentView.scene_id === 'karen_dinner' && !karenDinnerDismissed && karenDinnerLine === 0
+    ? () => { if (!busy) { karenDinnerLine = 1; renderView(currentView); } }
+    : currentView.scene_id === 'photo_found' && photoReactionEvents && photoReactionLine < photoReactionEvents.length - 1
+      ? () => { if (!busy) { ++photoReactionLine; renderView(currentView); } } : null;
   dialogueStage.render({
     background: festivalScene ? `/assets/images/festival_${currentView.scene_id === 'festival' ? 'meal' : currentView.scene_id === 'final_choice' ? 'stares' : festivalFrame === 0 ? 'meat' : festivalStares ? 'stares' : 'hair'}.png` : currentView.scene_id === 'photo_found' ? (secretFrame < 0 ? '/assets/images/karen_secret_room.png' : '/assets/images/karen_secret_room_angle2.png') : ['butcher_search', 'empty_butcher', 'bob_caught'].includes(currentView.scene_id)
       ? '/assets/images/butcher_shop_open.png' : currentView.background,
@@ -375,6 +381,7 @@ function renderMessages() {
     sceneId: currentView.scene_id,
     doorbellCount: currentView.scene_id === 'checkpoint' && currentView.available_actions.some(action => action.id === 'go_butcher') ? 3 : 1,
     dialogueKey: line,
+    nextLine,
     dialogue: currentView.scene_id !== 'final_choice' && !(currentView.scene_id === 'basement' && !line?.text) && (!cathyBasketScene || !basketGreetingDone),
     selectCharacter: !cathyBasketScene && !festivalScene && !['job_choice', 'job_result'].includes(currentView.scene_id),
   });
@@ -466,7 +473,7 @@ function renderView(view) {
   charlesHotspot.hidden = photoHotspot.hidden;
   charlesHotspot.disabled = busy;
   photoFlip.disabled = busy;
-  if (photoHotspot.hidden && photoDialog.open) photoDialog.close();
+  if (photoHotspot.hidden && photoDialog.open && !busy) photoDialog.close();
   walletHotspot.hidden = !walletInspection || view.scene_id !== 'basement' || !view.available_actions.some(a => a.id === 'inspect_wallet');
   walletHotspot.disabled = busy;
   firelight.hidden = view.scene_id !== 'basement';
@@ -522,20 +529,6 @@ function renderView(view) {
       } else renderView(currentView);
     });
     actionList.append(next);
-  }
-  if (karenGreeting && karenDinnerLine === 0 || view.scene_id === 'photo_found' && photoReactionEvents && photoReactionLine < photoReactionEvents.length - 1) {
-    const nextLine = document.createElement('button');
-    nextLine.type = 'button';
-    nextLine.className = 'action-button dialogue-next-action';
-    nextLine.textContent = '다음 대사 ›';
-    nextLine.disabled = busy;
-    nextLine.addEventListener('click', () => {
-      if (busy) return;
-      if (shopStage.dataset.dialogueComplete === 'false') { dialogueStage.finishTyping?.(); return; }
-      if (karenGreeting) { karenDinnerLine = 1; renderView(currentView); }
-      else { ++photoReactionLine; renderView(currentView); }
-    });
-    actionList.append(nextLine);
   }
   if (view.scene_id === 'neighbors' && Object.values(greetingDestinations).includes(view.location_id)) {
     greetedPlaces.add(view.location_id);
@@ -639,7 +632,7 @@ function applyResponse(data, kind, characterId = null) {
       character_id: characterId, scene_id: data.view.scene_id, location_id: data.view.location_id});
   }
   if (data.view.scene_id === 'photo_found' && data.events.some(item => item.speaker_id === 'karen')) {
-    photoReactionEvents = data.events;
+    photoReactionEvents = data.events.map(item => ({speaker: item.speaker_id, text: item.text, image: item.image}));
     photoReactionLine = 0;
   }
   renderView(data.view);

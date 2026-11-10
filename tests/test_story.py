@@ -638,6 +638,8 @@ class StoryTest(unittest.TestCase):
                 self.assertTrue(decode_state(self.token)["photo_recognized"])
                 self.assertEqual(result["view"]["affinity"], before - 5)
                 self.assertEqual(sum(e["speaker_id"] == "karen" for e in result["events"]), 2)
+                self.assertEqual(result["events"][0]["speaker_id"], "karen")
+                self.assertFalse(any("벽에 지미와 찰스" in e["text"] for e in result["events"]))
                 self.assertEqual([a["id"] for a in result["view"]["available_actions"]], ["return_home"])
                 denied = self.client.post("/api/action", json={"state_token": self.token, "action_id": frames[first][-1]})
                 self.assertEqual(denied.status_code, 409)

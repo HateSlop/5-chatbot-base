@@ -417,7 +417,6 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             next_state["photo_recognized"] = True
             next_state["affinity"] = max(0, next_state["affinity"] - 5)
             events += [
-                event("thought", "벽에 지미와 찰스의 사진이 나란히 걸려 있었다."),
                 event("karen", "제 방에서 무엇을 보고 계신 거죠?", "/assets/images/karen_worried.svg"),
                 event("karen", "이제 그만 나가 주세요."),
             ]

@@ -381,6 +381,51 @@ test('pagination measures copy only, even when status and controls overflow the 
   assert.equal(stage.pages[0].length,50);
 });
 
+test('short scripted lines use the existing triangle pager and clear it afterward', async () => {
+  const {stage, nodes} = setup();
+  stage.pager = {hidden:true}; stage.previous = {}; stage.next = {}; stage.pageLabel = {};
+  stage.box.clientHeight = 112; stage.box.style = {};
+  stage.box.querySelector = () => null;
+  stage.box.classList = {add(){}, remove(){}};
+  stage.copy = {clientHeight:100, scrollHeight:10};
+  let advances = 0;
+  stage.render({text:'첫 대사', nextLine:() => ++advances});
+  await stage.ready;
+  assert.equal(stage.pager.hidden, false);
+  assert.equal(stage.next.disabled, false);
+  stage.nextLine();
+  assert.equal(advances, 1);
+  stage.render({text:'다음 대사'});
+  await stage.ready;
+  assert.equal(stage.pager.hidden, true);
+  assert.equal(stage.next.disabled, true);
+});
+
+test('triangle click advances a scripted line after its text is shown', async () => {
+  const element = () => ({hidden:true, textContent:'', style:{}, children:[], listeners:{}, clientHeight:112,
+    classList:{add(){}, remove(){}}, append(...items){this.children.push(...items);},
+    addEventListener(name, callback){this.listeners[name]=callback;},
+    querySelector(){return null;}, querySelectorAll(){return [];}, setAttribute(){}, removeAttribute(){}});
+  const nodes = Object.fromEntries(['background','figure','tv','speaker','text','box'].map(name => [`.dialogue-${name}`, element()]));
+  nodes['.dialogue-box'].ownerDocument = {createElement:element};
+  const root = {dataset:{}, append(){}, querySelector:selector=>nodes[selector]};
+  const context = {window:{}};
+  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../public/assets/js/dialogue-stage.js'),'utf8'),context);
+  const stage = new context.window.DialogueStage(root);
+  stage.pause = async () => {};
+  stage.copy.scrollHeight = 0;
+  let advances = 0;
+  stage.render({text:'첫 대사', nextLine:() => ++advances});
+  await stage.ready;
+  assert.equal(stage.pager.hidden,false);
+  assert.equal(stage.root.dataset.dialogueComplete,'true');
+  stage.next.listeners.click();
+  assert.equal(advances,1);
+  stage.render({text:'다음 대사'});
+  await stage.ready;
+  assert.equal(stage.pager.hidden,true);
+});
+
 test('frightened Jimmy skips the location entrance delay', async () => {
   const {stage}=setup();const pauses=[];
   stage.pause=async ms=>pauses.push(ms);
