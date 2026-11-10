@@ -1,3 +1,5 @@
+"""대사 표정 단서가 실제 인물 그림으로 연결되는지 확인한다."""
+
 import unittest
 
 from services.image_selector import StoryImageSelector

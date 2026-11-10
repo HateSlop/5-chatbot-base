@@ -1,3 +1,4 @@
+// 주인공 이름 입력창을 표시하고 입력을 검증한다.
 const nameForm = document.getElementById("name-form");
 const nameInput = document.getElementById("username");
 const nameSubmit = document.getElementById("name-submit");

@@ -1,3 +1,4 @@
+/* 결말 영상과 마지막 화면의 배치를 정한다. */
 .ending-cinema { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: transparent; cursor: none; }
 .butcher-scare { position: fixed; inset: 0; z-index: 110; overflow: hidden; background: #000; }
 .butcher-scare[hidden] { display: none; }

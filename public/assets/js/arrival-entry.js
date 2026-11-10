@@ -1,3 +1,4 @@
+// 이사 전 집에서 광고와 지미 방문을 거쳐 이름 입력으로 연결한다.
 // Pre-session presentation only; name-entry.js creates the actual server session.
 const entryRoot = document.getElementById('entry-stage');
 const entryStage = new DialogueStage(entryRoot);

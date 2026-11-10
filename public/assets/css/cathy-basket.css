@@ -1,3 +1,4 @@
+/* 미용실 도구 바구니와 제한 시간 안내를 꾸민다. */
 .dialogue-stage[data-scene="cathy_help"] .move-top { display: none; }
 .dialogue-stage .cathy-basket-hotspot {
   position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%);

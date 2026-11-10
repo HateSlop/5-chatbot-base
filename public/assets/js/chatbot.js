@@ -1,3 +1,4 @@
+// 서버 장면과 대화 응답을 받아 현재 화면과 입력 상태를 갱신한다.
 const shell = document.querySelector(".story-layout");
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-message");

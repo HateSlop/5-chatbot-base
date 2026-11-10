@@ -1,3 +1,4 @@
+// 동화·사망 엔딩의 영상과 재시작 연출을 관리한다.
 // These scenes only present endings already chosen by the server.
 window.endingCinema = new class {
   constructor() {

@@ -1,3 +1,4 @@
+// 시작 화면 영상과 배경음악의 재생·음소거를 관리한다.
 const startMusic = document.getElementById('start-music');
 const startVideo = document.querySelector('.start-video');
 const musicToggle = document.getElementById('start-music-toggle');

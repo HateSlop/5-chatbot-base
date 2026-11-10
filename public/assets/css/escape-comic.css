@@ -1,3 +1,4 @@
+/* 탈출 엔딩 만화 컷의 배치와 전환을 정한다. */
 .escape-comic { position: fixed; inset: 0; z-index: 100; box-sizing: border-box; display: grid; place-items: center; overflow: hidden; background: #000; }
 .escape-comic[hidden] { display: none; }
 .escape-comic-panels { width: min(100vw, 75dvh); height: 100dvh; min-height: 0; display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); }

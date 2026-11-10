@@ -1,3 +1,4 @@
+// 축제 마지막 선택의 제한 시간과 버튼 상태를 표시한다.
 // The server owns the deadline and ending; this dialog only displays and submits them.
 window.FestivalChoice = class {
   constructor(dialog, onAction) {

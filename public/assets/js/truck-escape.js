@@ -1,3 +1,4 @@
+// 탈출 장면의 트럭 문 조작과 시간 경과를 표시한다.
 // The server owns the deadline and whether the door opens.
 window.TruckEscape = class {
   constructor(root, onAction, stage) {

@@ -1,3 +1,4 @@
+/* 이사 뒤 정보 영역과 추천 질문·선택지를 꾸민다. */
 ﻿/* 16:9 shell = 4:9 interface + 12:9 (4:3) play area. */
 .post-move-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); aspect-ratio: 16 / 9; box-sizing: border-box; }
 .move-sidebar { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 22px; padding: 16px 12px; overflow-y: auto; background: #ede5d2; border-right: 1px solid #b6a887; color: #2b3029; }

@@ -1,3 +1,4 @@
+// 이사 직후 장면을 개발 화면에서 미리 보여 준다.
 // Isolated scene prototype: never call the API or write a progress/name token.
 const arrivalRoot = document.getElementById('arrival-stage');
 const arrivalStage = new DialogueStage(arrivalRoot);

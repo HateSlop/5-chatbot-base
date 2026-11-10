@@ -1,3 +1,4 @@
+// 주인공 정보, 호감도, 추천 질문과 이동 선택지를 표시한다.
 // Presentation mapping only. An icon never invents a server action.
 window.postMoveNavigation = function(locationId, actions) {
   const home = locationId === 'player_house';

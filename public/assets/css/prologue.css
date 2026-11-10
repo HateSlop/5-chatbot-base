@@ -1,3 +1,4 @@
+/* 이사 전 독백과 광고 화면을 꾸민다. */
 @font-face { font-family: "Diary Handwriting"; src: url('../fonts/NanumBrushScript-Regular.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
 .prologue {
   position: fixed; inset: 0; z-index: 35; display: grid; place-items: center;

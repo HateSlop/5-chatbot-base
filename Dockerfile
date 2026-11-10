@@ -1,3 +1,4 @@
+# Vercel 밖에서 Flask 앱을 컨테이너로 실행할 때 쓰는 이미지 설정.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

@@ -1,3 +1,4 @@
+/* 마을 분위기와 장면별 인물 위치·상호작용을 꾸민다. */
 /* Brick red lettering, warm gold outlines and plum shadows from the supplied logo. */
 :root { --v-gold: #f1be78; --v-cream: #fff0d2; --v-ink: #211323; --v-panel: #30202b; --v-red: #b33728; --v-line: #b98250; }
 .move-sidebar .move-affinity { padding: 12px 6px 4px; border: 0; background: transparent; box-shadow: none; }

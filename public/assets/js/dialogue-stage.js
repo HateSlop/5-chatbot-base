@@ -1,3 +1,4 @@
+// 장면 배경, 인물 그림, 대사창과 방문 애니메이션을 그린다.
 /* Presentation only: no story decisions, API calls or persistent state. */
 window.DialogueStage = class {
   constructor(root) {

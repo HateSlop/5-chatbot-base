@@ -1,3 +1,4 @@
+// 정육점 사망 분기의 밥 등장과 공격 연출을 재생한다.
 // Plays only after the server confirms death in the butcher shop.
 window.butcherScare = new class {
   constructor() {
