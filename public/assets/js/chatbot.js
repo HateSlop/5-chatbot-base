@@ -319,12 +319,8 @@ function greetingLocked(view) {
     (greetingChats.get(`${view.scene_id}:${view.location_id}`) || 0) < 2;
 }
 let angryReaction = null;
-let reactionTimer;
-let reactionRender = 0;
 function clearReaction() {
-  clearTimeout(reactionTimer);
   angryReaction = null;
-  ++reactionRender;
 }
 // Presentation only: hide completed greeting destinations, without changing server actions.
 const greetedPlaces = new Set();
@@ -429,18 +425,6 @@ function renderMessages() {
         renderView(currentView);
       };
       karenDepartureTimer = setTimeout(depart, 3300);
-    });
-  }
-  clearTimeout(reactionTimer);
-  const render = ++reactionRender;
-  if (angryReaction) {
-    Promise.resolve(dialogueStage.ready).then(ready => {
-      if (ready === false || render !== reactionRender || !angryReaction) return;
-      reactionTimer = setTimeout(() => {
-        if (render !== reactionRender) return;
-        angryReaction = null;
-        renderMessages();
-      }, 1500);
     });
   }
   log.scrollTop = log.scrollHeight;
