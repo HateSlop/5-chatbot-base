@@ -61,7 +61,7 @@ window.sceneEffects = new class {
       if (this.assimilationTimer) clearTimeout(this.assimilationTimer);
       this.assimilationActive = false;
       if (this.assimilationScreen) this.assimilationScreen.hidden = true;
-    } else if (!this.assimilationActive && this.assimilationScreen) {
+    } else if (!window.endingCinema && !this.assimilationActive && this.assimilationScreen) {
       this.assimilationActive = true;
       this.assimilationScreen.hidden = false;
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

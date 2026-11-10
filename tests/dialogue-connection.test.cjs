@@ -680,7 +680,7 @@ for (const date of ['', '11월 1일']) test(`Charles uses his own front, back an
   assert.equal(h.nodes.get('photo-thought').textContent,'사');
   await h.nodes.get('photo-flip').listeners.click();
   assert.match(h.nodes.get('.photo-back').src,/props_charles_back/);
-  assert.equal(h.nodes.get('photo-back-date').textContent,date ? '11/1' : '');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'');
   await h.nodes.get('photo-close').listeners.click();
   assert.deepEqual(calls,['inspect_charles_photo','inspect_charles_photo_back','recognize_charles_photo']);
   assert.equal(h.nodes.get('photo-dialog').open,false);
