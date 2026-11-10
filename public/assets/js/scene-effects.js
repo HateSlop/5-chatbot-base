@@ -55,6 +55,8 @@ window.sceneEffects = new class {
     catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
   ending(type, text = '', gender = null) {
+    if (!type) window.endingCinema?.reset();
+    window.endingCinema?.show(type === 'assimilation', gender);
     window.escapeComic?.show(type === 'escape', text, gender);
     if (type !== 'assimilation') {
       if (this.assimilationTimer) clearTimeout(this.assimilationTimer);

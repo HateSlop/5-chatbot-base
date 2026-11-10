@@ -76,3 +76,14 @@ test('female death uses the supplied female film, and a missing source retains t
   assert.equal(ready.plays(),1);
   assert.equal(ready.get('death-video').src,'/assets/videos/video_ending_die_girl.mp4');
 });
+
+test('assimilation locks play and uses the selected gender, death finishes only when its video ends',()=>{
+  const h=setup(),calls=[];
+  h.window.endingCinema={show:(...args)=>calls.push(args),reset:()=>calls.push('reset'),finish:()=>calls.push('finish')};
+  h.effects.ending('assimilation','동화','female');
+  assert.deepEqual(calls[0],[true,'female']);assert.equal(h.get('game-screen').inert,true);
+  h.effects.ending('death','사망','male');assert.equal(calls.includes('finish'),false);
+  h.get('death-video').listeners.ended();assert.equal(calls.at(-1),'finish');
+  assert.equal(h.get('death-controls').hidden,true);
+  h.effects.ending(null);assert.ok(calls.includes('reset'));assert.equal(h.get('game-screen').inert,false);
+});
