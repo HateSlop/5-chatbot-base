@@ -2,10 +2,28 @@
 .butcher-scare { position: fixed; inset: 0; z-index: 110; overflow: hidden; background: #000; }
 .butcher-scare[hidden] { display: none; }
 .butcher-scare img { position: absolute; display: none; }
-.butcher-scare[data-phase="arrival"] :is(.scare-background, .scare-standing), .butcher-scare[data-phase="attack"] .scare-attack { display: block; }
-.scare-background { inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.65); }
-.scare-standing { inset: 5% 0 auto; width: 100%; height: 92%; object-fit: contain; object-position: center top; filter: brightness(.85); }
-.scare-attack { top: -3%; left: 50%; width: max(100%, 125dvh); height: 200%; object-fit: contain; object-position: center top; transform: translateX(-50%); transform-origin: 50% 18%; }
+.butcher-scare[data-phase="arrival"] :is(.scare-background, .scare-standing), .butcher-scare:is([data-phase="attack"], [data-phase="fade"]) :is(.scare-background, .scare-attack) { display: block; }
+.scare-background { z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.42); }
+.scare-standing { z-index: 1; inset: 5% 0 auto; width: 100%; height: 92%; object-fit: contain; object-position: center top; filter: brightness(.55) contrast(1.12) saturate(.75); }
+.scare-attack { z-index: 2; top: -3%; left: 50%; width: max(100%, 125dvh); height: 200%; object-fit: contain; object-position: center top; transform: translateX(-50%); transform-origin: 50% 18%; filter: brightness(.8) contrast(1.15) saturate(.8); }
+.butcher-scare::before, .butcher-scare::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.butcher-scare::before { z-index: 1; opacity: 0; background: radial-gradient(ellipse at 50% 35%, #5b000044, #780000b8 70%, #100000); }
+.butcher-scare::after { z-index: 3; background: radial-gradient(ellipse at 50% 35%, transparent 20%, #0007 70%, #000e); }
+.butcher-scare[data-phase="attack"] .scare-background { animation: butcher-darken 1500ms ease-in forwards; }
+.butcher-scare[data-phase="attack"]::before { animation: butcher-red 1500ms ease-in forwards; }
+.butcher-scare[data-phase="attack"]::after { background: radial-gradient(ellipse at 50% 35%, transparent 10%, #50000077 65%, #000 100%); }
+.butcher-scare[data-phase="fade"] .scare-background { filter: brightness(.14); }
+.butcher-scare[data-phase="fade"] .scare-attack { transform: translate(-50%, -2%) scale(1.4); }
+.butcher-scare[data-phase="fade"]::before { opacity: 1; }
+.butcher-scare[data-phase="fade"]::after { background: #000; animation: butcher-blackout 650ms ease-in forwards; }
+@keyframes butcher-darken { to { filter: brightness(.14); } }
+@keyframes butcher-red { from { opacity: .15; } to { opacity: 1; } }
+@keyframes butcher-blackout { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .butcher-scare[data-phase="attack"] .scare-background { animation: none; filter: brightness(.14); }
+  .butcher-scare[data-phase="attack"]::before { animation: none; opacity: 1; }
+  .butcher-scare[data-phase="fade"] .scare-attack { transform: translateX(-50%); }
+}
 @media (prefers-reduced-motion: no-preference) {
   .butcher-scare[data-phase="attack"] .scare-attack { animation: bob-lunge 1400ms cubic-bezier(.12,.75,.3,1) both; }
   @keyframes bob-lunge {

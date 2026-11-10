@@ -38,8 +38,8 @@ window.butcherScare = new class {
       this.root.dataset.phase = 'attack';
       await this.pause(1500);
       if (run !== this.version) return false;
-      this.root.dataset.phase = 'black';
-      await this.pause(250);
+      this.root.dataset.phase = 'fade';
+      await this.pause(650);
       return run === this.version;
     } catch {
       // A failed image must still allow the existing death film to play.
