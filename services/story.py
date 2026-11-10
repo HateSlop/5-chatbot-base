@@ -279,7 +279,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
 
     if scene == "arrival":
         next_state.update(scene_id="neighbors", location_id="square")
-        events.append(event("thought", "지미의 권유대로 광장에 나왔다. 캐런, 밥, 캐시에게 차례로 인사해 보자."))
+        events.append(event("thought", "지미의 권유대로 광장에 나왔다. 캐런, 밥, 캐시에게 인사해 보자."))
     elif scene == "neighbors":
         destination = {
             "visit_karen": ("karen_house", "karen"),
@@ -336,7 +336,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         next_state["story_day"] = 2
         events += [
             event("thought", "미용실을 나와 집으로 돌아왔다. 캐시는 끝까지 내 반응을 살피는 듯했다."),
-            event("jimmy", "고기 좀 사러 정육점에 다녀올게."),
+            event("jimmy", "나 지금 고기 사러 정육점에 가는 길인데, 너도 사다줄까?"),
         ]
     elif scene == "jimmy_butcher":
         next_state["scene_id"] = "karen_search"
@@ -373,11 +373,11 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             events.append(event("bob", "거기서 뭐 하시오? 여긴 손님이 들어올 곳이 아니야. 당장 나가시오."))
     elif scene == "bob_caught":
         next_state.update(scene_id="dinner_invite", location_id="player_house")
-        events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어. 같이 가자. 내일 오후 6시에 네 집으로 데리러 올게."))
+        events.append(event("jimmy", "캐런이 내일 저녁 식사에 초대했어.. 같이 가자.. 내일 6시까지 여기로 올게.."))
     elif scene == "dinner_invite":
         next_state["scene_id"] = "wait_dinner"
         next_state["story_day"] = 3
-        events.append(event("thought", "다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다."))
+        events.append(event("thought", "다음 날 7시가 되도록 지미는 나타나지 않았다."))
     elif scene == "wait_dinner":
         next_state.update(scene_id="karen_dinner", location_id="karen_house")
         events.extend([
@@ -429,7 +429,7 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
             return next_state, events
         if action_id == "accept_job":
             next_state["scene_id"] = "job_choice"
-            events.append(event("karen", "마음을 내주셔서 고마워요. 마침 두 군데에서 일손을 기다리고 있어요.\n\n정원사는 마을 정원을 돌보고, 트럭 운전수는 필요한 물건을 운반하는 일이에요. 어느 쪽이 더 잘 맞으실 것 같으세요?"))
+            events.append(event("karen", "좋은 생각이에요. 마침 두 군데에서 일손이 필요해요. 정원사는 마을에 정원을 관리하고, 트럭 운전수는 필요한 물건을 운반하죠. 어느 쪽이 더 잘 맞을 것 같나요?"))
         elif action_id == "decline_job":
             next_state["scene_id"] = "job_result"
             events.append(event("karen", "아직은 쉬는 시간이 더 필요하시군요. 물론이에요. 서두르실 필요는 없어요.\n\n마음이 정해지면 제게 말씀해 주세요. 이 마을에는 누구에게나 어울리는 자리가 있답니다."))
@@ -446,11 +446,11 @@ def apply_action(state: dict, action_id: str) -> tuple[dict, list[dict]]:
         events.append(event("karen", text))
     elif scene == "job_result":
         next_state["scene_id"] = "festival_invite"
-        events.append(event("bob", "고기 좋아한다고 했지? 내일 마을 축제가 있으니, 꼭 오시오."))
+        events.append(event("bob", "자네 고기 좋아한다 했었지? 내일 마을 축제에 오시게."))
     elif scene == "festival_invite":
         next_state.update(scene_id="festival", location_id="square")
         next_state["story_day"] = 4
-        events.append(event("narrator", "광장에 축제 음식이 차려졌다. 주민들이 자리에 앉기를 권한다."))
+        events.append(event("narrator", "광장에서 마을 축제가 시작됐다. 맛있는 음식과 즐거운 이야기들이 화기애애한 분위기를 이루고 있다."))
     elif scene == "festival":
         next_state["scene_id"] = "hair_found"
         next_state["clues"].append("jimmy_hair")

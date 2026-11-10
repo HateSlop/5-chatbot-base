@@ -13,7 +13,7 @@ window.postMoveNavigation = function(locationId, actions) {
 };
 const sceneQuestions = {
   'arrival:player_house:jimmy': ['이 마을은 어떤 곳이야?', '이웃들은 어떤 사람들이야?', '처음엔 어디를 가 보면 좋을까?'],
-  'neighbors:karen_house:karen': ['주민대표는 어떤 일을 하세요?', '이 동네에서는 보통 어떻게 지내나요?'],
+  'neighbors:karen_house:karen': ['주민대표는 어떤 일을 해요?', '이 동네에서는 보통 어떻게 지내나요?'],
   'neighbors:butcher_shop:bob': ['정육점에서는 어떤 일을 하세요?', '이 동네 생활은 어떠세요?'],
   'neighbors:salon:cathy': ['미용실에서는 어떤 일을 하세요?', '이 동네 생활은 어떠세요?'],
   'cathy_task:player_house:jimmy': ['캐시가 바빠 보이던데 무슨 일이야?', '내가 캐시를 어떻게 도우면 될까?'],
