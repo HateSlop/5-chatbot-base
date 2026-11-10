@@ -15,7 +15,7 @@ window.sceneEffects = new class {
       this.controls.hidden = false; this.status.textContent = '이야기가 끝났습니다.'; this.replay.focus();
     });
     this.video.addEventListener('error', () => { this.controls.hidden = false; this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 새로 시작해 주세요.'; });
-    window.addEventListener('pagehide', () => { this.video.pause(); });
+    window.addEventListener('pagehide', () => { this.active = false; window.butcherScare?.reset(); this.video.pause(); });
   }
   async transition(show) {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -39,12 +39,13 @@ window.sceneEffects = new class {
     try { await this.video.play(); }
     catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
-  ending(type, text = '', gender = null) {
+  ending(type, text = '', gender = null, locationId = null) {
     if (!type) window.endingCinema?.reset();
     window.endingCinema?.show(type === 'assimilation', gender);
     window.escapeComic?.show(type === 'escape', text, gender);
     const death = type === 'death';
     if (!death) {
+      window.butcherScare?.reset();
       if (this.active) { this.video.pause(); this.video.currentTime = 0; }
       this.active = false;
       this.screen.hidden = true;
@@ -70,6 +71,8 @@ window.sceneEffects = new class {
     this.video.src = source;
     this.video.hidden = false;
     this.replay.hidden = false;
-    this.play();
+    if (locationId === 'butcher_shop' && window.butcherScare) {
+      window.butcherScare.play().then(finished => { if (finished && this.active) this.play(); });
+    } else this.play();
   }
 }();

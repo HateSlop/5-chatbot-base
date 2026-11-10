@@ -85,6 +85,14 @@ test('the missed evening visit uses the supplied sunset house only while waiting
   assert.equal(h.stage().background,'/assets/images/player_house.svg');
 });
 
+test('ending presentation receives the server location so only butcher death gets Bob’s surprise',()=>{
+  const h=setup(),calls=[];
+  h.context.window.sceneEffects={ending:(...args)=>calls.push(args)};
+  const data=response('ending','butcher_shop',null,[]);data.view.ending='death';data.view.gender='female';
+  h.context.window.startStory(data,'테스트');
+  assert.deepEqual(calls.at(-1),['death','','female','butcher_shop']);
+});
+
 test('job explanation and reward keep Karen visible without asking for another character click', () => {
   const h = setup();
   h.context.window.startStory(response('checkpoint', 'player_house', 'karen', []), '테스트');

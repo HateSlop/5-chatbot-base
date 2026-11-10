@@ -1,4 +1,24 @@
 .ending-cinema { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: transparent; cursor: none; }
+.butcher-scare { position: fixed; inset: 0; z-index: 110; overflow: hidden; background: #000; }
+.butcher-scare[hidden] { display: none; }
+.butcher-scare img { position: absolute; display: none; }
+.butcher-scare[data-phase="arrival"] :is(.scare-background, .scare-standing), .butcher-scare[data-phase="attack"] .scare-attack { display: block; }
+.scare-background { inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.65); }
+.scare-standing { inset: 5% 0 auto; width: 100%; height: 92%; object-fit: contain; object-position: center top; filter: brightness(.85); }
+.scare-attack { top: -3%; left: 50%; width: max(100%, 125dvh); height: 200%; object-fit: contain; object-position: center top; transform: translateX(-50%); transform-origin: 50% 18%; }
+@media (prefers-reduced-motion: no-preference) {
+  .butcher-scare[data-phase="attack"] .scare-attack { animation: bob-lunge 1400ms cubic-bezier(.12,.75,.3,1) both; }
+  @keyframes bob-lunge {
+    0% { transform: translate(-50%, 6%) scale(.72); }
+    18% { transform: translate(-51%, -1%) scale(1.12); }
+    26% { transform: translate(-48%, 1%) scale(1.18) rotate(1.2deg); }
+    34% { transform: translate(-52%, -1%) scale(1.2) rotate(-1.2deg); }
+    42% { transform: translate(-49%, 0) scale(1.23) rotate(.6deg); }
+    52% { transform: translate(-51%, -1%) scale(1.25) rotate(-.6deg); }
+    65% { transform: translate(-50%, 0) scale(1.3); }
+    100% { transform: translate(-50%, -2%) scale(1.4); }
+  }
+}
 .ending-cinema [hidden], .ending-cinema[hidden] { display: none; }
 .cinema-opening, .cinema-room { position: absolute; inset: 0; }
 .cinema-opening .cinema-start img { display: block; width: 100%; }

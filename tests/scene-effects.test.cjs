@@ -67,3 +67,16 @@ test('assimilation locks play and uses the selected gender, death finishes only 
   assert.equal(h.get('death-controls').hidden,true);
   h.effects.ending(null);assert.ok(calls.includes('reset'));assert.equal(h.get('game-screen').inert,false);
 });
+
+test('only server-confirmed butcher death waits for the scare; duplicates and cancelled scares never start a film',async()=>{
+  const h=setup();let finish,scares=0;
+  h.window.butcherScare={play(){scares++;return new Promise(resolve=>finish=resolve);},reset(){}};
+  h.effects.ending('death','정육점','male','butcher_shop');
+  h.effects.ending('death','정육점','male','butcher_shop');
+  assert.equal(scares,1);assert.equal(h.plays(),0);
+  finish(true);await Promise.resolve();assert.equal(h.plays(),1);
+  h.effects.ending(null);
+  h.effects.ending('death','트럭','male','square');assert.equal(h.plays(),2);assert.equal(scares,1);
+  h.effects.ending(null);h.effects.ending('death','정육점','male','butcher_shop');
+  h.events.pagehide();finish(false);await Promise.resolve();assert.equal(h.plays(),2);
+});
