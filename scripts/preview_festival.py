@@ -19,7 +19,7 @@ def preview_festival():
                  affinity=70, job='driver', has_car_key=True,
                  clues=['brazier', 'jimmy_photo', 'photo_back_date'])
     state['journal'].append('트럭 운전수를 맡아 트럭 차 키를 가지고 있다.')
-    data = chatbot._response(state, [event('narrator', '광장에 축제 음식이 차려졌다. 주민들이 자리에 앉기를 권한다.')])
+    data = chatbot._response(state, [event('narrator', '광장에서 마을 축제가 시작됐다. 맛있는 음식과 즐거운 이야기들이 화기애애한 분위기를 이루고 있다.')])
     response = make_response(render_template('chat.html', bot=bot_view(load_config()), festival_preview=data))
     response.cache_control.no_store = True
     return response

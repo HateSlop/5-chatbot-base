@@ -5,6 +5,8 @@ window.sceneEffects = new class {
     this.datePanel = document.getElementById('scene-date-transition');
     this.screen = document.getElementById('death-screen');
     this.video = document.getElementById('death-video');
+    this.music = document.getElementById('death-music');
+    this.music.volume = .45;
     this.status = document.getElementById('death-status');
     this.controls = document.getElementById('death-controls');
     this.replay = document.getElementById('death-replay');
@@ -12,9 +14,35 @@ window.sceneEffects = new class {
     this.assimilationScreen = document.getElementById('assimilation-screen');
     this.replay.addEventListener('click', () => { this.video.currentTime = 0; this.play(); });
     document.getElementById('death-restart').addEventListener('click', () => window.location.reload());
-    this.video.addEventListener('ended', () => { this.controls.hidden = false; this.status.textContent = ''; this.replay.focus(); });
-    this.video.addEventListener('error', () => { this.controls.hidden = false; this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 새로 시작해 주세요.'; });
-    window.addEventListener('pagehide', () => { this.active = false; window.butcherScare?.reset(); this.video.pause(); });
+    document.getElementById('death-finish').addEventListener('click', () => window.endingCinema?.finish());
+    this.video.addEventListener('playing', () => { this.musicWanted = true; this.syncDeathMusic(); });
+    this.video.addEventListener('pause', () => { if (!this.video.ended) this.music.pause(); });
+    this.video.addEventListener('ended', () => {
+      if (window.endingCinema) { this.controls.hidden = true; window.endingCinema.finish(); return; }
+      this.controls.hidden = false; this.status.textContent = ''; this.replay.focus();
+    });
+    this.video.addEventListener('error', () => {
+      this.musicWanted = false; this.music.pause();
+      this.controls.hidden = false;
+      document.getElementById('death-finish').hidden = false;
+      this.status.textContent = '영상을 불러오지 못했습니다. 다시 재생하거나 The End로 마무리해 주세요.';
+    });
+    document.addEventListener('visibilitychange', () => this.syncDeathMusic());
+    window.addEventListener('pagehide', () => { this.active = false; window.butcherScare?.reset(); this.video.pause(); this.stopDeathMusic(); });
+  }
+  stopDeathMusic() {
+    this.musicWanted = false;
+    this.music.pause();
+    this.music.currentTime = 0;
+  }
+  syncDeathMusic() {
+    if (!this.active || !this.musicWanted || this.music.ended || document.hidden || window.locationMusic?.enabled === false || this.video.paused && !this.video.ended) {
+      this.music.pause(); return;
+    }
+    if (!this.music.paused) return;
+    this.music.play().then(() => {
+      if (!this.active || !this.musicWanted || document.hidden || window.locationMusic?.enabled === false) this.music.pause();
+    }).catch(() => {});
   }
   async transition(show, dates = null) {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -48,10 +76,14 @@ window.sceneEffects = new class {
     } finally { this.curtain.hidden = true; if (this.datePanel) this.datePanel.hidden = true; }
   }
   async play() {
+    this.musicWanted = false;
+    this.music.pause();
+    this.music.currentTime = this.video.currentTime || 0;
     this.controls.hidden = true;
+    document.getElementById('death-finish').hidden = true;
     this.status.textContent = '';
     try { await this.video.play(); }
-    catch { this.controls.hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
+    catch { this.controls.hidden = false; document.getElementById('death-finish').hidden = false; this.status.textContent = '재생 버튼을 눌러 엔딩 영상을 시작해 주세요.'; }
   }
   ending(type, text = '', gender = null, locationId = null) {
     if (!type) window.endingCinema?.reset();
@@ -69,6 +101,7 @@ window.sceneEffects = new class {
     }
     const death = type === 'death';
     if (!death) {
+      this.stopDeathMusic();
       window.butcherScare?.reset();
       if (this.active) { this.video.pause(); this.video.currentTime = 0; }
       this.active = false;
@@ -90,9 +123,11 @@ window.sceneEffects = new class {
       this.replay.hidden = true;
       this.controls.hidden = false;
       this.status.textContent = '선택한 주인공의 엔딩 영상은 준비 중입니다.';
+      document.getElementById('death-finish').hidden = false;
       return;
     }
     this.video.src = source;
+    this.music.load?.();
     this.video.hidden = false;
     this.replay.hidden = false;
     if (locationId === 'butcher_shop' && window.butcherScare) {

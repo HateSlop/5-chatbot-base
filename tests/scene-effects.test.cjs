@@ -4,10 +4,11 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 function setup(reduced=false) {
   const nodes=new Map(),steps=[],events={},durations=[];let plays=0;
-  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,style:{},dataset:{maleSrc:'/assets/videos/video_ending_die_boy.mp4'},listeners:{},classList:{add(){},remove(){}},addEventListener(k,f){this.listeners[k]=f;},removeAttribute(k){delete this[k];},focus(){this.focused=true;},pause(){this.paused=true;},play(){plays++;return Promise.resolve();},animate(frames,options){steps.push(frames.map(f=>f.opacity));durations.push(options.duration);return {finished:Promise.resolve()};}});return nodes.get(id);};
+  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,paused:true,plays:0,style:{},dataset:{maleSrc:'/assets/videos/video_ending_die_boy.mp4'},listeners:{},classList:{add(){},remove(){}},addEventListener(k,f){this.listeners[k]=f;},removeAttribute(k){delete this[k];},focus(){this.focused=true;},pause(){this.paused=true;},play(){if(id==='death-video')plays++;this.plays++;this.paused=false;return Promise.resolve();},animate(frames,options){steps.push(frames.map(f=>f.opacity));durations.push(options.duration);return {finished:Promise.resolve()};}});return nodes.get(id);};
   const window={matchMedia:()=>({matches:reduced}),addEventListener:(k,f)=>events[k]=f,location:{reload(){steps.push('reload');}}};
-  vm.runInNewContext(fs.readFileSync('public/assets/js/scene-effects.js','utf8'),{window,document:{getElementById:get}});
-  return {effects:window.sceneEffects,get,steps,events,durations,window,plays:()=>plays};
+  const document={hidden:false,getElementById:get,addEventListener:(k,f)=>events[k]=f};
+  vm.runInNewContext(fs.readFileSync('public/assets/js/scene-effects.js','utf8'),{window,document});
+  return {effects:window.sceneEffects,get,steps,events,durations,window,document,plays:()=>plays};
 }
 test('scene changes happen under black, then fade back; failures never leave a curtain',async()=>{
   const h=setup();await h.effects.transition(async()=>{assert.equal(h.get('scene-curtain').style.opacity,'1');h.steps.push('scene');});
@@ -77,15 +78,15 @@ test('female death uses the supplied female film, and a missing source retains t
   assert.equal(ready.get('death-video').src,'/assets/videos/video_ending_die_girl.mp4');
 });
 
-test('assimilation uses one ending screen and death controls appear when its video ends',()=>{
+test('assimilation uses one ending screen and death always finishes on the common The End page',()=>{
   const h=setup(),calls=[];
   h.window.endingCinema={show:(...args)=>calls.push(args),reset:()=>calls.push('reset'),finish:()=>calls.push('finish')};
   h.effects.ending('assimilation','동화','female');
   assert.deepEqual(calls[0],[true,'female']);assert.equal(h.get('game-screen').inert,true);
   assert.equal(h.get('assimilation-screen').hidden,true);
   h.effects.ending('death','사망','male');assert.equal(calls.includes('finish'),false);
-  h.get('death-video').listeners.ended();assert.equal(calls.includes('finish'),false);
-  assert.equal(h.get('death-controls').hidden,false);
+  h.get('death-video').listeners.ended();assert.equal(calls.includes('finish'),true);
+  assert.equal(h.get('death-controls').hidden,true);
   h.effects.ending(null);assert.ok(calls.includes('reset'));assert.equal(h.get('game-screen').inert,false);
 });
 
@@ -100,4 +101,35 @@ test('only server-confirmed butcher death waits for the scare; duplicates and ca
   h.effects.ending('death','트럭','male','square');assert.equal(h.plays(),2);assert.equal(scares,1);
   h.effects.ending(null);h.effects.ending('death','정육점','male','butcher_shop');
   h.events.pagehide();finish(false);await Promise.resolve();assert.equal(h.plays(),2);
+});
+
+test('bad ending music starts with actual film playback, survives The End, and stops on new play or exit',async()=>{
+  const h=setup(),music=h.get('death-music'),video=h.get('death-video');let finish,finales=0;
+  h.window.butcherScare={play:()=>new Promise(resolve=>finish=resolve),reset(){}};
+  h.window.endingCinema={show(){},reset(){},finish(){finales++;}};
+  h.effects.ending('death','','male','butcher_shop');assert.equal(music.plays,0);
+  finish(true);await Promise.resolve();assert.equal(music.plays,0);
+  video.listeners.playing();assert.equal(music.plays,1);
+  music.currentTime=3;h.effects.ending('death','','male','butcher_shop');assert.equal(music.currentTime,3);
+  h.document.hidden=true;h.events.visibilitychange();assert.equal(music.paused,true);
+  h.document.hidden=false;h.events.visibilitychange();assert.equal(music.paused,false);
+  video.paused=true;video.listeners.pause();assert.equal(music.paused,true);
+  h.get('death-replay').listeners.click();video.listeners.playing();assert.equal(music.currentTime,0);assert.equal(music.paused,false);
+  video.ended=true;video.paused=true;video.listeners.pause();video.listeners.ended();
+  assert.equal(finales,1);assert.equal(music.paused,false);assert.equal(h.get('death-controls').hidden,true);
+  h.effects.ending(null);assert.equal(music.paused,true);assert.equal(music.currentTime,0);
+  h.effects.ending('death','','male');video.ended=false;video.listeners.playing();
+  h.events.pagehide();assert.equal(music.paused,true);assert.equal(music.currentTime,0);
+});
+
+test('mute and blocked music never prevent The End; video failure still offers a finish action',async()=>{
+  const h=setup(),music=h.get('death-music'),video=h.get('death-video');let finishes=0;
+  h.window.endingCinema={show(){},reset(){},finish(){finishes++;}};
+  h.window.locationMusic={enabled:false};
+  h.effects.ending('death','','male');video.listeners.playing();assert.equal(music.plays,0);
+  h.window.locationMusic.enabled=true;music.play=()=>Promise.reject(Error('blocked'));
+  video.listeners.playing();await new Promise(setImmediate);
+  video.listeners.ended();assert.equal(finishes,1);
+  video.listeners.error();assert.equal(h.get('death-finish').hidden,false);
+  h.get('death-finish').listeners.click();assert.equal(finishes,2);
 });

@@ -72,7 +72,7 @@ test('festival layers ambience over square music without restarting, and both ob
   const h=setup();
   for(const scene of ['festival','hair_found','final_choice']) {
     h.music.enter('square',null,scene);
-    assert.equal(h.audio.src,'/assets/audio/square-bgm.mp3');
+    assert.equal(h.audio.src,scene==='final_choice'?'/assets/audio/festival-escape-bgm.mp3':'/assets/audio/square-bgm.mp3');
     assert.equal(h.ambience.paused,false);
     h.ambience.currentTime=20;
   }
@@ -88,4 +88,17 @@ test('festival layers ambience over square music without restarting, and both ob
   blocked.music.enter('square',null,'festival');await Promise.resolve();
   blocked.ambience.play=()=>{blocked.ambience.paused=false;return Promise.resolve();};
   blocked.events.pointerdown({target:{closest:()=>false}});assert.equal(blocked.ambience.paused,false);
+});
+
+test('the urgent track starts at the final choice and continues through truck attempts and result',()=>{
+  const h=setup();h.music.enter('square',null,'hair_found');
+  assert.equal(h.audio.src,'/assets/audio/square-bgm.mp3');
+  h.music.enter('square',null,'final_choice');assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');
+  h.audio.currentTime=8;const plays=h.audio.plays;
+  for(const scene of ['final_choice','truck_escape','truck_escape','truck_escape_result']) {
+    h.music.enter('square',null,scene);
+    assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');assert.equal(h.audio.currentTime,8);assert.equal(h.audio.plays,plays);
+  }
+  h.music.enter('square','death','ending');assert.equal(h.audio.paused,true);
+  h.music.enter('player_house',null,'arrival');assert.equal(h.audio.src,'/assets/audio/home-bgm.mp3');
 });

@@ -75,10 +75,10 @@ test('the missed evening visit uses the supplied sunset house only while waiting
   const h=setup();
   h.context.window.startStory(response('dinner_invite','player_house','jimmy',[]),'테스트');
   assert.equal(h.stage().background,'/assets/images/player_house.svg');
-  h.context.applyResponse(response('wait_dinner','player_house',null,[{speaker_id:'thought',text:'다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다.'}]),'scene');
+  h.context.applyResponse(response('wait_dinner','player_house',null,[{speaker_id:'thought',text:'다음 날 7시가 되도록 지미는 나타나지 않았다.'}]),'scene');
   assert.equal(h.stage().background,'/assets/images/player_house_evening.png');
   assert.equal(h.stage().image,null);
-  assert.match(h.stage().text,/오후 7시/);
+  assert.match(h.stage().text,/다음 날 7시/);
   h.context.applyResponse(response('karen_dinner','karen_house','karen',[]),'scene');
   assert.equal(h.stage().background,'/assets/images/karen_house.svg');
   h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 시작');
@@ -796,7 +796,7 @@ test('both festival endings expose a title return and a new play drops old state
   const elements=new Map();
   const deathWindow={location:{reload(){this.reloaded=true;}},addEventListener(){}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/scene-effects.js'),'utf8'), {
-    window:deathWindow, document:{getElementById(id){if(!elements.has(id)) elements.set(id,node()); return elements.get(id);}},
+    window:deathWindow, document:{addEventListener(){},getElementById(id){if(!elements.has(id)) elements.set(id,node()); return elements.get(id);}},
   });
   elements.get('death-restart').listeners.click();
   assert.equal(deathWindow.location.reloaded,true);
