@@ -4,7 +4,7 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 function setup(reduced=false) {
   const nodes=new Map(),steps=[],events={},durations=[];let plays=0;
-  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,style:{},dataset:{maleSrc:'/assets/videos/video_ending_die_boy.mp4'},listeners:{},addEventListener(k,f){this.listeners[k]=f;},removeAttribute(k){delete this[k];},focus(){this.focused=true;},pause(){this.paused=true;},play(){plays++;return Promise.resolve();},animate(frames,options){steps.push(frames.map(f=>f.opacity));durations.push(options.duration);return {finished:Promise.resolve()};}});return nodes.get(id);};
+  const get=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,style:{},dataset:{maleSrc:'/assets/videos/video_ending_die_boy.mp4'},listeners:{},classList:{add(){},remove(){}},addEventListener(k,f){this.listeners[k]=f;},removeAttribute(k){delete this[k];},focus(){this.focused=true;},pause(){this.paused=true;},play(){plays++;return Promise.resolve();},animate(frames,options){steps.push(frames.map(f=>f.opacity));durations.push(options.duration);return {finished:Promise.resolve()};}});return nodes.get(id);};
   const window={matchMedia:()=>({matches:reduced}),addEventListener:(k,f)=>events[k]=f,location:{reload(){steps.push('reload');}}};
   vm.runInNewContext(fs.readFileSync('public/assets/js/scene-effects.js','utf8'),{window,document:{getElementById:get}});
   return {effects:window.sceneEffects,get,steps,events,durations,window,plays:()=>plays};
@@ -15,6 +15,26 @@ test('scene changes happen under black, then fade back; failures never leave a c
   assert.deepEqual(h.durations,[180,180]);
   await assert.rejects(h.effects.transition(async()=>{throw Error('failed');}));assert.equal(h.get('scene-curtain').hidden,true);
   const quiet=setup(true);await quiet.effects.transition(async()=>{});assert.equal(quiet.steps.length,0);
+});
+test('date change replaces only the day on the dark transition',async()=>{
+  const h=setup(true);
+  await h.effects.transition(async()=>{
+    assert.equal(h.get('scene-date-transition').hidden,false);
+    assert.equal(h.get('scene-date-base').textContent,'1955.11.');
+    assert.equal(h.get('scene-date-old').textContent,'7');
+    assert.equal(h.get('scene-date-new').textContent,'8');
+  },{from:'1955.11.7',to:'1955.11.8'});
+  assert.equal(h.get('scene-date-transition').hidden,true);
+});
+test('assimilation shows the START replay before returning to character choice',()=>{
+  const h=setup();
+  h.effects.ending('assimilation');
+  assert.equal(h.get('assimilation-screen').hidden,false);
+  h.effects.ending(null);
+  assert.equal(h.get('assimilation-screen').hidden,true);
+  const html=fs.readFileSync('templates/chat.html','utf8');
+  assert.match(html,/id="assimilation-screen"/);
+  assert.match(html,/class="escape-the-end">THE END/);
 });
 test('escape uses the comic and disables the game underneath, returning clears it',()=>{
   const h=setup();const calls=[];h.window.escapeComic={show:(...args)=>calls.push(args)};
