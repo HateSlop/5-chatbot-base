@@ -605,7 +605,7 @@ function renderView(view) {
     },
     deadline: view.scene_id === 'final_choice' ? view.choice_deadline : null, busy});
   const endingText = transcript.filter(item => item.scene_id === view.scene_id && item.kind === 'scene').map(item => item.text).join(' ');
-  window.sceneEffects?.ending(view.ending, endingText, view.gender);
+  window.sceneEffects?.ending(view.ending, endingText, view.gender, view.location_id);
 }
 
 function applyResponse(data, kind, characterId = null) {
