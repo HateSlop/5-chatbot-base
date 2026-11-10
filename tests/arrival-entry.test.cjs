@@ -29,7 +29,7 @@ test('live entry begins at the pre-move house, then waits for Jimmy after depart
   assert.equal(h.get('entry-depart').hidden,false);
   assert.equal(h.timers.size,0);
   h.get('entry-depart').listeners.click();await new Promise(r=>setImmediate(r));
-  assert.equal(h.renders.at(-1).dialogue,false);assert.equal(h.delay,1500);
+  assert.equal(h.renders.at(-1).dialogue,false);assert.equal(h.delay,650);
   h.timers.get(1)();assert.equal(h.renders.at(-1).speaker,'지미');
   assert.match(h.renders.at(-1).text,/내 친구 찰스가 지난주에 마을을 떠나서 외로웠던 참이었어!/);
   assert.match(h.renders.at(-1).text,/아 참, 너의 이름은 뭐야\?$/);
@@ -65,7 +65,7 @@ test('departure waits for the final TV monologue page to finish and has no truck
   assert.equal(h.timers.size,0);
   root.dataset.dialogueComplete='true';
   await h.get('entry-depart').listeners.click();
-  assert.equal(h.delay,1500);
+  assert.equal(h.delay,650);
   const markup=fs.readFileSync(path.join(__dirname,'../templates/chat.html'),'utf8');
   assert.match(markup,/id="entry-depart"[^>]*>더뉴빌리지로 이사 가기<\/button>/);
   const css=fs.readFileSync(path.join(__dirname,'../public/assets/css/village-theme.css'),'utf8');

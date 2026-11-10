@@ -356,16 +356,21 @@ test('angry reaction waits for the displayed answer and is cancelled on movement
 
 test('Karen leaves after her greeting, then the door reveals the existing room action', async () => {
   const h = setup();
-  const dinner = response('karen_dinner','karen_house',null, [{speaker_id:'karen',text:'편히 둘러보세요.',image:'/assets/images/karen_smile.png'}]);
+  const dinner = response('karen_dinner','karen_house',null, [{speaker_id:'karen',text:'와 주셨네요.',image:'/assets/images/karen_smile.png'}, {speaker_id:'karen',text:'지미요..? 저도 잘 모르겠네요.',image:null}]);
   dinner.view.available_actions = [{id:'inspect_room',label:'수상한 방을 살핀다',kind:'inspect'}];
   h.context.window.startStory(dinner,'테스트');
   assert.equal(h.nodes.get('user-message').disabled,true);
   assert.equal(h.nodes.get('send-btn').disabled,true);
-  assert.equal(h.stage().text,'편히 둘러보세요.');
+  assert.equal(h.stage().text,'와 주셨네요.');
   assert.equal(h.stage().image,'/assets/images/karen_smile.png');
   assert.equal(h.nodes.get('action-list').children.length,0);
+  assert.equal(typeof h.stage().nextLine,'function');
   await Promise.resolve();
-  const timer = [...h.timers.values()].find(t => t.ms === 1800);
+  assert.equal([...h.timers.values()].some(t => t.ms === 3300),false);
+  h.stage().nextLine();
+  assert.equal(h.stage().text,'지미요..? 저도 잘 모르겠네요.');
+  await Promise.resolve();
+  const timer = [...h.timers.values()].find(t => t.ms === 3300);
   await timer.callback();
   assert.equal(h.stage().image,null);
   assert.equal(h.stage().text,'');
@@ -576,7 +581,7 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   h.context.window.startStory(data,'테스트');
   assert.equal(h.stage().background,'/assets/images/karen_secret_room.png');
   assert.equal(h.nodes.get('dialogue-stage').children[1].hidden,true);
-  assert.equal(h.nodes.get('action-list').children[0].textContent,'주변을 둘러본다');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'방을 살펴본다');
   await h.nodes.get('action-list').children[0].listeners.click();
   assert.equal(h.stage().background,'/assets/images/karen_secret_room_angle2.png');
   assert.equal(h.stage().text,'저기 뭔가 익숙한 얼굴이..?');
@@ -599,24 +604,29 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
     requested.push(action);
     if (action === 'inspect_photo_back') {
       const back=response('photo_found','karen_house',null,[],50);
-      back.view.photo_back_date='11월 8일';
+      back.view.photo_back_date='1955.11.8';
       back.view.journal=['액자 뒷면에서 날짜를 보았다.'];
       back.view.available_actions=[{id:'recognize_photo',label:'사진을 알아본다',kind:'inspect'}];
       return {ok:true,json:async()=>back};
     }
-    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}],45);
-    found.view.photo_back_date='11월 8일';
+    assert.equal(dialog.open,true);
+    const found=response('photo_found','karen_house',null,[{speaker_id:'karen',text:'거기서 뭘 보고 계신 거죠?',image:'/assets/images/karen_angry.png'}, {speaker_id:'karen',text:'이제 나가 주세요.',image:null}],45);
+    found.view.photo_back_date='1955.11.8';
     found.view.available_actions=[{id:'return_home',label:'집으로 돌아간다',kind:'move'}];
     return {ok:true,json:async()=>found};
   };
   await flip.listeners.click();
   assert.deepEqual(requested,['inspect_photo_back']);
   assert.equal(flip.attrs['data-back'],'true');
-  assert.equal(h.nodes.get('photo-back-date').textContent,'11/8');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'1955.11.8');
   await h.nodes.get('photo-close').listeners.click();
   assert.deepEqual(requested,['inspect_photo_back','recognize_photo']);
   assert.equal(h.stage().image,'/assets/images/karen_angry.png');
   assert.equal(h.stage().text,'거기서 뭘 보고 계신 거죠?');
+  assert.equal(h.nodes.get('action-list').children.length,0);
+  assert.equal(dialog.open,false);
+  h.stage().nextLine();
+  assert.equal(h.stage().text,'이제 나가 주세요.');
   assert.equal(h.nodes.get('affinity-value').textContent,'45 / 100');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'집으로 돌아간다');
   await h.nodes.get('photo-close').listeners.click();
@@ -775,7 +785,7 @@ test('the room starts front-on and reveals its photo only after looking around',
   const photo=response('photo_found','karen_house',null,[]);
   photo.view.available_actions=[{id:'inspect_photo_back',label:'액자 뒷면을 확인한다',kind:'inspect'}, {id:'inspect_charles_photo',label:'옆 액자',kind:'inspect'}];
   h.context.window.startStory(photo,'이름');
-  assert.equal(h.nodes.get('action-list').children[0].textContent,'주변을 둘러본다');
+  assert.equal(h.nodes.get('action-list').children[0].textContent,'방을 살펴본다');
   await h.nodes.get('action-list').children[0].listeners.click();
   assert.equal(h.nodes.get('action-list').children.length,0);
   h.context.applyResponse(response('hair_found','square','bob',[]),'scene');
@@ -879,11 +889,14 @@ test('Karen departure countdown waits until the character is selected', async ()
   const h=setup();let select;
   h.context.pendingSelection=new Promise(resolve=>{select=resolve;});
   vm.runInContext('dialogueStage.opened = pendingSelection',h.context);
-  h.context.window.startStory(response('karen_dinner','karen_house','karen',[{speaker_id:'karen',text:'편히 둘러보세요.',image:null}]),'테스트');
+  h.context.window.startStory(response('karen_dinner','karen_house','karen',[{speaker_id:'karen',text:'와 주셨네요.',image:null}, {speaker_id:'karen',text:'지미요..? 저도 잘 모르겠네요.',image:null}]),'테스트');
   await Promise.resolve();
-  assert.equal([...h.timers.values()].some(t=>t.ms===1800),false);
+  assert.equal([...h.timers.values()].some(t=>t.ms===3300),false);
   select(true);await new Promise(resolve=>setImmediate(resolve));
-  assert.equal([...h.timers.values()].some(t=>t.ms===1800),true);
+  assert.equal([...h.timers.values()].some(t=>t.ms===3300),false);
+  h.stage().nextLine();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal([...h.timers.values()].some(t=>t.ms===3300),true);
 });
 
 test('urgent Karen bell uses the server summons action, not a client affinity check',()=>{

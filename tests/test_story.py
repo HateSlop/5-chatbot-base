@@ -575,9 +575,9 @@ class StoryTest(unittest.TestCase):
 
     def test_five_story_days_advance_at_scene_boundaries_across_calendar_boundaries(self):
         cases = (
-            (datetime(2024, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("2월 28일", "2월 29일", "3월 1일", "3월 2일", "3월 3일")),
-            (datetime(2023, 12, 31, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("12월 31일", "1월 1일", "1월 2일", "1월 3일", "1월 4일")),
-            (datetime(2023, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("2월 28일", "3월 1일", "3월 2일", "3월 3일", "3월 4일")),
+            (datetime(2024, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4")),
+            (datetime(2023, 12, 31, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.12.31", "1956.1.1", "1956.1.2", "1956.1.3", "1956.1.4")),
+            (datetime(2023, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4")),
         )
         transitions = {("neighbors", "return_home"): 1, ("cathy_result", "return_home"): 2,
                        ("dinner_invite", "accept_dinner_invite"): 3, ("festival_invite", "go_festival"): 4}
@@ -587,7 +587,7 @@ class StoryTest(unittest.TestCase):
                     clock.now.return_value = started
                     self.setUp()
                     clock.now.assert_called_once_with(ZoneInfo("Asia/Seoul"))
-                self.assertEqual(decode_state(self.token)["start_date"], started.date().isoformat())
+                self.assertEqual(decode_state(self.token)["start_date"], started.date().replace(year=1955).isoformat())
                 with patch("services.story.datetime") as later_clock:
                     later_clock.now.return_value = started + timedelta(days=1)
                     self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], dates[0])
@@ -628,7 +628,7 @@ class StoryTest(unittest.TestCase):
                     for action in frames[person]:
                         result = self.action(action)
                         if action == "inspect_charles_photo":
-                            self.assertEqual(result["events"][0]["text"], "사진 속에서 지미 옆에 있던 사람이잖아…?")
+                            self.assertEqual(result["events"][0]["text"], "이 사람은 어제 지갑 속 사진에 있던 사람이잖아..?")
                     if person == first:
                         self.assertEqual(result["events"], [])
                         self.assertEqual(result["view"]["affinity"], before)
@@ -638,6 +638,8 @@ class StoryTest(unittest.TestCase):
                 self.assertTrue(decode_state(self.token)["photo_recognized"])
                 self.assertEqual(result["view"]["affinity"], before - 5)
                 self.assertEqual(sum(e["speaker_id"] == "karen" for e in result["events"]), 2)
+                self.assertEqual(result["events"][0]["speaker_id"], "karen")
+                self.assertFalse(any("벽에 지미와 찰스" in e["text"] for e in result["events"]))
                 self.assertEqual([a["id"] for a in result["view"]["available_actions"]], ["return_home"])
                 denied = self.client.post("/api/action", json={"state_token": self.token, "action_id": frames[first][-1]})
                 self.assertEqual(denied.status_code, 409)
@@ -648,14 +650,14 @@ class StoryTest(unittest.TestCase):
             self.setUp()
         for action_id in TO_CHECKPOINT[:TO_CHECKPOINT.index("inspect_photo_back")]:
             self.action(action_id)
-        self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], "3월 4일")
+        self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], "1955.3.4")
         self.assertIsNone(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["photo_back_date"])
         denied = self.client.post("/api/action", json={"state_token": self.token, "action_id": "recognize_photo"})
         self.assertEqual(denied.status_code, 409)
         self.assertNotIn("photo_back_date", decode_state(self.token)["clues"])
         inspected = self.action("inspect_photo_back")
-        self.assertEqual(inspected["view"]["photo_back_date"], "3월 3일")
-        self.assertEqual(decode_state(self.token)["journal"][-1].count("3월 3일"), 1)
+        self.assertEqual(inspected["view"]["photo_back_date"], "1955.3.3")
+        self.assertEqual(decode_state(self.token)["journal"][-1].count("1955.3.3"), 1)
         self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "inspect_photo_back"}).status_code, 409)
         self.assertEqual(decode_state(self.token)["clues"].count("photo_back_date"), 1)
 

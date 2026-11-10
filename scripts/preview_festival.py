@@ -15,7 +15,7 @@ from services.story import apply_action, event, new_state  # noqa: E402
 @app.get('/preview/festival')
 def preview_festival():
     state = new_state('축제 체험', 'male')
-    state.update(scene_id='festival', location_id='square', story_day=2,
+    state.update(scene_id='festival', location_id='square', story_day=4,
                  affinity=70, job='driver', has_car_key=True,
                  clues=['brazier', 'jimmy_photo', 'photo_back_date'])
     state['journal'].append('트럭 운전수를 맡아 트럭 차 키를 가지고 있다.')

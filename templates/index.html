@@ -23,18 +23,18 @@
       <div class="cover-slot" aria-hidden="true"></div>
       <div class="start-panel">
       <nav class="start-actions" aria-label="이야기 시작">
-        <button id="start-action" class="image-action" type="button" aria-haspopup="dialog"><img src="{{ asset_url('assets/images/start/start-button.png') }}" alt="START"></button>
+        <button id="start-action" class="image-action start-letter-button" type="button" aria-haspopup="dialog">START</button>
       </nav>
       </div>
     </main>
     <dialog id="gender-dialog" class="gender-dialog" aria-labelledby="gender-heading">
-      <h2 id="gender-heading">주인공을 선택하세요</h2>
+      <h2 id="gender-heading">캐릭터를 선택하세요</h2>
       <div class="gender-options">
         <a class="gender-option" data-gender="male" href="{{ url_for('chat') }}?gender=male" aria-label="남성 주인공 선택">
-          <img class="gender-art" src="{{ asset_url('assets/images/player_male.png') }}" alt="남성 주인공 액자"><strong>남</strong>
+          <img class="gender-art" src="{{ asset_url('assets/images/player_male.png') }}" alt="남성 주인공 액자">
         </a>
         <a class="gender-option" data-gender="female" href="{{ url_for('chat') }}?gender=female" aria-label="여성 주인공 선택">
-          <img class="gender-art" src="{{ asset_url('assets/images/player_female.png') }}" alt="여성 주인공 액자"><strong>여</strong>
+          <img class="gender-art" src="{{ asset_url('assets/images/player_female.png') }}" alt="여성 주인공 액자">
         </a>
       </div>
     </dialog>

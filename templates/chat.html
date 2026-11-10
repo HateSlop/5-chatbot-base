@@ -135,7 +135,14 @@
       </nav>
     </main>
     </div>
-    <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden></div>
+    <div id="scene-curtain" class="scene-curtain" aria-hidden="true" hidden>
+      <p id="scene-date-transition" class="scene-date-transition" hidden><span id="scene-date-base"></span><span class="date-wheel"><span id="scene-date-old"></span><span id="scene-date-new"></span></span></p>
+    </div>
+    <section id="assimilation-screen" class="assimilation-screen" aria-label="새로운 이웃 엔딩" hidden>
+      <img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="Welcome to The New Village">
+      <span class="start-letter-button assimilation-start">START</span>
+      <span class="assimilation-cursor" aria-hidden="true">➤</span>
+    </section>
     <section id="death-screen" class="death-screen" aria-label="사망 엔딩" tabindex="-1" hidden>
       <video id="death-video" playsinline preload="none" aria-label="사망 엔딩 영상" data-male-src="{{ asset_url('assets/videos/video_ending_die_boy.mp4') }}" data-female-src="{{ asset_url('assets/videos/video_ending_die_girl.mp4') }}"></video>
       <div id="death-controls" class="death-controls" hidden>
@@ -156,7 +163,7 @@
       <button id="photo-flip" class="photo-flip" type="button" aria-label="액자 뒤집어 뒷면 보기" data-back="false">
         <span class="photo-card">
           <img class="photo-front" src="{{ asset_url('assets/images/props_photo_front.png') }}" alt="안경을 쓴 지미의 사진 액자" draggable="false">
-          <img class="photo-back" src="{{ asset_url('assets/images/props_photo_back.png') }}" alt="Jimmy라는 이름이 적힌 액자 뒷면" aria-hidden="true" draggable="false">
+          <img class="photo-back" src="{{ asset_url('assets/images/props_photo_back.png') }}" alt="지미의 액자 뒷면" aria-hidden="true" draggable="false">
           <span id="photo-back-date" class="photo-back-date"></span>
         </span>
       </button>
@@ -211,6 +218,7 @@
         <div class="escape-panel" style="--delay: 2100ms"><img src="{{ asset_url('assets/images/escape_comic_1.png') }}" data-male-src="{{ asset_url('assets/images/escape_comic_1.png') }}" data-female-src="{{ asset_url('assets/images/escape_female_3.png') }}" alt="셋째 컷: 마을 출구를 지나 달아나는 트럭"></div>
         <div class="escape-panel" style="--delay: 3150ms"><img src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-male-src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-female-src="{{ asset_url('assets/images/escape_female_4.png') }}" alt="넷째 컷: 마을에서 멀어지는 트럭과 노을"></div>
       </div>
+      <p class="escape-the-end">THE END</p>
       <footer class="escape-comic-footer"><a class="escape-return" href="{{ url_for('index') }}" aria-label="첫 화면으로 돌아가기" title="첫 화면으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></a></footer>
     </section>
     <section id="ending-cinema" class="ending-cinema" role="dialog" aria-modal="true" aria-label="엔딩 연출" tabindex="-1" hidden>

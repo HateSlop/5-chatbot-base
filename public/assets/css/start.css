@@ -35,3 +35,5 @@
 .gender-option:hover { filter: brightness(1.12); transform: translateY(-3px); }
 .gender-option:focus-visible { outline: 2px solid #ffe4a1; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) { .gender-option { transition: none; } .gender-option:hover { transform: none; } }
+.gender-dialog h2 { font-family: "Malgun Gothic", sans-serif; font-weight: 600; letter-spacing: .02em; }
+.gender-option { gap: 0; }
