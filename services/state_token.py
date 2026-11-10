@@ -39,7 +39,7 @@ def decode_state(token: str) -> dict:
         if not isinstance(state.get("start_date"), str):
             raise ValueError
         date.fromisoformat(state["start_date"])
-        if type(state.get("story_day")) is not int or state["story_day"] not in range(5):
+        if type(state.get("story_day")) is not int or state["story_day"] not in range(6):
             raise ValueError
     except ValueError as exc:
         raise InvalidStateToken("날짜가 올바르지 않은 진행 기록입니다. 새로 시작해 주세요.") from exc

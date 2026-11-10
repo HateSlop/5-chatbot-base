@@ -120,7 +120,7 @@ class StoryTest(unittest.TestCase):
         checkpoint = self.checkpoint_at(64)
         state = decode_state(self.token)
         self.assertEqual(state["affinity"], 64)
-        self.assertEqual(state["story_day"], 3)
+        self.assertEqual(state["story_day"], 4)
         self.assertIsNone(state["ending"])
         self.assertFalse(state["has_car_key"])
         self.assertEqual([person["id"] for person in checkpoint["view"]["available_characters"]], ["karen"])
@@ -140,7 +140,7 @@ class StoryTest(unittest.TestCase):
         self.assertEqual([action["id"] for action in available_actions(decode_state(self.token))], ["go_butcher"])
         result = self.action("go_butcher")
         self.assertEqual(result["view"]["ending"], "death")
-        self.assertEqual(decode_state(self.token)["story_day"], 3)
+        self.assertEqual(decode_state(self.token)["story_day"], 4)
         self.assertEqual(result["view"]["today"], checkpoint["view"]["today"])
         self.assertEqual(result["view"]["location_id"], "butcher_shop")
         self.assertEqual(result["events"][0]["image"], "/assets/images/ending_death.svg")
@@ -573,14 +573,15 @@ class StoryTest(unittest.TestCase):
         rejected = self.client.post("/api/chat", json={"state_token": self.token, "character_id": "karen", "message": "사진이네요"})
         self.assertEqual(rejected.status_code, 409)
 
-    def test_five_story_days_advance_at_scene_boundaries_across_calendar_boundaries(self):
+    def test_six_story_days_advance_at_scene_boundaries_across_calendar_boundaries(self):
         cases = (
-            (datetime(2024, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4")),
-            (datetime(2023, 12, 31, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.12.31", "1956.1.1", "1956.1.2", "1956.1.3", "1956.1.4")),
-            (datetime(2023, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4")),
+            (datetime(2024, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4", "1955.3.5")),
+            (datetime(2023, 12, 31, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.12.31", "1956.1.1", "1956.1.2", "1956.1.3", "1956.1.4", "1956.1.5")),
+            (datetime(2023, 2, 28, 23, 59, tzinfo=ZoneInfo("Asia/Seoul")), ("1955.2.28", "1955.3.1", "1955.3.2", "1955.3.3", "1955.3.4", "1955.3.5")),
         )
         transitions = {("neighbors", "return_home"): 1, ("cathy_result", "return_home"): 2,
-                       ("dinner_invite", "accept_dinner_invite"): 3, ("festival_invite", "go_festival"): 4}
+                       ("dinner_invite", "accept_dinner_invite"): 3,
+                       ("photo_found", "return_home"): 4, ("festival_invite", "go_festival"): 5}
         for started, dates in cases:
             with self.subTest(started=started):
                 with patch("services.story.datetime") as clock:
@@ -607,13 +608,13 @@ class StoryTest(unittest.TestCase):
                         self.assertEqual(self.client.post("/api/session/resume", json={"state_token": self.token}).get_json()["view"]["today"], dates[day])
                     if scene == "bob_caught":
                         self.assertEqual(self.chat("jimmy", "내일 데리러 오는 거지?", "neutral")["view"]["today"], dates[day])
-                self.assertEqual(self.action("decline_job")["view"]["today"], dates[3])
-                self.assertEqual(self.action("see_karen_off")["view"]["today"], dates[3])
+                self.assertEqual(self.action("decline_job")["view"]["today"], dates[4])
+                self.assertEqual(self.action("see_karen_off")["view"]["today"], dates[4])
                 arrived = self.action("go_festival")
-                self.assertEqual(arrived["view"]["today"], dates[4])
-                self.assertEqual(decode_state(self.token)["story_day"], 4)
+                self.assertEqual(arrived["view"]["today"], dates[5])
+                self.assertEqual(decode_state(self.token)["story_day"], 5)
                 self.assertEqual(self.client.post("/api/action", json={"state_token": self.token, "action_id": "go_festival"}).status_code, 409)
-                self.assertEqual(self.action("inspect_food")["view"]["today"], dates[4])
+                self.assertEqual(self.action("inspect_food")["view"]["today"], dates[5])
 
     def test_both_frames_are_required_in_either_order_and_karen_appears_once(self):
         for first in ("jimmy", "charles"):
