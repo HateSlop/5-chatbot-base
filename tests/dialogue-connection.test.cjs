@@ -483,6 +483,18 @@ test('failed chat keeps the draft and token so the same message can be retried',
   assert.equal(sent.message,'다시 물어볼게요');assert.equal(h.stage().text,'답변');
 });
 
+test('an HTML server error shows a retry message without losing the question', async () => {
+  const h = setup();
+  h.context.window.startStory(response('arrival', 'player_house', 'jimmy', []), '알렉스');
+  h.nodes.get('user-message').value = '이 마을은 어떤 곳이야?';
+  h.context.fetch = async () => ({ok: false, json: async () => { throw new SyntaxError("Unexpected token '<'"); }});
+  await h.nodes.get('chat-form').listeners.submit({preventDefault() {}});
+  assert.match(h.nodes.get('status-message').textContent, /잠시 후 다시 보내 주세요/);
+  assert.equal(h.nodes.get('user-message').value, '이 마을은 어떤 곳이야?');
+  assert.equal(h.transcript().length, 0);
+  assert.equal(vm.runInContext('stateToken', h.context), 'token-arrival-player_house');
+});
+
 
 test('open butcher doorway reveals thought before submitting the existing basement action', async () => {
   const h = setup();
