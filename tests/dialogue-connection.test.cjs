@@ -600,7 +600,7 @@ test('photo back succeeds before closing recognizes Jimmy and shows Karen once',
   await flip.listeners.click();
   assert.deepEqual(requested,['inspect_photo_back']);
   assert.equal(flip.attrs['data-back'],'true');
-  assert.equal(h.nodes.get('photo-back-date').textContent,'11월 8일');
+  assert.equal(h.nodes.get('photo-back-date').textContent,'11/8');
   await h.nodes.get('photo-close').listeners.click();
   assert.deepEqual(requested,['inspect_photo_back','recognize_photo']);
   assert.equal(h.stage().image,'/assets/images/karen_angry.png');
@@ -636,13 +636,38 @@ for (const date of ['', '11월 1일']) test(`Charles uses his own front, back an
   assert.equal(h.nodes.get('photo-thought').textContent,'사');
   await h.nodes.get('photo-flip').listeners.click();
   assert.match(h.nodes.get('.photo-back').src,/props_charles_back/);
-  assert.equal(h.nodes.get('photo-back-date').textContent,date);
+  assert.equal(h.nodes.get('photo-back-date').textContent,date ? '11/1' : '');
   await h.nodes.get('photo-close').listeners.click();
   assert.deepEqual(calls,['inspect_charles_photo','inspect_charles_photo_back','recognize_charles_photo']);
   assert.equal(h.nodes.get('photo-dialog').open,false);
   assert.equal(h.stage().image,null);
   assert.equal(h.nodes.get('action-list').children.length,0);
   assert.equal(h.nodes.get('photo-thought').textContent,'');
+});
+
+test('switching frames hides the old photo until both new images decode and resets the flip without animation',async()=>{
+  const h=setup();const data=response('photo_found','karen_house',null,[]);
+  data.view.available_actions=[{id:'inspect_photo_back',label:'뒤집기',kind:'inspect'},{id:'inspect_charles_photo',label:'찰스',kind:'inspect'}];
+  h.context.window.startStory(data,'테스트');
+  await h.nodes.get('action-list').children[0].listeners.click();
+  const dialog=h.nodes.get('photo-dialog'),flip=h.nodes.get('photo-flip');
+  h.context.fetch=async()=>({ok:true,json:async()=>data});
+  let frontReady,backReady;
+  h.nodes.get('.photo-front').decode=()=>new Promise(resolve=>frontReady=resolve);
+  h.nodes.get('.photo-back').decode=()=>new Promise(resolve=>backReady=resolve);
+  const opening=h.context.openRoomPhoto('charles');await new Promise(setImmediate);
+  assert.equal(dialog.attrs['data-opening'],'true');assert.equal(flip.attrs['data-back'],'false');
+  assert.match(h.nodes.get('.photo-front').src,/props_charles_front/);
+  frontReady();await new Promise(setImmediate);assert.equal(dialog.attrs['data-opening'],'true');
+  backReady();await opening;assert.equal(dialog.attrs['data-opening'],'false');
+  h.context.showPhotoSide(true);await h.context.closePhoto();
+  const jimmy=h.context.openRoomPhoto('jimmy');
+  assert.equal(dialog.attrs['data-opening'],'true');assert.equal(flip.attrs['data-back'],'false');
+  assert.match(h.nodes.get('.photo-front').src,/props_photo_front/);
+  frontReady();backReady();await jimmy;assert.equal(dialog.attrs['data-opening'],'false');
+  await h.context.closePhoto();
+  const cancelled=h.context.openRoomPhoto('jimmy');h.listeners.pagehide();
+  frontReady();backReady();await cancelled;assert.equal(dialog.open,false);
 });
 
 test('photo back failure stays on front, retries, and Escape follows the same close rule', async () => {
