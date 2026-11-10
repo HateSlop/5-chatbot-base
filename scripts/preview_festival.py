@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from flask import make_response, render_template  # noqa: E402
+from flask import make_response, render_template, request  # noqa: E402
 from app import app, bot_view, chatbot, load_config  # noqa: E402
 from services.story import apply_action, event, new_state  # noqa: E402
 
@@ -37,7 +37,8 @@ def preview_basement():
 
 @app.get('/preview/escape')
 def preview_escape():
-    state = new_state('탈출 체험', 'male')
+    gender = 'female' if request.args.get('gender') == 'female' else 'male'
+    state = new_state('탈출 체험', gender)
     state.update(scene_id='final_choice', location_id='square', job='driver', has_car_key=True,
                  choice_deadline=int(time.time() * 1000) + 10000)
     state, events = apply_action(state, 'escape')

@@ -18,9 +18,9 @@ test('scene changes happen under black, then fade back; failures never leave a c
 });
 test('escape uses the comic and disables the game underneath, returning clears it',()=>{
   const h=setup();const calls=[];h.window.escapeComic={show:(...args)=>calls.push(args)};
-  h.effects.ending('escape','탈출');assert.deepEqual(calls[0],[true,'탈출']);
+  h.effects.ending('escape','탈출','female');assert.deepEqual(calls[0],[true,'탈출','female']);
   assert.equal(h.get('game-screen').inert,true);assert.equal(h.plays(),0);
-  h.effects.ending(null);assert.deepEqual(calls[1],[false,'']);assert.equal(h.get('game-screen').inert,false);
+  h.effects.ending(null);assert.deepEqual(calls[1],[false,'',null]);assert.equal(h.get('game-screen').inert,false);
 });
 
 test('death plays once, other endings do not, replay and new game remain available',async()=>{
