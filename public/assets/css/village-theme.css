@@ -196,28 +196,21 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 
 /* A speech bubble matching the village's plum and antique-gold controls. */
 .dialogue-stage .character-talk-cue {
-  position: absolute; z-index: 5; width: 56px; height: 44px; padding: 0 0 12px;
-  transform: translate(-50%, -55%); border: 1px solid #dcb67a;
-  border-radius: 16px 16px 16px 4px;
-  outline: 1px solid #b88c585c; outline-offset: -5px;
-  background: radial-gradient(ellipse at 35% 8%, #78534688, transparent 65%), linear-gradient(145deg, #48303d, #241a27 80%);
-  color: #ffe1a0; box-shadow: inset 0 1px 0 #ffe5b766, inset 0 -3px 6px #110c16aa, 0 4px 8px #100b1699;
+  position: absolute; z-index: 5; width: 64px; height: 60px; padding: 0 0 12px;
+  transform: translate(-50%, -55%); border: 0; border-radius: 0;
+  background: url('../images/ui-talk-bubble.svg') center / contain no-repeat;
+  color: #ffe1a0; box-shadow: none;
   font: 700 30px/1 Georgia, serif; letter-spacing: 2px; text-indent: 2px; text-shadow: 0 1px 0 #fff0c644, 0 2px 2px #100b16;
 }
-.character-talk-cue::before { content: ''; position: absolute; bottom: -5px; left: 9px; width: 9px; height: 9px; background: #2b1e2c; border-right: 1px solid #dcb67a; border-bottom: 1px solid #dcb67a; transform: rotate(45deg); pointer-events: none; }
 .character-talk-cue::after { content: '✦'; position: absolute; top: -7px; right: -5px; color: #ffe8b6; font: 16px/1 Georgia, serif; text-shadow: 0 0 7px #efbd70aa; pointer-events: none; }
-.dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.06); border-color: #ffe4ad; }
+.dialogue-stage .character-talk-cue:hover, .dialogue-stage .character-talk-cue:active { transform: translate(-50%, -55%) scale(1.06); }
 .dialogue-stage .character-talk-cue:focus-visible { outline: 2px solid #ffe4ad; outline-offset: 4px; }
 .dialogue-stage[data-awaiting-talk="true"] .dialogue-figure { cursor: pointer; }
 .dialogue-stage[data-loading="true"] .character-talk-cue { visibility: hidden; }
 .dialogue-stage[data-awaiting-talk="true"][data-loading="true"] .dialogue-figure { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
   .character-talk-cue { animation: talk-glow 1.5s ease-in-out infinite; }
-  .character-talk-cue::after { animation: talk-sparkle 1.5s ease-in-out infinite; }
-  .character-talk-cue::before { animation: talk-tail-glow 1.5s ease-in-out infinite; }
-  @keyframes talk-glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.45) drop-shadow(0 0 7px #ffd58a99); } }
-  @keyframes talk-sparkle { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.35); } }
-  @keyframes talk-tail-glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.8) drop-shadow(0 0 5px #ffd58a); } }
+  @keyframes talk-glow { 0%,100% { filter: brightness(1) drop-shadow(0 4px 5px #100b1699); } 50% { filter: brightness(1.45) drop-shadow(0 0 8px #ffd58acc); } }
 }
 
 .scene-curtain { position: fixed; inset: 0; z-index: 100; background: #000; pointer-events: auto; }
@@ -379,8 +372,6 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .move-affinity .affinity-heart strong { position: static; display: block; width: fit-content; min-width: 88px; margin: 6px auto 0; padding: 4px 14px; transform: none; border: 1px solid #ba965e88; border-radius: 10px; background: linear-gradient(#4c2c42, #29192f); box-shadow: inset 0 1px #f5d5a322, 0 3px 6px #100b1444; }
 .dialogue-speaker:empty { display: none; }
 .dialogue-copy, .dialogue-text, .prologue-copy p { text-indent: 0; text-align: left; }
-.dialogue-stage .character-talk-cue { border-radius: 14px; }
-.character-talk-cue::before { left: 9px; bottom: -11px; width: 15px; height: 12px; border: 0; transform: none; background: #2b1e2c; clip-path: polygon(0 0, 100% 0, 0 100%); filter: drop-shadow(1px 1px 0 #dcb67a); }
 .entry-ad-dialog #entry-ad-continue { position: absolute; z-index: 2; right: 24px; bottom: 24px; min-height: 44px; padding: 10px 18px; border: 1px solid #e5c28b88; border-radius: 10px; background: #25172dcc; color: #fff0d2; }
 
 .post-move-stage .festival-meat-hotspot { z-index: 1; }
@@ -393,8 +384,6 @@ body .location-music-toggle:hover, body .location-music-toggle:focus-visible { o
 .post-move-stage .move-location { background: linear-gradient(#60352b77, #291915bb), url('../images/ui-village-wallpaper.svg') center / 72px 96px repeat, #36231d; }
 .move-affinity .affinity-heart strong { background: linear-gradient(#58342a, #2b1c17); color: #f0d7b1; font: 600 16px/1.2 'Segoe UI', 'Malgun Gothic', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .dialogue-copy { flex: none; font-size: clamp(14px, 1.1vw, 16px); line-height: 1.55; height: calc(3.1em + 1px); max-height: calc(3.1em + 1px); }
-.dialogue-stage .character-talk-cue { background: radial-gradient(ellipse at 35% 8%, #a56b4244, transparent 65%), linear-gradient(145deg, #583029, #2c1d18 80%); }
-.character-talk-cue::before { background: #2c1d18; }
 .festival-choice-dialog { width: min(620px, calc(100vw - 40px)); padding: 0; border: 0; border-radius: 0; outline: none; background: transparent; box-shadow: none; overflow: visible; }
 .festival-choice-timer { margin: 0 0 28px; color: #f1d4a5; text-shadow: 0 3px 12px #0b0605; }
 .festival-choice-timer strong { font: 500 clamp(48px, 7vw, 64px)/1 'Segoe UI', 'Malgun Gothic', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
