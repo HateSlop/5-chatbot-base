@@ -71,6 +71,20 @@ function response(sceneId, locationId, characterId, events, affinity = 50) {
   };
 }
 
+test('the missed evening visit uses the supplied sunset house only while waiting for Jimmy',()=>{
+  const h=setup();
+  h.context.window.startStory(response('dinner_invite','player_house','jimmy',[]),'테스트');
+  assert.equal(h.stage().background,'/assets/images/player_house.svg');
+  h.context.applyResponse(response('wait_dinner','player_house',null,[{speaker_id:'thought',text:'다음 날 오후 7시가 되도록 지미는 데리러 오지 않았다.'}]),'scene');
+  assert.equal(h.stage().background,'/assets/images/player_house_evening.png');
+  assert.equal(h.stage().image,null);
+  assert.match(h.stage().text,/오후 7시/);
+  h.context.applyResponse(response('karen_dinner','karen_house','karen',[]),'scene');
+  assert.equal(h.stage().background,'/assets/images/karen_house.svg');
+  h.context.window.startStory(response('arrival','player_house','jimmy',[]),'새 시작');
+  assert.equal(h.stage().background,'/assets/images/player_house.svg');
+});
+
 test('job explanation and reward keep Karen visible without asking for another character click', () => {
   const h = setup();
   h.context.window.startStory(response('checkpoint', 'player_house', 'karen', []), '테스트');
