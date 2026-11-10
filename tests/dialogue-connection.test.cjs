@@ -331,7 +331,7 @@ test('current scene events and current character chat never mix other scenes or 
   assert.equal(h.transcript().length, 5);
 });
 
-test('residents keep server-selected expressions and show anger for 1.5 seconds after a score decrease', async () => {
+test('residents keep server-selected expressions and keep anger after a score decrease', () => {
   for (const id of ['jimmy', 'karen', 'bob', 'cathy']) {
     const h = setup();
     h.context.window.startStory(response('neighbors', 'salon', id, []), '알렉스');
@@ -342,38 +342,29 @@ test('residents keep server-selected expressions and show anger for 1.5 seconds 
     h.context.applyResponse(response('neighbors', 'salon', id,
       [{speaker_id:id, text:'불쾌한 답변', image:null}], 48), 'chat', id);
     h.context.renderView(vm.runInContext('currentView', h.context));
-    await Promise.resolve();
     assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
-    assert.equal(h.timers.size, 1);
-    const timer = [...h.timers.values()][0];
-    assert.equal(timer.ms, 1500);
-    timer.callback();
-    assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
+    assert.equal(h.timers.size, 0);
+    h.context.renderView(vm.runInContext('currentView', h.context));
+    assert.equal(h.stage().image, `/assets/images/${id}_angry.png`);
     h.context.applyResponse(response('neighbors', 'salon', id, [], 55), 'chat', id);
     assert.equal(h.stage().image, `/assets/images/${id}_worried.svg`);
   }
 });
 
-test('angry reaction waits for the displayed answer and is cancelled on movement and exit', async () => {
+test('anger stays during a pending reply and clears on movement and exit', async () => {
   const h = setup();
   h.context.window.startStory(response('neighbors', 'salon', 'cathy', []), '알렉스');
-  let ready;
-  vm.runInContext('dialogueStage.ready = pendingReady', Object.assign(h.context, {
-    pendingReady: new Promise(resolve => { ready = resolve; }),
-  }));
   h.context.applyResponse(response('neighbors', 'salon', 'cathy', [], 48), 'chat', 'cathy');
-  await Promise.resolve();
+  assert.equal(h.stage().image, '/assets/images/cathy_angry.png');
   assert.equal(h.timers.size, 0);
-  ready(true);
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(h.timers.size, 1);
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 48), 'scene');
   assert.equal(h.timers.size, 0);
   assert.equal(h.stage().image, '/bob.svg');
   h.context.applyResponse(response('neighbors', 'butcher_shop', 'bob', [], 46), 'chat', 'bob');
-  await Promise.resolve();
+  assert.equal(h.stage().image, '/assets/images/bob_angry.png');
   h.listeners.pagehide();
-  assert.equal(h.timers.size, 0);
+  h.context.renderView(vm.runInContext('currentView', h.context));
+  assert.equal(h.stage().image, '/bob.svg');
 });
 
 test('Karen leaves after her greeting, then the door reveals the existing room action', async () => {
