@@ -796,7 +796,7 @@ test('both festival endings expose a title return and a new play drops old state
   const elements=new Map();
   const deathWindow={location:{reload(){this.reloaded=true;}},addEventListener(){}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/assets/js/scene-effects.js'),'utf8'), {
-    window:deathWindow, document:{getElementById(id){if(!elements.has(id)) elements.set(id,node()); return elements.get(id);}},
+    window:deathWindow, document:{addEventListener(){},getElementById(id){if(!elements.has(id)) elements.set(id,node()); return elements.get(id);}},
   });
   elements.get('death-restart').listeners.click();
   assert.equal(deathWindow.location.reloaded,true);
