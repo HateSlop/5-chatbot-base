@@ -41,7 +41,7 @@ window.sceneEffects = new class {
         this.datePanel.classList.remove('is-turning');
         void this.datePanel.offsetWidth;
         this.datePanel.classList.add('is-turning');
-        if (!reduced) await new Promise(resolve => setTimeout(resolve, 950));
+        if (!reduced) await new Promise(resolve => setTimeout(resolve, 1250));
         base.textContent = newBase;
       }
       await show();

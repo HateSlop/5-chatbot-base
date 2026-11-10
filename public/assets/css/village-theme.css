@@ -219,8 +219,8 @@ body :is(input, textarea)::placeholder { color: #e3c5aa; opacity: .5; }
 .date-wheel { position: relative; display: inline-block; width: 1.6em; height: 1.2em; overflow: hidden; text-align: left; }
 .date-wheel span { position: absolute; left: 0; top: 0; }
 .date-wheel #scene-date-new { transform: translateY(110%); }
-.scene-date-transition.is-turning #scene-date-old { animation: date-old-away .8s .1s ease-in-out forwards; }
-.scene-date-transition.is-turning #scene-date-new { animation: date-new-arrive .8s .1s ease-in-out forwards; }
+.scene-date-transition.is-turning #scene-date-old { animation: date-old-away 1.05s .1s ease-in-out forwards; }
+.scene-date-transition.is-turning #scene-date-new { animation: date-new-arrive 1.05s .1s ease-in-out forwards; }
 @keyframes date-old-away { to { transform: translateY(-110%); opacity: .1; } }
 @keyframes date-new-arrive { to { transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .scene-date-transition.is-turning #scene-date-old { display: none; } .scene-date-transition.is-turning #scene-date-new { transform: none; animation: none; } }
