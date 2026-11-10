@@ -196,16 +196,15 @@
       <p data-wallet-hint></p>
       <p data-wallet-caption aria-live="polite"></p>
     </dialog>
-    <section id="escape-screen" class="escape-comic" role="dialog" aria-modal="true" aria-labelledby="escape-title" tabindex="-1" hidden>
-      <h2 id="escape-title">더뉴빌리지 탈출</h2>
+    <section id="escape-screen" class="escape-comic" role="dialog" aria-modal="true" aria-label="탈출 엔딩" tabindex="-1" hidden>
       <p id="escape-description" class="escape-description"></p>
       <div class="escape-comic-panels">
-        <div class="escape-panel" style="--delay: 0ms"><img src="{{ asset_url('assets/images/escape_comic_1.png') }}" alt="첫째 컷: 마을 출구를 지나 달아나는 트럭"></div>
-        <div class="escape-panel" style="--delay: 750ms"><img src="{{ asset_url('assets/images/escape_comic_2.png') }}" alt="둘째 컷: 마을 거리를 질주하는 트럭"></div>
-        <div class="escape-panel" style="--delay: 1500ms"><img src="{{ asset_url('assets/images/escape_comic_3.png') }}" alt="셋째 컷: 마을에서 멀어지는 트럭과 노을"></div>
-        <div class="escape-panel" style="--delay: 2250ms"><img src="{{ asset_url('assets/images/escape_comic_4.png') }}" alt="넷째 컷: 땀에 젖은 채 트럭을 운전하는 주인공"></div>
+        <div class="escape-panel" style="--delay: 0ms"><img src="{{ asset_url('assets/images/escape_comic_4.png') }}" alt="첫째 컷: 땀에 젖은 채 트럭을 운전하는 주인공"></div>
+        <div class="escape-panel" style="--delay: 750ms"><img src="{{ asset_url('assets/images/escape_comic_3.png') }}" alt="둘째 컷: 마을에서 멀어지는 트럭과 노을"></div>
+        <div class="escape-panel" style="--delay: 1500ms"><img src="{{ asset_url('assets/images/escape_comic_2.png') }}" alt="셋째 컷: 마을 거리를 질주하는 트럭"></div>
+        <div class="escape-panel" style="--delay: 2250ms"><img src="{{ asset_url('assets/images/escape_comic_1.png') }}" alt="넷째 컷: 마을 출구를 지나 달아나는 트럭"></div>
       </div>
-      <footer class="escape-comic-footer"><a class="escape-return" href="{{ url_for('index') }}">첫 화면으로 돌아가기</a></footer>
+      <footer class="escape-comic-footer"><a class="escape-return" href="{{ url_for('index') }}" aria-label="첫 화면으로 돌아가기" title="첫 화면으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></a></footer>
     </section>
   </body>
 </html>
