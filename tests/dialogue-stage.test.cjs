@@ -129,6 +129,21 @@ test('replacement images keep the old background visible until decoding finishes
   assert.equal(bg.src,'/open.png');assert.equal(bg.hidden,false);
 });
 
+test('failed character replacement hides the previous resident and retries the same URL',async()=>{
+  const pending=[];
+  const {nodes,stage}=setup({Image:class {constructor(){pending.push(this);}decode(){return Promise.resolve();}}});
+  const figure=nodes['.dialogue-figure'];figure.src='/assets/images/jimmy_basic.png';figure.hidden=false;
+  const url='/assets/images/bob_angry.png';
+  const failed=stage.image(figure,url,'밥의 현재 모습');
+  assert.equal(figure.src,'/assets/images/jimmy_basic.png');
+  pending[0].onerror();await failed;
+  assert.equal(figure.hidden,true);
+  const retried=stage.image(figure,url,'밥의 현재 모습');
+  assert.equal(pending.length,2);
+  await pending[1].onload();await retried;
+  assert.equal(figure.src,url);assert.equal(figure.hidden,false);
+});
+
 test('location label is released with each background before the dialogue delay', async () => {
   const pending = [];
   const {nodes, stage} = setup({Image:class {constructor() { pending.push(this); } decode() { return Promise.resolve(); }}});

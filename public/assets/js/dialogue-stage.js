@@ -211,7 +211,11 @@ window.DialogueStage = class {
           resolve(true);
         };
         pending.onerror = () => {
-          if (this.paths.get(node) === path && !node.getAttribute('src')) node.hidden = true;
+          if (this.paths.get(node) === path) {
+            node.hidden = true;
+            this.paths.delete(node);
+            this.requests.delete(node);
+          }
           resolve(false);
         };
         pending.src = path;

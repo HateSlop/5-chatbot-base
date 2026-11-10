@@ -23,6 +23,12 @@ function setup() {
   const ui=window.endingCinema;ui.wait=()=>Promise.resolve();
   return {ui,node,renders,events,animations};
 }
+test('the writing mask starts fully hidden, then reveals the pen and complete title',()=>{
+  const css=fs.readFileSync('public/assets/css/ending-cinema.css','utf8');
+  assert.match(css,/\.cinema-pen \{ opacity: 0; \}/);
+  assert.match(css,/\.is-lit \.cinema-pen \{ animation: pen-reveal 1ms 1800ms forwards; \}/);
+  assert.match(css,/\.is-lit \.cinema-ink-complete \{ animation: ink-complete 300ms 7200ms forwards; \}/);
+});
 for(const [gender,asset] of [['male','boy'],['female','girl']]) test(`${gender} assimilation automatically repeats the arrival and finishes once`,async()=>{
   const h=setup();await h.ui.show(true,gender);
   assert.equal(h.renders.length,3);
