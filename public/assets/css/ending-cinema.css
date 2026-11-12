@@ -39,7 +39,6 @@
 }
 .ending-cinema [hidden], .ending-cinema[hidden] { display: none; }
 .cinema-opening, .cinema-room { position: absolute; inset: 0; }
-.cinema-opening .cinema-start img { display: block; width: 100%; }
 .cinema-room { display: grid; grid-template-columns: 1fr 3fr; background: #160d09; }
 .cinema-sidebar { background: url('../images/ui-village-wallpaper.svg') center / 96px 128px, #251916; border-right: 3px double #c49a6466; }
 .cinema-stage { height: 100dvh; aspect-ratio: auto; pointer-events: none; }
