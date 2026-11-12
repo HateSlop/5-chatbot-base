@@ -10,10 +10,6 @@
 .escape-return svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
 .escape-return:focus-visible { outline: 2px solid #e9dcc2; outline-offset: 3px; }
 .escape-description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.escape-the-end { position: absolute; z-index: 4; bottom: 6%; left: 50%; transform: translateX(-50%); margin: 0; padding: 6px 22px; border: 1px solid #f2deb2; background: #090807b8; color: #fff2d2; font: 600 clamp(24px, 5vw, 42px)/1.2 Georgia, serif; letter-spacing: .18em; white-space: nowrap; opacity: 0; }
-.escape-comic.is-playing .escape-the-end { animation: escape-end-title .6s 4.2s ease-out forwards; }
-@keyframes escape-end-title { to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .escape-comic.is-playing .escape-the-end { animation: none; opacity: 1; } }
 @media (prefers-reduced-motion: no-preference) {
   .escape-comic.is-playing .escape-panel { animation: escape-panel-left 900ms cubic-bezier(.15,.72,.22,1) both; animation-delay: var(--delay); }
   .escape-comic.is-playing .escape-panel:nth-child(even) { animation-name: escape-panel-right; }

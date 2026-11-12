@@ -90,7 +90,7 @@ test('festival layers ambience over square music without restarting, and both ob
   blocked.events.pointerdown({target:{closest:()=>false}});assert.equal(blocked.ambience.paused,false);
 });
 
-test('the urgent track starts when the hair is revealed and continues through truck attempts and result',()=>{
+test('the urgent track starts when the hair is revealed and continues through the escape ending',()=>{
   const h=setup();h.music.enter('square',null,'hair_found');
   assert.equal(h.audio.src,'/assets/audio/square-bgm.mp3');
   h.music.enter('square',null,'hair_found',true);assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');
@@ -99,6 +99,12 @@ test('the urgent track starts when the hair is revealed and continues through tr
     h.music.enter('square',null,scene);
     assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');assert.equal(h.audio.currentTime,8);assert.equal(h.audio.plays,plays);
   }
+  h.music.enter('truck','escape','ending');
+  assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');
+  assert.equal(h.audio.currentTime,8);assert.equal(h.audio.plays,plays);
+  assert.equal(h.ambience.paused,true);
+  h.windowEvents.pagehide();assert.equal(h.audio.paused,true);assert.equal(h.audio.currentTime,0);
+  h.music.enter('truck',null,'truck_escape_result');
   h.music.enter('square','death','ending');assert.equal(h.audio.paused,true);
   h.music.enter('player_house',null,'arrival');assert.equal(h.audio.src,'/assets/audio/home-bgm.mp3');
 });
