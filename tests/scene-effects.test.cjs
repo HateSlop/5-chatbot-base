@@ -35,7 +35,6 @@ test('assimilation shows the START replay before returning to character choice',
   assert.equal(h.get('assimilation-screen').hidden,true);
   const html=fs.readFileSync('templates/chat.html','utf8');
   assert.match(html,/id="assimilation-screen"/);
-  assert.match(html,/class="escape-the-end">THE END/);
 });
 test('escape uses the comic and disables the game underneath, returning clears it',()=>{
   const h=setup();const calls=[];h.window.escapeComic={show:(...args)=>calls.push(args)};

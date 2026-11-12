@@ -146,6 +146,7 @@
       <span class="assimilation-cursor" aria-hidden="true">➤</span>
     </section>
     <section id="butcher-scare" class="butcher-scare" role="dialog" aria-modal="true" aria-label="정육점에서 다가오는 밥" tabindex="-1" hidden>
+      <audio id="butcher-lunge-sound" preload="auto" src="{{ asset_url('assets/audio/butcher-lunge.wav') }}"></audio>
       <img class="scare-background" src="{{ asset_url('assets/images/butcher_shop.svg') }}" alt="정육점 내부">
       <img class="scare-standing" src="{{ asset_url('assets/images/bob_knife_blood.png') }}" alt="피 묻은 칼을 들고 어둠 속에 서 있는 밥">
       <img class="scare-attack" src="{{ asset_url('assets/images/bob_lunge.png') }}" alt="칼을 들고 바로 앞으로 달려드는 밥">
@@ -226,7 +227,6 @@
         <div class="escape-panel" style="--delay: 2100ms"><img src="{{ asset_url('assets/images/escape_comic_1.png') }}" data-male-src="{{ asset_url('assets/images/escape_comic_1.png') }}" data-female-src="{{ asset_url('assets/images/escape_female_3.png') }}" alt="셋째 컷: 마을 출구를 지나 달아나는 트럭"></div>
         <div class="escape-panel" style="--delay: 3150ms"><img src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-male-src="{{ asset_url('assets/images/escape_comic_3.png') }}" data-female-src="{{ asset_url('assets/images/escape_female_4.png') }}" alt="넷째 컷: 마을에서 멀어지는 트럭과 노을"></div>
       </div>
-      <p class="escape-the-end">THE END</p>
       <footer class="escape-comic-footer"><a class="escape-return" href="{{ url_for('index') }}" aria-label="첫 화면으로 돌아가기" title="첫 화면으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></a></footer>
     </section>
     <section id="ending-cinema" class="ending-cinema" role="dialog" aria-modal="true" aria-label="엔딩 연출" tabindex="-1" hidden>
@@ -235,7 +235,7 @@
           <video class="start-video" muted loop playsinline preload="none" poster="{{ asset_url('assets/images/start/opening-background.png') }}" aria-hidden="true"><source src="{{ asset_url('assets/videos/opening-loop.mp4') }}" type="video/mp4"></video>
           <h1 class="start-title"><img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="더뉴빌리지로 오세요"></h1>
           <div class="cover-slot"></div>
-          <div class="start-panel"><div class="start-actions"><div class="image-action cinema-start"><img src="{{ asset_url('assets/images/start/start-button.png') }}" alt="START"></div></div></div>
+          <div class="start-panel"><div class="start-actions"><div class="image-action start-letter-button cinema-start">START</div></div></div>
         </div>
       </div>
       <div class="cinema-room" hidden>

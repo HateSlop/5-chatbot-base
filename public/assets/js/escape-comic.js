@@ -34,6 +34,6 @@ window.escapeComic = new class {
     this.root.focus();
     if (window.endingCinema) this.finishTimer = setTimeout(() => {
       if (this.active && version === this.version) window.endingCinema.finish();
-    }, 12000);
+    }, 6500);
   }
 }();

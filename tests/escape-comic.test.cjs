@@ -28,7 +28,7 @@ test('the finale waits for panel loading and reading time; leaving cancels the p
   // All panels share the same readiness promise.
   const wait=new Promise(resolve=>ready=resolve);for(const image of h.images) image.decode=()=>wait;
   const playing=h.ui.show(true);assert.equal(h.timers.size,0);ready();await playing;
-  assert.equal(h.timers.size,1);const timer=[...h.timers.values()][0];assert.equal(timer.ms,12000);
+  assert.equal(h.timers.size,1);const timer=[...h.timers.values()][0];assert.equal(timer.ms,6500);
   timer.fn();assert.equal(finishes,1);
   await h.ui.show(false);assert.equal(h.timers.size,0);timer.fn();assert.equal(finishes,1);
 });
