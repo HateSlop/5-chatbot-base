@@ -90,10 +90,10 @@ test('festival layers ambience over square music without restarting, and both ob
   blocked.events.pointerdown({target:{closest:()=>false}});assert.equal(blocked.ambience.paused,false);
 });
 
-test('the urgent track starts at the final choice and continues through truck attempts and result',()=>{
+test('the urgent track starts when the hair is revealed and continues through truck attempts and result',()=>{
   const h=setup();h.music.enter('square',null,'hair_found');
   assert.equal(h.audio.src,'/assets/audio/square-bgm.mp3');
-  h.music.enter('square',null,'final_choice');assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');
+  h.music.enter('square',null,'hair_found',true);assert.equal(h.audio.src,'/assets/audio/festival-escape-bgm.mp3');
   h.audio.currentTime=8;const plays=h.audio.plays;
   for(const scene of ['final_choice','truck_escape','truck_escape','truck_escape_result']) {
     h.music.enter('square',null,scene);

@@ -465,7 +465,8 @@ function renderView(view) {
   basketHotspot.hidden = view.scene_id !== 'cathy_help' || !basketDialog || !basketGreetingDone;
   basketHotspot.disabled = busy;
   renderBasket();
-  window.locationMusic?.enter(view.location_id, view.ending, view.scene_id);
+  window.locationMusic?.enter(view.location_id, view.ending, view.scene_id,
+    view.scene_id === 'hair_found' && festivalFrame === 1);
   photoHotspot.hidden = view.scene_id !== 'photo_found' || secretFrame < 0 || secretFrame === 2;
   photoHotspot.disabled = busy;
   charlesHotspot.hidden = photoHotspot.hidden;
