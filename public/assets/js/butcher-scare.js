@@ -2,13 +2,21 @@
 window.butcherScare = new class {
   constructor() {
     this.root = document.getElementById('butcher-scare');
+    this.sound = document.getElementById('butcher-lunge-sound');
+    this.sound.volume = .6;
     this.images = [...this.root.querySelectorAll('img')];
     this.version = 0;
     this.waits = new Map();
     window.addEventListener('pagehide', () => this.reset());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.stopSound(); });
+  }
+  stopSound() {
+    this.sound.pause();
+    this.sound.currentTime = 0;
   }
   reset() {
     ++this.version;
+    this.stopSound();
     for (const [timer, resolve] of this.waits) { clearTimeout(timer); resolve(); }
     this.waits.clear();
     this.root.hidden = true;
@@ -36,8 +44,10 @@ window.butcherScare = new class {
       await this.pause(850);
       if (run !== this.version) return false;
       this.root.dataset.phase = 'attack';
+      if (!document.hidden && window.locationMusic?.enabled !== false) this.sound.play().catch(() => {});
       await this.pause(1500);
       if (run !== this.version) return false;
+      this.stopSound();
       this.root.dataset.phase = 'fade';
       await this.pause(650);
       return run === this.version;
