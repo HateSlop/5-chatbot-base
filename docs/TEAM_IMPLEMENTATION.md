@@ -1,0 +1,35 @@
+# 더뉴빌리지로 오세요 — 구현·협업
+
+> 분류: 팀 신규 · 독자: 두 개발자와 구현 AI 에이전트 · 실행 중 대화 모델의 입력: 아님. [문서 지도](README.md)
+
+[스토리](STORY.md)와 [API 계약](API_CONTRACT.md)을 공동 기준으로 삼는다. 첫 공개 시연에서 세 엔딩까지 도달한다. 자유 대사는 AI가 생성하고 장소 이동, 조사, 호감도 검사, 차 키와 결말은 서버가 결정한다.
+
+## 두 개발자의 파일 경계
+
+| 담당 | 작업 | 소유 파일 |
+| --- | --- | --- |
+| 팀장 (`suyoung` 브랜치) | 장면·호감도·엔딩, 공개 사실 검색, AI 대사, 토큰과 API | `app.py`, `services/story.py`, `services/state_token.py`, `services/chatbot_service.py`, `services/generator.py`, `services/retriever.py`, `config/`, `data/knowledge/`, 서버 테스트 |
+| 팀원 (`yejoon` 브랜치) | 장소·인물·채팅·발견 기록 화면, 이미지 자산과 선택 | `templates/`, `public/assets/`, `services/image_selector.py`, `data/images/`, 화면 테스트 |
+
+`requirements.txt`, `README.md`, `AGENTS.md`, `docs/`는 공유 영역이다. 인터페이스를 바꿀 때 두 사람이 [API 계약](API_CONTRACT.md)을 먼저 갱신한다. 화면 담당자는 계약의 예시 응답으로 화면을 먼저 검증할 수 있다.
+
+기능을 구현하거나 수정한 PR에는 [구현 현황](IMPLEMENTATION_SPEC.md)의 쉬운 말로 쓴 상태 갱신도 포함한다. 실제 확인한 것과 남은 일을 구분하고, 공개 배포 완료는 공개 주소에서 확인한 뒤 기록한다.
+
+## 브랜치와 순서
+
+원본에서 fork한 팀장 소유 저장소를 기준으로 한다. 두 사람은 `git remote -v`로 자신의 `origin`을 확인한다. 팀장은 `suyoung`에서 서버·스토리를, 팀원은 `yejoon`에서 화면·이미지를 구현한다. 각각 `main` 대상의 작은 PR을 올리면 팀장이 검토한 뒤 병합한다. AI 에이전트에도 브랜치별 파일 경계, 스토리와 API 계약을 전달한다.
+
+협업을 시작한 지금부터 팀장 작업은 **항상 `suyoung`**, 팀원 작업은 **항상 `yejoon`**에서 한다. 매 기능을 구현·검증하면 관련 [구현 현황](IMPLEMENTATION_SPEC.md)까지 갱신하고 기능 단위로 커밋한 뒤 **그 브랜치에 바로 push**한다. push가 안 되면 완료로 보고하지 않고 원인을 공유한다. `main`에는 직접 push하지 않고 PR 검토 후 병합한다.
+
+새 커밋 메시지는 [팀 워크플로](archive/TEAM_WORKFLOW.md)의 접두어 규칙에 따라 `<접두어>: <변경 내용>`으로 쓴다. 변경 성격에 맞게 `feat`, `fix`, `docs`, `test`, `refactor`, `style`, `chore`를 사용한다.
+
+이 규칙을 GitHub에 올려도 팀원의 브랜치가 자동으로 `suyoung`으로 바뀌지는 않는다. 팀원이 `yejoon`에서 일반 `git pull`을 하면 `origin/yejoon`을 가져올 뿐이다. 공유 문서는 `main`에 병합된 뒤 팀원이 **`yejoon`에 머문 상태에서 `main`의 변경을 가져와** 읽고 따른다. `suyoung`을 pull해서 미병합 구현을 팀원 브랜치에 섞을 필요는 없다. 브랜치를 옮기는 동작은 별도의 명시적 `git switch`가 있을 때만 한다.
+
+플레이를 떠나거나 엔딩을 본 뒤 성별 선택과 이름 입력부터 새로 시작하는 동작은 [구현 현황](IMPLEMENTATION_SPEC.md)에 기록한다. 이후 화면과 서버를 바꿀 때 이전 플레이가 새 플레이에 섞이지 않는지 확인한다.
+
+1. 계약·스토리·에이전트 지침을 기준 브랜치에 반영한다.
+2. 서버와 화면을 파일 경계대로 구현한다. 첫 통합 구현은 `main`에 포함되었고, 이후 변경부터 `suyoung`과 `yejoon`의 경계를 적용한다.
+3. 이름 입력부터 세 결말까지, 정보 제한, 중복 점수, 잘못된 토큰, 모델 실패와 화면 복원을 검증한다.
+4. PR 검토·병합 뒤 Vercel에 배포하고 공개 URL에서 모바일과 새로고침 뒤 새 시작을 재검증한다.
+
+로컬 환경은 `conda activate chatbot-base`로 활성화한다. Ponytail은 선택적 보조 도구이며 프로젝트 계약과 검증 기준이 우선이다. 비밀 값은 로컬 `.env`와 Vercel 환경 변수에만 둔다.

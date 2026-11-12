@@ -1,0 +1,22 @@
+/* Game and all three endings share one scrolling landscape canvas. */
+.chat-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; background: #090b09; }
+.story-screen { min-height: 0; overflow: auto; background: var(--paper); }
+.story-screen .story-header { min-height: 72px; padding: 12px; gap: 10px; }
+.story-screen .wordmark { min-width: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.story-screen .text-button { min-height: 44px; flex-shrink: 0; white-space: normal; font-size: 14px; }
+.story-screen .story-layout { width: 100%; height: auto; min-height: 0; display: flex; flex-direction: column; padding: 12px; gap: 12px; }
+.story-screen .story-sidebar, .story-screen .conversation, .story-screen .journal { min-width: 0; padding: 14px; overflow-wrap: anywhere; }
+.story-screen .story-sidebar h1 { font-size: 1.6rem; }
+.story-screen .scene-background { min-height: 0; max-height: 200px; }
+.story-screen .action-list { grid-template-columns: 1fr; }
+.story-screen .action-button, .story-screen .character-button { min-height: 44px; overflow-wrap: anywhere; }
+.story-screen .conversation { min-height: 520px; }
+.story-screen .conversation-heading { gap: 8px; }
+.story-screen .conversation-heading h2 { font-size: 1.4rem; }
+.story-screen .character-portrait { width: 60px; height: 60px; flex-shrink: 0; }
+.story-screen .chat-log { min-height: 260px; max-height: 380px; }
+.story-screen .message { max-width: 100%; }
+.story-screen .chat-input-area { gap: 8px; }
+.story-screen .chat-input-area input { min-height: 48px; padding: 10px; font-size: 16px; }
+.story-screen .send-button { min-height: 48px; padding: 10px 12px; }
+.story-screen .ending-card { font-size: 1.2rem; line-height: 1.5; }

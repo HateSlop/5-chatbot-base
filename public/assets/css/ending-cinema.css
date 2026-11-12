@@ -1,0 +1,66 @@
+.ending-cinema { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: transparent; cursor: none; }
+.butcher-scare { position: fixed; inset: 0; z-index: 110; overflow: hidden; background: #000; }
+.butcher-scare[hidden] { display: none; }
+.butcher-scare img { position: absolute; display: none; }
+.butcher-scare[data-phase="arrival"] :is(.scare-background, .scare-standing), .butcher-scare:is([data-phase="attack"], [data-phase="fade"]) :is(.scare-background, .scare-attack) { display: block; }
+.scare-background { z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(.42); }
+.scare-standing { z-index: 1; inset: 5% 0 auto; width: 100%; height: 92%; object-fit: contain; object-position: center top; filter: brightness(.55) contrast(1.12) saturate(.75); }
+.scare-attack { z-index: 2; top: -3%; left: 50%; width: max(100%, 125dvh); height: 200%; object-fit: contain; object-position: center top; transform: translateX(-50%); transform-origin: 50% 18%; filter: brightness(.8) contrast(1.15) saturate(.8); }
+.butcher-scare::before, .butcher-scare::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.butcher-scare::before { z-index: 1; opacity: 0; background: radial-gradient(ellipse at 50% 35%, #5b000044, #780000b8 70%, #100000); }
+.butcher-scare::after { z-index: 3; background: radial-gradient(ellipse at 50% 35%, transparent 20%, #0007 70%, #000e); }
+.butcher-scare[data-phase="attack"] .scare-background { animation: butcher-darken 1500ms ease-in forwards; }
+.butcher-scare[data-phase="attack"]::before { animation: butcher-red 1500ms ease-in forwards; }
+.butcher-scare[data-phase="attack"]::after { background: radial-gradient(ellipse at 50% 35%, transparent 10%, #50000077 65%, #000 100%); }
+.butcher-scare[data-phase="fade"] .scare-background { filter: brightness(.14); }
+.butcher-scare[data-phase="fade"] .scare-attack { transform: translate(-50%, -2%) scale(1.4); }
+.butcher-scare[data-phase="fade"]::before { opacity: 1; }
+.butcher-scare[data-phase="fade"]::after { background: #000; animation: butcher-blackout 650ms ease-in forwards; }
+@keyframes butcher-darken { to { filter: brightness(.14); } }
+@keyframes butcher-red { from { opacity: .15; } to { opacity: 1; } }
+@keyframes butcher-blackout { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .butcher-scare[data-phase="attack"] .scare-background { animation: none; filter: brightness(.14); }
+  .butcher-scare[data-phase="attack"]::before { animation: none; opacity: 1; }
+  .butcher-scare[data-phase="fade"] .scare-attack { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .butcher-scare[data-phase="attack"] .scare-attack { animation: bob-lunge 1400ms cubic-bezier(.12,.75,.3,1) both; }
+  @keyframes bob-lunge {
+    0% { transform: translate(-50%, 6%) scale(.72); }
+    18% { transform: translate(-51%, -1%) scale(1.12); }
+    26% { transform: translate(-48%, 1%) scale(1.18) rotate(1.2deg); }
+    34% { transform: translate(-52%, -1%) scale(1.2) rotate(-1.2deg); }
+    42% { transform: translate(-49%, 0) scale(1.23) rotate(.6deg); }
+    52% { transform: translate(-51%, -1%) scale(1.25) rotate(-.6deg); }
+    65% { transform: translate(-50%, 0) scale(1.3); }
+    100% { transform: translate(-50%, -2%) scale(1.4); }
+  }
+}
+.ending-cinema [hidden], .ending-cinema[hidden] { display: none; }
+.cinema-opening, .cinema-room { position: absolute; inset: 0; }
+.cinema-room { display: grid; grid-template-columns: 1fr 3fr; background: #160d09; }
+.cinema-sidebar { background: url('../images/ui-village-wallpaper.svg') center / 96px 128px, #251916; border-right: 3px double #c49a6466; }
+.cinema-stage { height: 100dvh; aspect-ratio: auto; pointer-events: none; }
+.cinema-stage .dialogue-box { bottom: 21%; }
+.cinema-dim { position: absolute; inset: 0; z-index: 5; background: #0005; pointer-events: none; }
+.cinema-cursor { position: absolute; z-index: 6; width: 32px; height: 44px; filter: drop-shadow(0 2px 3px #0008); }
+.cinema-black { position: absolute; inset: 0; z-index: 7; opacity: 0; background: #000; pointer-events: none; }
+.cinema-finale { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: #000; cursor: default; }
+.cinema-spotlights { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 76%, #9d100b66, transparent 56%), conic-gradient(from 149deg at 18% -12%, transparent, #d0111d44 9deg, #74050977 23deg, transparent 39deg), conic-gradient(from 173deg at 82% -12%, transparent, #a7061266 12deg, #cf102c44 30deg, transparent 42deg); filter: blur(16px); }
+.cinema-title { position: relative; width: min(80vw, 1050px); max-height: 78dvh; filter: drop-shadow(0 4px 12px #a80f0855); }
+.cinema-pen { opacity: 0; }
+.cinema-pen path { stroke-dasharray: 100; stroke-dashoffset: 100; }
+.cinema-ink-complete { opacity: 0; }
+.is-lit .cinema-spotlights { animation: stage-lights 2500ms ease-out forwards; }
+.is-lit .cinema-pen { animation: pen-reveal 1ms 1800ms forwards; }
+.is-lit .cinema-pen path { animation: title-writing var(--stroke-time) var(--stroke-delay) linear forwards; }
+.is-lit .cinema-ink-complete { animation: ink-complete 300ms 7200ms forwards; }
+.cinema-return { position: absolute; right: 24px; bottom: 24px; padding: 10px 16px; color: #e2bca5; border: 1px solid #a46b5766; border-radius: 8px; background: #210b09; font: 14px/1.5 'Malgun Gothic', sans-serif; text-decoration: none; }
+.cinema-return:focus-visible { outline: 2px solid #f1be78; outline-offset: 4px; }
+@keyframes stage-lights { to { opacity: 1; } }
+@keyframes pen-reveal { to { opacity: 1; } }
+@keyframes title-writing { to { stroke-dashoffset: 0; } }
+@keyframes ink-complete { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .is-lit .cinema-spotlights, .is-lit .cinema-ink-complete, .is-lit .cinema-pen { animation: none; opacity: 1; } .is-lit .cinema-pen path { animation: none; stroke-dashoffset: 0; } }
+@media (max-width: 700px) { .cinema-room { grid-template-columns: 1fr; } .cinema-sidebar { display: none; } }

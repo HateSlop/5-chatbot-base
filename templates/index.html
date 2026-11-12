@@ -4,17 +4,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ bot.name }} - 캐릭터 챗봇</title>
-    <link rel="stylesheet" href="{{ asset_url('assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/screen.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/start.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('assets/css/village-theme.css') }}">
+    <script src="{{ asset_url('assets/js/start-music.js') }}" defer></script>
+    <script src="{{ asset_url('assets/js/start-gender.js') }}" defer></script>
   </head>
-  <body class="landing-page">
-    <main class="landing-card">
-      <header class="landing-header">
-        <h1>캐릭터 챗봇</h1>
-      </header>
-      <div class="landing-content">
-        <img class="brand-image" src="{{ asset_url('assets/images/hateslop-logo.png') }}" alt="hateSlop 로고">
-        <a class="start-button" href="{{ url_for('detail') }}">시작하기</a>
+  <body class="village-start">
+    <main class="start-scene game-screen" aria-label="더뉴빌리지 시작 화면">
+      <video class="start-video" autoplay muted loop playsinline preload="auto" poster="{{ asset_url('assets/images/start/opening-background.png') }}" aria-hidden="true" tabindex="-1">
+        <source src="{{ asset_url('assets/videos/opening-loop.mp4') }}" type="video/mp4">
+      </video>
+      <audio id="start-music" loop autoplay preload="auto" src="{{ asset_url('assets/audio/sunny-little-waltz.mp3') }}"></audio>
+      <button id="start-music-toggle" class="start-music-toggle" type="button" aria-label="음소거" title="음소거" aria-pressed="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="music-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="music-muted" d="m16 9 6 6m0-6-6 6"/></svg>
+      </button>
+      <h1 class="start-title"><img src="{{ asset_url('assets/images/start/village-logo.png') }}" alt="Welcome to The New Village — 더뉴빌리지로 오세요" width="2172" height="724"></h1>
+      <div class="cover-slot" aria-hidden="true"></div>
+      <div class="start-panel">
+      <nav class="start-actions" aria-label="이야기 시작">
+        <button id="start-action" class="image-action start-letter-button" type="button" aria-haspopup="dialog">START</button>
+      </nav>
       </div>
     </main>
+    <dialog id="gender-dialog" class="gender-dialog" aria-labelledby="gender-heading">
+      <h2 id="gender-heading">캐릭터를 선택하세요</h2>
+      <div class="gender-options">
+        <a class="gender-option" data-gender="male" href="{{ url_for('chat') }}?gender=male" aria-label="남성 주인공 선택">
+          <img class="gender-art" src="{{ asset_url('assets/images/player_male.png') }}" alt="남성 주인공 액자">
+        </a>
+        <a class="gender-option" data-gender="female" href="{{ url_for('chat') }}?gender=female" aria-label="여성 주인공 선택">
+          <img class="gender-art" src="{{ asset_url('assets/images/player_female.png') }}" alt="여성 주인공 액자">
+        </a>
+      </div>
+    </dialog>
   </body>
 </html>

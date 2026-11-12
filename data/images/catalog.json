@@ -1,0 +1,29 @@
+{
+  "jimmy": {
+    "neutral": "/assets/images/jimmy_basic.png",
+    "basic": "/assets/images/jimmy_basic.png",
+    "smile": "/assets/images/jimmy_smile.png",
+    "worried": "/assets/images/jimmy_scared.png",
+    "scared": "/assets/images/jimmy_scared.png",
+    "anxiety": "/assets/images/jimmy_anxiety.png",
+    "angry": "/assets/images/jimmy_angry.png"
+  },
+  "karen": {
+    "neutral": "/assets/images/karen_basic.png",
+    "smile": "/assets/images/karen_smile.png",
+    "worried": "/assets/images/karen_basic.png",
+    "angry": "/assets/images/karen_angry.png"
+  },
+  "bob": {
+    "neutral": "/assets/images/bob_basic.png",
+    "smile": "/assets/images/bob_smile.png",
+    "worried": "/assets/images/bob_angry.png",
+    "angry": "/assets/images/bob_angry.png"
+  },
+  "cathy": {
+    "neutral": "/assets/images/cathy_basic.png",
+    "smile": "/assets/images/cathy_smile.png",
+    "worried": "/assets/images/cathy_angry.png",
+    "angry": "/assets/images/cathy_angry.png"
+  }
+}

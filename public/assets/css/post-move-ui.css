@@ -1,0 +1,29 @@
+﻿/* 16:9 shell = 4:9 interface + 12:9 (4:3) play area. */
+.post-move-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); aspect-ratio: 16 / 9; box-sizing: border-box; }
+.move-sidebar { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 22px; padding: 16px 12px; overflow-y: auto; background: #ede5d2; border-right: 1px solid #b6a887; color: #2b3029; }
+.move-affinity { padding: 12px 6px; border: 1px solid #a89b7f; border-radius: 12px; background: #f8f0de; text-align: center; font: 16px/1.5 sans-serif; }
+.move-affinity strong { display: block; font-size: 22px; }
+.move-hints { display: grid; gap: 14px; }
+.move-hints button { width: 100%; min-width: 0; min-height: 60px; padding: 10px; font: 16px/1.5 sans-serif; border: 1px solid #a89b7f; border-radius: 12px; background: #f8f0de; color: #292c26; cursor: pointer; overflow-wrap: anywhere; }
+.move-hints button:disabled { opacity: .55; cursor: not-allowed; }
+.post-move-stage { width: 100%; min-width: 0; aspect-ratio: 4 / 3; }
+.post-move-stage .move-top { position: absolute; z-index: 3; top: 8px; right: 8px; left: 58%; color: #fff5df; }
+.post-move-stage .move-location { font: 600 16px/1.4 "Malgun Gothic",sans-serif; margin: 0; padding: 10px 8px; text-align: center; background: rgb(18 19 17 / 82%); border-radius: 4px; overflow-wrap: anywhere; max-height: 90px; overflow-y: auto; }
+.post-move-stage .move-nav { position: absolute; top: 8px; left: 8px; max-width: 55%; overflow-x: auto; z-index: 4; display: flex; gap: 8px; padding: 3px; }
+.move-icon { flex: none; width: 44px; height: 44px; border: 1px solid #e3d1a1; border-radius: 7px; color: #fff5df; background: rgb(18 19 17 / 85%); cursor: pointer; padding: 8px; }
+.move-icon svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.move-icon:disabled { opacity: .45; cursor: not-allowed; }
+.post-move-stage .dialogue-figure { top: 15%; left: 16%; width: 68%; height: 65%; }
+.post-move-stage .dialogue-box { bottom: 21%; height: 25%; padding: 10px 12px; }
+.post-move-stage .move-composer { position: absolute; z-index: 3; left: 5%; right: 5%; bottom: 3%; height: 15%; min-height: 48px; }
+.post-move-stage .chat-input-area { height: 100%; min-height: 0; display: flex; gap: 8px; align-items: stretch; }
+.post-move-stage .chat-input-area textarea { min-width: 0; width: 100%; resize: none; padding: 10px; border: 1px solid #e3d1a1; border-radius: 8px; background: rgb(18 19 17 / 90%); color: #fff5df; font: 16px/1.5 sans-serif; }
+.post-move-stage .send-button { flex: none; min-height: 44px; padding: 8px; border: 1px solid #e3d1a1; border-radius: 8px; background: #802f36; color: white; cursor: pointer; font: 14px sans-serif; }
+.post-move-screen button:focus-visible, .post-move-screen textarea:focus-visible { outline: 3px solid #b67725; outline-offset: 2px; }
+.post-move-stage textarea:disabled { opacity: .6; }
+.post-move-screen.is-intro { grid-template-columns: minmax(0, 1fr); }
+.is-intro .move-sidebar, .is-intro .move-nav, .is-intro .move-composer { display: none; }
+.move-top:has(.move-location:empty) { display: none; }
+.dialogue-stage[data-background-ready="false"] .move-top { visibility: hidden; }
+.is-intro .post-move-stage { aspect-ratio: 16 / 9; }
+.is-intro .dialogue-box { bottom: 5%; height: 24%; padding: 16px; }

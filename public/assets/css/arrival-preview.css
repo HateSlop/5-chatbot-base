@@ -1,0 +1,15 @@
+body { margin: 0; background: #090b09; color: #f3e4bd; font: 16px/1.6 "Malgun Gothic", sans-serif; }
+.arrival-controls { max-width: 900px; margin: auto; padding: 16px; }
+.arrival-controls button, .arrival-controls a { display: inline-block; min-height: 44px; padding: 8px 12px; margin-right: 12px; font: inherit; color: inherit; }
+.arrival-controls button { border: 1px solid #a89b7f; background: #254433; cursor: pointer; }
+#arrival-answer { display: block; margin: 8px 0 0 auto; min-height: 44px; padding: 6px 12px; border: 1px solid #c8ad75; border-radius: 4px; background: #254433; color: #fff4da; font: 16px sans-serif; cursor: pointer; }
+#arrival-name-dialog { width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; padding: 20px; overflow-y: auto; border: 1px solid #bca36c; border-radius: 8px; background: #17251c; color: #f3e4bd; box-shadow: 0 0 40px #d6b77220; }
+#arrival-answer[hidden] { display: none; }
+#arrival-name-dialog::backdrop { background: rgb(0 0 0 / 94%); }
+#arrival-name-form { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+#arrival-name-dialog label { flex: none; font: 18px sans-serif; white-space: nowrap; }
+#arrival-name { flex: 1; width: 0; min-width: 0; box-sizing: border-box; min-height: 48px; padding: 10px; border: 1px solid #c8ad75; border-radius: 4px; background: #090f0b; color: #fff4da; font: 18px/1.4 "Malgun Gothic",sans-serif; }
+#arrival-name::placeholder { color: #e9ddbf; opacity: .45; }
+#arrival-name-error { flex-basis: 100%; margin: 0; color: #ffc4aa; font-size: 14px; }
+#arrival-name-error:empty { display: none; }
+#arrival-name-dialog input:focus-visible, #arrival-answer:focus-visible { outline: 3px solid #ffe3a0; outline-offset: 3px; }

@@ -1,0 +1,94 @@
+// The server owns the deadline and ending; this dialog only displays and submits them.
+window.FestivalChoice = class {
+  constructor(dialog, onAction) {
+    this.dialog = dialog;
+    this.onAction = onAction;
+    this.count = dialog.querySelector('[data-choice-count]');
+    this.status = dialog.querySelector('[data-choice-status]');
+    this.buttons = [...dialog.querySelectorAll('[data-choice-action]')];
+    for (const button of this.buttons) button.addEventListener('click', () => this.choose(button.dataset.choiceAction));
+    dialog.addEventListener('cancel', event => event.preventDefault());
+    window.addEventListener('pagehide', () => this.reset());
+  }
+  reset() {
+    clearTimeout(this.timer);
+    this.version = (this.version || 0) + 1;
+    this.phase = null;
+    this.readAt = null;
+    this.stareAt = null;
+    this.locked = false;
+    if (this.dialog.open) this.dialog.close();
+  }
+  update({reading, ready, onRead, deadline, busy = false}) {
+    this.busy = busy;
+    if (Number.isFinite(deadline)) {
+      if (this.phase === 'choice' && this.deadline === deadline) {
+        for (const button of this.buttons) button.disabled = busy || this.locked || Date.now() >= deadline;
+        return;
+      }
+      this.reset();
+      this.phase = 'choice';
+      this.deadline = deadline;
+      this.status.textContent = '';
+      this.dialog.showModal();
+      this.tick();
+      this.buttons[0].focus();
+      return;
+    }
+    if (!reading) { this.reset(); return; }
+    this.ready = ready;
+    this.onRead = onRead;
+    if (this.phase === 'reading') return;
+    this.reset();
+    this.phase = 'reading';
+    this.poll();
+  }
+  async poll() {
+    if (this.phase !== 'reading') return;
+    const version = this.version;
+    if (!this.ready()) this.readAt = null;
+    else this.readAt ??= Date.now();
+    // Rest on the thought before the reveal, then give the gaze its own pause.
+    if (this.readAt !== null && Date.now() - this.readAt >= 2000 && this.stareAt === null) {
+      await this.onRead?.();
+      if (this.phase !== 'reading' || version !== this.version) return;
+      this.stareAt = Date.now();
+    }
+    if (this.stareAt !== null && Date.now() - this.stareAt >= 4000 && this.ready()) {
+      const run = this.phase;
+      this.onAction('begin_final_choice').then(() => {
+        if (this.phase === run && version === this.version) { this.stareAt = Date.now(); this.timer = setTimeout(() => this.poll(), 1000); }
+      });
+      return;
+    }
+    this.timer = setTimeout(() => this.poll(), 100);
+  }
+  tick() {
+    if (this.phase !== 'choice') return;
+    const remaining = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000));
+    if (this.count.textContent !== String(remaining)) {
+      this.count.textContent = String(remaining);
+      if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        this.count.animate?.([{opacity:.5,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}], {duration:120,easing:'ease-out'});
+      }
+    }
+    for (const button of this.buttons) button.disabled = this.busy || this.locked || remaining === 0;
+    if (!remaining && !this.locked && !this.busy) { this.choose('choice_timeout'); return; }
+    this.timer = setTimeout(() => this.tick(), 100);
+  }
+  async choose(action) {
+    if (this.phase !== 'choice' || this.locked || this.busy) return;
+    if (Date.now() >= this.deadline) action = 'choice_timeout';
+    this.locked = true;
+    clearTimeout(this.timer);
+    for (const button of this.buttons) button.disabled = true;
+    const deadline = this.deadline;
+    const ok = await this.onAction(action);
+    if (this.phase !== 'choice' || deadline !== this.deadline) return;
+    if (!ok) {
+      this.locked = false;
+      this.status.textContent = '연결을 확인하고 다시 시도합니다…';
+      this.timer = setTimeout(() => this.tick(), 1000);
+    }
+  }
+};

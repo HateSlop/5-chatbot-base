@@ -1,0 +1,14 @@
+﻿/* Only the lower panel differs from the start page. */
+.name-entry .name-panel { position: static; width: 100%; margin: 0; padding-top: 0; text-align: center; }
+.name-entry .name-question { margin: 0 0 20px; font-size: clamp(18px, 3.5vw, 24px); line-height: 1.5; font-family: Georgia, "Batang", serif; font-weight: 600; }
+.name-entry .name-row { display: flex; align-items: center; gap: 8px; text-align: left; }
+.name-entry label { flex: none; white-space: nowrap; font-size: 16px; }
+.name-entry input { flex: 1; width: 0; min-width: 0; min-height: 48px; padding: 10px 8px; border: 1px solid #a49568; border-radius: 2px; color: #f3e4bd; background: #101b15; font: 16px "Malgun Gothic", sans-serif; }
+.name-entry input::placeholder { color: #baaf91; opacity: .6; }
+.name-entry button { flex: none; min-height: 48px; padding: 10px 12px; border: 1px solid #b5a16c; border-radius: 2px; background: #254433; color: #f3e4bd; font: inherit; cursor: pointer; }
+.name-entry button:hover:not(:disabled) { background: #355b45; }
+.name-entry button:active:not(:disabled) { transform: translateY(1px); }
+.name-entry button:disabled { opacity: .6; cursor: wait; }
+.name-entry input:focus-visible, .name-entry button:focus-visible { outline: 3px solid #ffe3a0; outline-offset: 3px; }
+.name-entry .name-status { min-height: 3em; margin: 12px 0 0; font-size: 14px; line-height: 1.5; color: #f3dba6; overflow-wrap: anywhere; }
+.name-entry[hidden], .story-screen[hidden] { display: none; }

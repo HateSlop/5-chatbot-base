@@ -1,89 +1,146 @@
-"""화면·정적 파일·채팅 응답과 서비스 연결을 확인합니다."""
+"""공개 화면과 이야기 API의 기본 연결을 확인한다."""
 
+import os
 import unittest
 from unittest.mock import patch
 
-from app import app
-from services.chatbot_service import ChatbotService
-from services.retriever import KnowledgeHit
+from cryptography.fernet import Fernet
+
+os.environ["STORY_STATE_KEY"] = Fernet.generate_key().decode("ascii")
+
+from app import app, chatbot  # noqa: E402
+from services.state_token import decode_state, encode_state  # noqa: E402
 
 
 class SmokeTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_pages_and_referenced_assets(self):
-        for route in ("/", "/detail", "/chat?username=헤슬", "/health"):
-            with self.subTest(route=route):
-                self.assertEqual(self.client.get(route).status_code, 200)
+    def start(self):
+        response = self.client.post("/api/session", json={"player_name": "알렉스", "gender": "male"})
+        self.assertEqual(response.status_code, 201)
+        return response.get_json()["state_token"]
 
-        chat_page = self.client.get("/chat").get_data(as_text=True)
-        self.assertIn("/assets/js/chatbot.js", chat_page)
-        self.assertIn("/assets/images/hateslop-logo.png", self.client.get("/").get_data(as_text=True))
-        for path in (
-            "/assets/js/chatbot.js",
-            "/assets/css/style.css",
-            "/assets/images/hateslop-logo.png",
-        ):
+    def test_pages_and_assets(self):
+        for path in ("/", "/detail", "/chat?username=알렉스", "/health", "/assets/js/chatbot.js", "/assets/css/style.css", "/assets/images/start/opening-background.png", "/assets/images/jimmy_smile.png"):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 response.close()
+        chat_response = self.client.get("/chat?username=이전이름")
+        self.assertIn("no-store", chat_response.headers["Cache-Control"])
+        chat_page = chat_response.get_data(as_text=True)
+        self.assertIn('id="name-form"', chat_page)
+        self.assertIn("assets/js/name-entry.js", chat_page)
+        self.assertNotIn('data-player-name="이전이름"', chat_page)
 
-    def test_chat_returns_demo_response(self):
-        response = self.client.post("/api/chat", json={"message": "안녕", "username": "헤슬"})
+    def test_merged_ending_surfaces_remain_separate(self):
+        html = self.client.get("/chat").get_data(as_text=True)
+        curtain = html.index('id="scene-curtain"')
+        assimilation = html.index('id="assimilation-screen"')
+        butcher = html.index('id="butcher-scare"')
+        death = html.index('id="death-screen"')
+        self.assertEqual(html.count('id="scene-curtain"'), 1)
+        self.assertLess(html.index('</div>', curtain), assimilation)
+        self.assertLess(html.index('</section>', assimilation), butcher)
+        self.assertLess(html.index('</section>', butcher), death)
+
+    def test_session_and_resume(self):
+        token = self.start()
+        response = self.client.post("/api/session/resume", json={"state_token": token})
         self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-        self.assertIn("안녕", data["reply"])
-        self.assertIsNone(data["image"])
-        self.assertEqual(data["sources"], [])
+        self.assertEqual(response.get_json()["view"]["scene_id"], "arrival")
+        self.assertEqual(decode_state(response.get_json()["state_token"])["player_name"], "알렉스")
+        self.assertEqual(response.get_json()["view"]["gender"], "male")
+        self.assertIsNone(response.get_json()["view"]["job"])
 
-    def test_bad_inputs_are_rejected(self):
-        cases = (
-            ({}, 400, "invalid_message"),
-            ({"message": "   "}, 400, "invalid_message"),
-            ({"message": "x" * 2001}, 413, "message_too_long"),
-            ({"message": "안녕", "username": 1}, 400, "invalid_username"),
-        )
-        for payload, status, code in cases:
-            with self.subTest(code=code):
-                response = self.client.post("/api/chat", json=payload)
-                self.assertEqual(response.status_code, status)
-                self.assertEqual(response.get_json()["error"]["code"], code)
+    def test_new_play_requires_name_and_gender_and_resets_both(self):
+        for payload in ({"player_name": "알렉스"}, {"gender": "female"},
+                        {"player_name": "알렉스", "gender": "other"},
+                        {"player_name": "알렉스", "gender": 1},
+                        {"player_name": " ", "gender": "male"}):
+            with self.subTest(payload=payload):
+                response = self.client.post("/api/session", json=payload)
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.get_json()["error"]["code"], "invalid_request")
+        first = self.start()
+        second = self.client.post("/api/session", json={"player_name": "새 이름", "gender": "female"})
+        self.assertEqual(second.status_code, 201)
+        state = decode_state(second.get_json()["state_token"])
+        self.assertNotEqual(first, second.get_json()["state_token"])
+        self.assertEqual((state["player_name"], state["gender"], state["job"], state["affinity"]),
+                         ("새 이름", "female", None, 50))
+        self.assertEqual(second.get_json()["view"]["gender"], "female")
 
-        response = self.client.post("/api/chat", data="broken", content_type="application/json")
+    def test_older_token_without_gender_remains_readable(self):
+        state = decode_state(self.start())
+        del state["gender"]
+        response = self.client.post("/api/session/resume", json={"state_token": encode_state(state)})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.get_json()["view"]["gender"])
+
+    def test_new_session_with_same_name_has_no_previous_play(self):
+        token = self.start()
+        turn = {"reply": "도와줘서 고마워.", "visual_cue": "smile"}
+        with patch.object(chatbot.generator, "classify", return_value="cooperative"), patch.object(chatbot.generator, "generate", return_value=turn):
+            response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "도울게"})
+        self.assertEqual(response.get_json()["view"]["affinity"], 57)
+        fresh = decode_state(self.start())
+        self.assertEqual(fresh["affinity"], 50)
+        self.assertEqual(fresh["history"], {})
+        self.assertEqual(fresh["scored_chat"], [])
+
+    def test_invalid_inputs_and_tampered_token(self):
+        self.assertEqual(self.client.post("/api/session", json={"player_name": " ", "gender": "male"}).status_code, 400)
+        self.assertEqual(self.client.post("/api/session", data="broken", content_type="application/json").status_code, 400)
+        token = self.start()
+        bad_token = token[:-2] + ("AA" if token[-2:] != "AA" else "BB")
+        response = self.client.post("/api/session/resume", json={"state_token": bad_token})
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.get_json()["error"]["code"], "invalid_json")
+        self.assertEqual(response.get_json()["error"]["code"], "invalid_state_token")
+        response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "x" * 2001})
+        self.assertEqual(response.status_code, 413)
 
-    def test_service_failure_is_not_a_successful_null(self):
-        with patch("app.chatbot.generate_response", side_effect=RuntimeError("upstream down")), patch(
-            "app.app.logger.exception"
-        ):
-            response = self.client.post("/api/chat", json={"message": "안녕"})
+    def test_undated_or_invalid_day_token_asks_for_new_play(self):
+        state = decode_state(self.start())
+        for day in range(6):
+            with self.subTest(valid_day=day):
+                response = self.client.post("/api/session/resume", json={"state_token": encode_state({**state, "story_day": day})})
+                self.assertEqual(response.status_code, 200)
+        for change in ({"start_date": None}, {"start_date": "2024-02-30"}, {"story_day": 6}, {"story_day": -1}):
+            with self.subTest(change=change):
+                response = self.client.post("/api/session/resume", json={"state_token": encode_state({**state, **change})})
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.get_json()["error"]["code"], "invalid_state_token")
+
+    def test_chat_failure_keeps_state_and_unavailable_character_is_rejected(self):
+        token = self.start()
+        response = self.client.post("/api/chat", json={"state_token": token, "character_id": "bob", "message": "안녕"})
+        self.assertEqual(response.status_code, 409)
+        with patch.object(chatbot.generator, "classify", return_value="friendly"), patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
+            response = self.client.post("/api/chat", json={"state_token": token, "character_id": "jimmy", "message": "안녕"})
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(decode_state(token)["affinity"], 50)
+        self.assertEqual(decode_state(token)["history"], {})
+
+    def test_both_model_failures_leave_original_token_usable(self):
+        token = self.start()
+        payload = {"state_token": token, "character_id": "jimmy", "message": "안녕하세요"}
+        with patch.object(chatbot.generator, "classify", side_effect=RuntimeError("offline")), patch.object(chatbot.generator, "generate") as generate, patch("app.app.logger.exception"):
+            response = self.client.post("/api/chat", json=payload)
         self.assertEqual(response.status_code, 500)
         self.assertEqual(response.get_json()["error"]["code"], "chat_failed")
+        self.assertNotIn("state_token", response.get_json())
+        generate.assert_not_called()
 
-    def test_service_passes_character_and_retrieved_sources_to_generator(self):
-        hit = KnowledgeHit(title="세계관 설정", content="성 안에는 오래된 도서관이 있다.")
-
-        class Retriever:
-            def search(self, question):
-                self.question = question
-                return [hit]
-
-        class Generator:
-            def generate(self, question, username, character, knowledge):
-                self.args = (question, username, character, knowledge)
-                return "도서관을 찾아보세요."
-
-        retriever, generator = Retriever(), Generator()
-        service = ChatbotService(retriever, generator)
-        character = {"name": "안내인"}
-        result = service.generate_response("도서관은 어디?", "헤슬", character)
-        self.assertEqual(retriever.question, "도서관은 어디?")
-        self.assertEqual(generator.args, ("도서관은 어디?", "헤슬", character, [hit]))
-        self.assertEqual(result["sources"], ["세계관 설정"])
-        self.assertEqual(result["reply"], "도서관을 찾아보세요.")
+        with patch.object(chatbot.generator, "classify", return_value="friendly"), patch.object(chatbot.generator, "generate", side_effect=RuntimeError("offline")), patch("app.app.logger.exception"):
+            response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json()["error"]["code"], "chat_failed")
+        self.assertNotIn("state_token", response.get_json())
+        resumed = self.client.post("/api/session/resume", json={"state_token": token}).get_json()
+        self.assertEqual(resumed["view"]["affinity"], 50)
+        self.assertEqual(decode_state(resumed["state_token"])["history"], {})
 
 
 if __name__ == "__main__":

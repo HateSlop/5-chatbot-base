@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이사 이후 첫 장면 미리보기</title>
+<link rel="stylesheet" href="/assets/css/screen.css">
+<link rel="stylesheet" href="/assets/css/dialogue-stage.css">
+<link rel="stylesheet" href="/assets/css/post-move-ui.css">
+<link rel="stylesheet" href="/assets/css/arrival-preview.css">
+<link rel="stylesheet" href="/assets/css/village-theme.css">
+<div class="arrival-controls">
+  <strong>개발용 첫 장면 · 서버 연결 전 · 이름/진행 저장 없음</strong>
+  <p>집 배경이 표시된 뒤 3초 후 지미가 찾아옵니다.</p>
+  <button id="arrival-replay" type="button">처음부터 다시 보기</button>
+  <a href="/dev/post-move.html">기존 인터페이스 미리보기</a>
+  <p id="arrival-status" role="status"></p>
+</div>
+<section id="arrival-stage" class="game-screen dialogue-stage" aria-label="이사 이후 집 첫 장면">
+  <img class="dialogue-background" alt="" hidden><img class="dialogue-figure" alt="" hidden>
+  <div class="dialogue-tv" role="img" aria-label="TV" hidden></div>
+  <div class="dialogue-box" tabindex="0" role="region" aria-label="현재 대사" aria-live="polite" hidden><span class="dialogue-speaker"></span><span class="dialogue-text"></span><button id="arrival-answer" type="button" hidden>이름 입력하기 ›</button></div>
+</section>
+<form id="arrival-chat" class="chat-input-area" hidden>
+  <textarea id="arrival-message" aria-label="대화 입력" placeholder="대화를 입력하세요" maxlength="2000" disabled></textarea>
+  <button id="arrival-send" class="send-button" type="submit" disabled>보내기</button>
+</form>
+<dialog id="arrival-name-dialog" aria-label="이름 입력">
+  <form id="arrival-name-form" novalidate>
+    <label for="arrival-name">이름:</label>
+    <input id="arrival-name" type="text" placeholder="이름을 입력하세요" title="이름을 입력하고 Enter로 확인하세요" enterkeyhint="done" autocomplete="off" aria-describedby="arrival-name-error" autofocus required>
+    <p id="arrival-name-error" role="status" aria-live="polite"></p>
+  </form>
+</dialog>
+<script src="/assets/js/dialogue-stage.js"></script>
+<script src="/assets/js/post-move-ui.js"></script>
+<script src="/assets/js/arrival-preview.js"></script>
+</html>

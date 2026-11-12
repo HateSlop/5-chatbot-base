@@ -1,7 +1,33 @@
-"""답변과 맞는 이미지를 고르는 경계. 기본 구현은 이미지를 고르지 않습니다."""
+"""답변의 표정 단서에 맞는 공개 이미지를 고른다."""
+
+import json
+from pathlib import Path
 
 
-class DemoImageSelector:
-    def select(self, reply: str, character: dict) -> str | None:
-        """실제 선택기를 붙일 때 답변에 맞는 공개 이미지 URL을 반환하세요."""
-        return None
+CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "images" / "catalog.json"
+PUBLIC_PATH = Path(__file__).resolve().parent.parent / "public"
+
+
+class StoryImageSelector:
+    def __init__(self, path: Path = CATALOG_PATH):
+        self.catalog = json.loads(path.read_text(encoding="utf-8"))
+
+    def select(
+        self, reply_text: str, character_id: str, scene_id: str, visual_cue: str | None = None
+    ) -> str | None:
+        images = self.catalog.get(character_id, {})
+        cue = visual_cue
+        if character_id == "karen" and scene_id == "photo_found":
+            cue = "angry"
+        if character_id == "jimmy" and scene_id in {"butcher_search", "empty_butcher"}:
+            cue = "scared"
+        if character_id == "jimmy" and scene_id == "dinner_invite":
+            cue = "anxiety"
+        if cue is None and character_id == "jimmy":
+            cue = "neutral"
+        if cue is None:
+            cue = "worried" if any(word in reply_text for word in ("뭐", "안 돼", "말할 수", "아직", "왜")) else "smile"
+        url = images.get(cue) or images.get("neutral")
+        if not isinstance(url, str) or not url.startswith("/assets/images/"):
+            return None
+        return url
