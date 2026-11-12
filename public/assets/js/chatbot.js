@@ -500,7 +500,7 @@ function renderView(view) {
   meatHotspot.disabled = busy;
   if (!meatHotspot.hidden) positionDoor();
   exploreHint.textContent = !meatHotspot.hidden ? '음식을 살펴보자. 고기를 눌러 확인해 보세요.' : !basketHotspot.hidden ? '바구니를 눌러보자.' : !doorHotspot.hidden ? '주변을 둘러보자. 열린 문을 살펴볼까?' : !photoHotspot.hidden ? '두 액자를 눌러서 확인해 보자.' : '';
-  if (view.scene_id === 'basement') exploreHint.textContent = '옷 주머니의 지갑을 눌러 살펴보자.';
+  if (view.scene_id === 'basement' && !view.available_actions.some(a => a.id === 'go_upstairs')) exploreHint.textContent = '옷 주머니의 지갑을 눌러 살펴보자.';
   if (view.scene_id === 'truck_escape') exploreHint.textContent = '시간이 없어! 트럭 차문을 눌러보자.';
   exploreHint.hidden = !exploreHint.textContent;
   postMoveUI.setSplit?.(!view.ending && view.scene_id !== 'cathy_help');

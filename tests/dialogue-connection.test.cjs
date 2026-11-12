@@ -557,6 +557,8 @@ test('only the wallet is clickable in the basement and the server reveals the ex
   h.context.window.startStory(basement,'테스트');
   const children=h.nodes.get('dialogue-stage').children;
   assert.equal(children.some(n=>n.className==='door-hotspot brazier-hotspot'),false);
+  const hint=children.find(n=>n.className==='scene-explore-hint');
+  assert.equal(hint.hidden,false);assert.match(hint.textContent,/지갑/);
   const wallet=children.find(n=>n.className==='door-hotspot wallet-hotspot');
   assert.equal(wallet.hidden,false);assert.equal(h.nodes.get('action-list').children.length,0);
   let sent;h.context.fetch=async(_,options)=>{sent=JSON.parse(options.body).action_id;return {ok:true,json:async()=>basement};};
@@ -565,6 +567,9 @@ test('only the wallet is clickable in the basement and the server reveals the ex
   inspected.view.available_actions=[{id:'go_upstairs',label:'지하실에서 나온다',kind:'move'},{id:'inspect_wallet',label:'지갑',kind:'inspect'}];
   h.context.applyResponse(inspected,'scene');
   assert.equal(h.nodes.get('action-list').children[0].textContent,'지하실에서 나온다');
+  assert.equal(hint.hidden,true);
+  h.context.applyResponse(inspected,'scene');
+  assert.equal(hint.hidden,true);
   h.context.applyResponse(response('bob_caught','butcher_shop',null,[]),'scene');
   assert.equal(wallet.hidden,true);
 });
